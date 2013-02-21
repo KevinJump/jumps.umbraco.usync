@@ -25,11 +25,30 @@ namespace jumps.umbraco.usync
         private static bool _synced = false ; 
         
         // TODO: Config this
-        private static string _rootFolder = "~/uSync";
+        private bool _read;
+        private bool _write;
+        private bool _attach; 
 
         public uSync()
         {
-         }
+            uSyncSettings config = 
+                (uSyncSettings)System.Configuration.ConfigurationManager.GetSection("usync");
+
+            if (config != null)
+            {
+
+                _read = config.Read;
+                _write = config.Write;
+                _attach = config.Attach;
+            }
+            else
+            {
+                _read = true;
+                _write = false;
+                _attach = true;
+            }
+
+        }
 
         private void RunSync()
         {
@@ -37,29 +56,46 @@ namespace jumps.umbraco.usync
             // in theory when it is all working, 
             // this would only be done first time
 
-            if (!Directory.Exists(IOHelper.MapPath(_rootFolder)))
+            //
+            
+            if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write )
             {
-
-                SyncDataType.SaveAllToDisk();
                 SyncDocType.SaveAllToDisk();
                 SyncMacro.SaveAllToDisk();
                 SyncTemplate.SaveAllToDisk();
                 SyncStylesheet.SaveAllToDisk();
             }
 
+            // bugs in the DataType EventHandling, mean it isn't fired 
+            // onSave - so we just write it out to disk everyload.
+            // this will make it hard 
+            // to actually delete anything via the sync
+            SyncDataType.SaveAllToDisk();
+
             //
             // we take the disk and sync it to the DB, this is how 
             // you can then distribute using uSync.
             //
-            SyncDocType.ReadAllFromDisk(); 
+            
+            if (_read)
+            {
+                SyncTemplate.ReadAllFromDisk();
+                SyncStylesheet.ReadAllFromDisk();
+                SyncDataType.ReadAllFromDisk();
+                SyncDocType.ReadAllFromDisk();
+                SyncMacro.ReadAllFromDisk();
+            }
 
-            // everytime. register our events to all the saves..
-            // that way we capture things as they are done. 
-            SyncDataType.AttachEvents();
-            SyncDocType.AttachEvents();
-            SyncMacro.AttachEvents();
-            SyncTemplate.AttachEvents();
-            SyncStylesheet.AttachEvents(); 
+            if (_attach)
+            {
+                // everytime. register our events to all the saves..
+                // that way we capture things as they are done. 
+                SyncDataType.AttachEvents();
+                SyncDocType.AttachEvents();
+                SyncMacro.AttachEvents();
+                SyncTemplate.AttachEvents();
+                SyncStylesheet.AttachEvents();
+            }
         }
 
 

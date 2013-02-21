@@ -6,7 +6,20 @@ using System.Threading.Tasks;
 
 using System.Xml ;
 using umbraco.cms.businesslogic;
-using umbraco.cms.businesslogic.template; 
+using umbraco.cms.businesslogic.template;
+
+using umbraco.BusinessLogic; 
+
+using System.IO; 
+using Umbraco.Core.IO; 
+
+//  Check list
+// ====================
+//  SaveOne         X
+//  SaveAll         X
+//  OnSave          X
+//  OnDelete        X
+//  ReadFromDisk    X
 
 namespace jumps.umbraco.usync
 {
@@ -40,9 +53,46 @@ namespace jumps.umbraco.usync
 
             path = string.Format("{0}//{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
 
-            return path; 
+            return path;
+        }
+
+        public static void ReadAllFromDisk()
+        {
+            string path = IOHelper.MapPath(string.Format("{0}{1}",
+                helpers.uSyncIO.RootFolder,
+                "umbraco.cms.businesslogic.template.Template"));
+
+            ReadFromDisk(path);
+        }
+
+        public static void ReadFromDisk(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                User user = new User(0); 
+
+                foreach (string file in Directory.GetFiles(path, "*.config"))
+                {
+                    XmlDocument xmlDoc = new XmlDocument();
+                    xmlDoc.Load(file);
+
+                    XmlNode node = xmlDoc.SelectSingleNode("//Template");
+
+                    if (node != null)
+                    {
+                       Template.Import(node,user); 
+                    }
+                }
+
+                foreach (string folder in Directory.GetDirectories(path))
+                {
+                    ReadFromDisk(folder);
+                }
+            }
 
 
+        
+        
         }
 
         public static void AttachEvents()
@@ -54,7 +104,9 @@ namespace jumps.umbraco.usync
 
         static void Template_AfterDelete(Template sender, DeleteEventArgs e)
         {
-            
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString() + GetDocPath(sender), sender.Text);
+
+            e.Cancel = false; 
         }
 
         static void Template_AfterSave(Template sender, SaveEventArgs e)

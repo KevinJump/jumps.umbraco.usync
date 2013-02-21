@@ -28,13 +28,13 @@ namespace jumps.umbraco.usync.helpers
 
         public static void SaveXmlDoc(string type, string name, XmlDocument doc)
         {
-            string savePath = string.Format("{0}/{1}.xml", type, ScrubFile(name)) ;
+            string savePath = string.Format("{0}/{1}.config", type, ScrubFile(name)) ;
             SaveXmlDoc(savePath, doc) ; 
         }
 
         public static void SaveXmlDoc(string path, XmlDocument doc)
         {
-            string savePath = string.Format("{0}/{1}", IOHelper.MapPath("~/usync"), path);
+            string savePath = string.Format("{0}/{1}", IOHelper.MapPath(uSyncIO.RootFolder), path);
 
             if ( !Directory.Exists(Path.GetDirectoryName(savePath)))
             {
@@ -53,23 +53,38 @@ namespace jumps.umbraco.usync.helpers
 
         public static void ArchiveFile(string type, string name)
         {
-            string filePath = string.Format( "{0}/{1}/{2}.xml",
-                IOHelper.MapPath("~/uSync"), type, ScrubFile(name) ) ; 
+            string liveRoot = IOHelper.MapPath(uSyncIO.RootFolder);
+            string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder);
 
-            if ( File.Exists(filePath) ) 
+            string currentFile = string.Format(@"{0}\{1}\{2}.config",
+                liveRoot, type, ScrubFile(name));
+
+
+            string archiveFile = string.Format(@"{0}\{1}\{2}_{3}.config",
+                archiveRoot, type, ScrubFile(name), DateTime.Now.ToString("ddMMyy_hhmmss"));
+
+
+            // we need to confirm the archive directory exists 
+            if (!Directory.Exists(Path.GetDirectoryName(archiveFile)))
             {
-                
-                string archiveName = string.Format("{0}/{1}.archive", 
-                    Path.GetDirectoryName(filePath), 
-                    Path.GetFileNameWithoutExtension(filePath) );
+                Directory.CreateDirectory(Path.GetDirectoryName(archiveFile));
+            }
 
-                if ( File.Exists( archiveName ) )
+            if (File.Exists(currentFile))
+            {
+                // it shouldn't happen as we are going for a unique name
+                // but it might be called twice v'quickly
+
+                if (File.Exists(archiveFile))
                 {
-                    File.Delete(archiveName) ; 
+                    File.Delete(archiveFile);
                 }
 
-                File.Move( filePath, archiveName ) ; 
+                // 
+                File.Copy(currentFile, archiveFile);
+                File.Delete(currentFile); 
             }
+
         }
 
        

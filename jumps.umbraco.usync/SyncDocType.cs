@@ -11,7 +11,15 @@ using umbraco.cms.businesslogic;
 using umbraco.cms.businesslogic.web;
 using umbraco.cms.businesslogic.packager;
 using umbraco.BusinessLogic;
-using Umbraco.Core.IO; 
+using Umbraco.Core.IO;
+
+//  Check list
+// ====================
+//  SaveOne         X
+//  SaveAll         X
+//  OnSave          X
+//  OnDelete        X
+//  ReadFromDisk    X
 
 namespace jumps.umbraco.usync
 {
@@ -74,7 +82,7 @@ namespace jumps.umbraco.usync
 
             // buld the final path (as path is "" to start with we always get
             // a preceeding '/' on the path, which is nice
-            path = string.Format("{0}//{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
+            path = string.Format(@"{0}\{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
          
             return path; 
         }
@@ -89,7 +97,9 @@ namespace jumps.umbraco.usync
 
             // TODO: nicer way of getting the type string 
             //       (without creating a dummy doctype?)
-            string path = IOHelper.MapPath(string.Format("~/uSync/{0}", "umbraco.cms.businesslogic.web.DocumentType"));
+            string path = IOHelper.MapPath(string.Format("{0}{1}",
+                helpers.uSyncIO.RootFolder,
+                "umbraco.cms.businesslogic.web.DocumentType"));
 
             // recurse in
             ReadFromDisk(path); 
@@ -114,7 +124,7 @@ namespace jumps.umbraco.usync
             {
                 // get all the xml files in this folder 
                 // we are sort of assuming they are doctype ones.
-                foreach (string file in Directory.GetFiles(path, "*.xml"))
+                foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
                     // load the xml
                     XmlDocument xmlDoc = new XmlDocument();
