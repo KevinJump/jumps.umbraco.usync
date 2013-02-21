@@ -6,15 +6,14 @@
 # add a Config Section 
 
 <Action runat="install" undo="true" alias="AddConfigurationSection">
-  <section name="usync" type="jumps.umbraco.usync.uSyncSettings" allowLocation="true" allowDefinition="Everywhere" />
+  <section name="usync" type="jumps.umbraco.usync.uSyncSettings"
+    assembly="jumps.umbraco.usync" 
+  />
 </Action>
-
-# add the actual config.
 <Action 
-	runat="install" undo="false" alias="AdduSyncSettings" 
+	runat="install" undo="false" alias="AddXmlFragment" 
 	file="~/web.config" 
 	xpath="//configuration" 
 	position="end"> 
 	   <usync read="true" write="false" attach="true" folder="~/uSync/" archive="~/uSync.Archive" />
  </Action>
-
