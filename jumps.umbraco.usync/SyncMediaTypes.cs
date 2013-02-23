@@ -17,7 +17,7 @@ using umbraco.DataLayer;
 
 namespace jumps.umbraco.usync
 {
-    /*
+    
     /// <summary>
     /// Syncs the Media Types in umbraco to the disk
     /// </summary>
@@ -26,7 +26,7 @@ namespace jumps.umbraco.usync
         public static void SaveToDisk(MediaType item)
         {
             XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-            xmlDoc.AppendChild(item.ToXml(xmlDoc, false));
+            xmlDoc.AppendChild( uSyncMediaType.MediaToXML(xmlDoc, item));
             helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
         }
 
@@ -40,7 +40,7 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
-
+            // will read it from the disk
         }
 
         public static void AttachEvents()
@@ -54,7 +54,7 @@ namespace jumps.umbraco.usync
             SaveToDisk((MediaType)sender); 
         }
     }
-     */
+     
 
     public class uSyncMediaType
     {
@@ -116,32 +116,9 @@ namespace jumps.umbraco.usync
             }
             doc.AppendChild(tabs);
             return doc;
-
-
-            return doc; 
-
+            
         }
     }
 
-    /*
-        
-             // generic properties
-      ;
-
-            // tabs
-            XmlElement tabs = xd.CreateElement("Tabs");
-            foreach (TabI t in getVirtualTabs.ToList())
-            {
-                //only add tabs that aren't from a master doctype
-                if (t.ContentType == this.Id)
-                {
-                    XmlElement tabx = xd.CreateElement("Tab");
-                    tabx.AppendChild(xmlHelper.addTextNode(xd, "Id", t.Id.ToString()));
-                    tabx.AppendChild(xmlHelper.addTextNode(xd, "Caption", t.Caption));
-                    tabs.AppendChild(tabx);
-                }
-            }
-            doc.AppendChild(tabs);
-            return doc;
-    */
+    
 }
