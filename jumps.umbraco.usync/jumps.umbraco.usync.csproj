@@ -54,6 +54,10 @@
     <Reference Include="Umbraco.Core">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\Umbraco.Core.dll</HintPath>
     </Reference>
+    <Reference Include="umbraco.DataLayer, Version=1.0.4759.26015, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\umbraco.DataLayer.dll</HintPath>
+    </Reference>
     <Reference Include="Umbraco.Web.UI">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\Umbraco.Web.UI.dll</HintPath>
     </Reference>
