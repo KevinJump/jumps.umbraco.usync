@@ -62,7 +62,7 @@ namespace jumps.umbraco.usync
             {
                 SyncDocType.SaveAllToDisk();
                 SyncMacro.SaveAllToDisk();
-                SyncMediaTypes.SaveAllToDisk(); 
+                //SyncMediaTypes.SaveAllToDisk(); 
                 SyncTemplate.SaveAllToDisk();
                 SyncStylesheet.SaveAllToDisk();
             }
@@ -85,6 +85,7 @@ namespace jumps.umbraco.usync
                 SyncDataType.ReadAllFromDisk();
                 SyncDocType.ReadAllFromDisk();
                 SyncMacro.ReadAllFromDisk();
+                //SyncMediaTypes.ReadAllFromDisk(); 
             }
 
             if (_attach)
@@ -93,7 +94,7 @@ namespace jumps.umbraco.usync
                 // that way we capture things as they are done. 
                 SyncDataType.AttachEvents();
                 SyncDocType.AttachEvents();
-                SyncMediaTypes.AttachEvents(); 
+                //SyncMediaTypes.AttachEvents(); 
                 SyncMacro.AttachEvents();
                 SyncTemplate.AttachEvents();
                 SyncStylesheet.AttachEvents();

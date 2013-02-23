@@ -105,6 +105,16 @@ namespace jumps.umbraco.usync.helpers
 
             return sb.ToString() ;
         }
+
+        public static string GetNodeValue(XmlNode val)
+        {
+            string value = val.Value;
+
+            if (String.IsNullOrEmpty(value))
+                return "";
+            else
+                return value;
+        }
         
     }
 }
