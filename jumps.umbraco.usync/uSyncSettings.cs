@@ -16,12 +16,12 @@ namespace jumps.umbraco.usync
     /// <uSync>
     ///     <Settings>
     ///         <add 
-    ///             read="true" 
-    ///             write="false" 
-    ///             attach="true" 
-    ///             folder="~/uSync/" 
-    ///             archive="~/uSync.Archive/" 
-    ///             versions="true" 
+    ///             read="true"                     - read the uSync directory on startup
+    ///             write="false"                   - write the uSync directory on statup
+    ///             attach="true"                   - attach the events to save on the fly
+    ///             folder="~/uSync/"               - place to put files
+    ///             archive="~/uSync.Archive/"      - place to archive files
+    ///             versions="true"                 - store versions at every save
     ///             />
     ///     </settings>
     /// </uSync>
@@ -106,6 +106,8 @@ namespace jumps.umbraco.usync
                 this["versions"] = value;
             }
         }
+
+
 
     }
 }

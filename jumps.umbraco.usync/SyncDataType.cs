@@ -133,23 +133,30 @@ namespace jumps.umbraco.usync
         public static void AttachEvents()
         {
             // these are not firing...
-            DataTypeDefinition.Saving += DataTypeDefinition_Saving;
-
+            DataTypeDefinition.Saving += new DataTypeDefinition.SaveEventHandler(DataTypeDefinition_Saving);
+            //DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
+            //DataTypeDefinition.BeforeSave += new EventHandler<SaveEventArgs>(DataTypeDefinition_AfterSave);
+            
             // but this is 
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
         }
 
-        static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
+        public static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
         {
             SaveToDisk((DataTypeDefinition)sender);
         }
 
-        static void DataTypeDefinition_AfterDelete(object sender, DeleteEventArgs e)
+        public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
+        {
+            SaveToDisk((DataTypeDefinition)sender);
+        }
+
+        public static void DataTypeDefinition_AfterDelete(object sender, DeleteEventArgs e)
         {
             helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), ((DataTypeDefinition)sender).Text);
 
-            e.Cancel = false; 
-        
+            e.Cancel = false;
+       
         }
         
     }

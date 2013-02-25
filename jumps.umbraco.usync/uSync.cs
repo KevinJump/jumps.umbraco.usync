@@ -1,4 +1,16 @@
-﻿using System;
+﻿#define UMBRACO4
+
+// IApplicationEventHanlder moved from Umbraco.Web to Umbraco.Core
+// between v4 and v6 
+//
+// Arguments also changed. the UMBRACO4 defines the functions.
+//
+// when you compile for 4 or 6 you will also need to change
+// the dll refrences as Umbraco.Web no longer contains the
+// names of the functions in 6.
+//
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,10 +21,15 @@ using System.Xml; // so we can serialize stuff
 
 using umbraco.businesslogic;
 using Umbraco.Core.IO;
-using Umbraco.Web; 
+using Umbraco.Core;
+
+#if UMBRACO4
+using Umbraco.Web;
+#endif
 
 namespace jumps.umbraco.usync
 {
+
     /// <summary>
     /// usync. the umbraco database to disk and back again helper.
     /// 
@@ -101,9 +118,9 @@ namespace jumps.umbraco.usync
             }
         }
 
-
-        public void OnApplicationStarted(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
+        private void DoOnStart()
         {
+
             // lock
             if (!_synced)
             {
@@ -114,14 +131,20 @@ namespace jumps.umbraco.usync
                         // everything we do here is blocking
                         // on application start, so we should be 
                         // quick. 
-                        RunSync(); 
+                        RunSync();
+
 
                         _synced = true;
                     }
                 }
             }
         }
-        
+#if UMBRACO4
+        public void OnApplicationStarted(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
+        {
+            DoOnStart();
+        }
+
         public void OnApplicationStarting(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
             // don't think i do it here.
@@ -131,5 +154,22 @@ namespace jumps.umbraco.usync
         {
             // don't think i do it here.
         }
+#else 
+        public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
+        {
+            DoOnStart();
+        }
+        
+        public void OnApplicationStarting(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
+        {
+            // don't think i do it here.
+        }
+
+        public void OnApplicationInitialized(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
+        {
+            // don't think i do it here.
+        }
+
+#endif
     }
 }
