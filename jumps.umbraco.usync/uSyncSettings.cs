@@ -20,7 +20,9 @@ namespace jumps.umbraco.usync
     ///             write="false" 
     ///             attach="true" 
     ///             folder="~/uSync/" 
-    ///             archive="~/uSync.Archive/" />
+    ///             archive="~/uSync.Archive/" 
+    ///             versions="true" 
+    ///             />
     ///     </settings>
     /// </uSync>
     /// 
@@ -91,5 +93,19 @@ namespace jumps.umbraco.usync
                 this["archive"] = value;
             }
         }
+
+        [ConfigurationProperty("versions", DefaultValue = "true", IsRequired = false)]
+        public Boolean Versions
+        {
+            get
+            {
+                return (Boolean)this["versions"];
+            }
+            set
+            {
+                this["versions"] = value;
+            }
+        }
+
     }
 }

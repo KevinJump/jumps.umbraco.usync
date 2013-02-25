@@ -17,6 +17,20 @@ namespace jumps.umbraco.usync.helpers
     /// </summary>
     public class XmlDoc
     {
+        private static bool _versions = false;  
+
+        static XmlDoc()
+        {
+             uSyncSettings config = 
+                (uSyncSettings)System.Configuration.ConfigurationManager.GetSection("usync");
+
+            if (config != null)
+            {
+                _versions = config.Versions ; 
+            }
+
+        }
+
         public static XmlDocument CreateDoc()
         {
             XmlDocument doc = new XmlDocument();
@@ -44,6 +58,11 @@ namespace jumps.umbraco.usync.helpers
                 if ( File.Exists(savePath) ) 
                 {
                     // TODO: Archive here..? 
+                    if ( _versions ) {
+                        ArchiveFile(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path), false);  
+                    }
+            
+
                     File.Delete(savePath);
                 }
             }
@@ -51,7 +70,19 @@ namespace jumps.umbraco.usync.helpers
             doc.Save(savePath) ; 
         }
 
-        public static void ArchiveFile(string type, string name)
+        /// <summary>
+        /// Archive a file (and delete the orgininal) called when a file is deleted
+        /// </summary>
+        public static void ArchiveFile(string path, string name)
+        {
+            ArchiveFile(path, name, true);
+        }
+
+        /// <summary>
+        /// archive a file, and optionally delete the orgiinal, allows us to use archive 
+        /// as a versioning tool :) 
+        /// </summary>
+        public static void ArchiveFile(string type, string name, bool delete)
         {
             string liveRoot = IOHelper.MapPath(uSyncIO.RootFolder);
             string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder);
@@ -61,7 +92,7 @@ namespace jumps.umbraco.usync.helpers
 
 
             string archiveFile = string.Format(@"{0}\{1}\{2}_{3}.config",
-                archiveRoot, type, ScrubFile(name), DateTime.Now.ToString("ddMMyy_hhmmss"));
+                archiveRoot, type, ScrubFile(name), DateTime.Now.ToString("ddMMyy_HHmmss"));
 
 
             // we need to confirm the archive directory exists 
