@@ -102,7 +102,6 @@ namespace jumps.umbraco.usync
 
                 global::umbraco.cms.businesslogic.datatype.controls.Factory f = new global::umbraco.cms.businesslogic.datatype.controls.Factory();
 
-
                 DataTypeDefinition dtd = DataTypeDefinition.MakeNew(u, _name, new Guid(_def));
 				var dataType = f.DataType(new Guid(_id));
 				if (dataType == null)

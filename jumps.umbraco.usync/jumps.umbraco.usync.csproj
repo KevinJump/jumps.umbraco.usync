@@ -92,7 +92,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\devumbraco\bin\$(TargetFileName)" /Y
-xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\targetumbraco\bin\$(TargetFileName)" /Y</PostBuildEvent>
+rem xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\targetumbraco\bin\$(TargetFileName)" /Y</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -19,19 +19,14 @@ using Umbraco.Core.IO;
 
 /* WARNING - THIS CODE CURRENTLY BORKS AN UMBRACO INSTALLATION */
 
-/*
 namespace jumps.umbraco.usync
 {
-    
-    /// <summary>
-    /// Syncs the Media Types in umbraco to the disk
-    /// </summary>
     public class SyncMediaTypes
     {
         public static void SaveToDisk(MediaType item)
         {
             XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-            xmlDoc.AppendChild( uSyncMediaType.MediaToXML(xmlDoc, item));
+            xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
             helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
         }
 
@@ -45,19 +40,19 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
-          string path = IOHelper.MapPath(string.Format("{0}{1}",
+            string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "umbraco.cms.businesslogic.media.MediaType"));
 
-            ReadFromDisk(path); 
-
+            ReadFromDisk(path);
         }
 
         public static void ReadFromDisk(string path)
         {
+            // actually read it in....
+            // 
             if (Directory.Exists(path))
             {
-
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
                     XmlDocument xmlDoc = new XmlDocument();
@@ -67,13 +62,10 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        uSyncMediaType.ImportMediaType(node);
-                        
+                        // do the actuall magic here...
                     }
-
                 }
             }
-
         }
 
         public static void AttachEvents()
@@ -81,77 +73,71 @@ namespace jumps.umbraco.usync
             MediaType.AfterSave += MediaType_AfterSave;
         }
 
-
         static void MediaType_AfterSave(MediaType sender, SaveEventArgs e)
         {
-            SaveToDisk((MediaType)sender); 
+            SaveToDisk(sender); 
         }
     }
 
-
-    public class uSyncMediaType
+    public class MediaTypeHelper
     {
-        public static XmlElement MediaToXML(XmlDocument xd, MediaType mt)
+        public static XmlElement ToXml(XmlDocument xd, MediaType mt)
         {
             XmlElement doc = xd.CreateElement("MediaType");
 
+            // build the info section (name and stuff)
             XmlElement info = xd.CreateElement("Info");
             doc.AppendChild(info);
+
             info.AppendChild(XmlHelper.AddTextNode(xd, "Name", mt.Text));
             info.AppendChild(XmlHelper.AddTextNode(xd, "Alias", mt.Alias));
             info.AppendChild(XmlHelper.AddTextNode(xd, "Icon", mt.IconUrl));
             info.AppendChild(XmlHelper.AddTextNode(xd, "Thumbnail", mt.Thumbnail));
             info.AppendChild(XmlHelper.AddTextNode(xd, "Description", mt.Description));
 
+            // now the Media Type Scructure
             XmlElement structure = xd.CreateElement("Structure");
-
-            foreach (int cc in mt.AllowedChildContentTypeIDs.ToList())
+            foreach(int child in mt.AllowedChildContentTypeIDs.ToList())
             {
-                structure.AppendChild(XmlHelper.AddTextNode(xd, "MediaType", new MediaType(cc).Alias));
+                structure.AppendChild(XmlHelper.AddTextNode(xd, "MediaType", new MediaType(child).Alias));
             }
 
-            // generic properties
-            XmlElement pts = xd.CreateElement("GenericProperties");
-            foreach (PropertyType pt in mt.PropertyTypes)
+            // stuff in the generic properties tab
+            XmlElement props = xd.CreateElement("GenericProperties");
+            foreach(PropertyType pt in mt.PropertyTypes)
             {
-                //only add properties that aren't from master doctype
+                // we only add properties that arn't in a parent (although media types are flat at the mo)
                 if (pt.ContentTypeId == mt.Id)
                 {
-                    XmlElement ptx = xd.CreateElement("GenericProperty");
-                    ptx.AppendChild(XmlHelper.AddTextNode(xd, "Name", pt.Name));
-                    ptx.AppendChild(XmlHelper.AddTextNode(xd, "Alias", pt.Alias));
-                    ptx.AppendChild(XmlHelper.AddTextNode(xd, "Type", pt.DataTypeDefinition.DataType.Id.ToString()));
+                    XmlElement prop = xd.CreateElement("GenericProperty");
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Name", pt.Name));
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Alias", pt.Alias));
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "type", pt.DataTypeDefinition.DataType.Id.ToString()));
 
-                    //Datatype definition guid was added in v4 to enable datatype imports
-                    ptx.AppendChild(XmlHelper.AddTextNode(xd, "Definition", pt.DataTypeDefinition.UniqueId.ToString()));
-
-                    ptx.AppendChild(XmlHelper.AddTextNode(xd, "Tab", ContentType.Tab.GetCaptionById(pt.TabId)));
-                    ptx.AppendChild(XmlHelper.AddTextNode(xd, "Mandatory", pt.Mandatory.ToString()));
-                    ptx.AppendChild(XmlHelper.AddTextNode(xd, "Validation", pt.ValidationRegExp));
-                    ptx.AppendChild(XmlHelper.AddCDataNode(xd, "Description", pt.Description));
-                    pts.AppendChild(ptx);
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Definition", pt.DataTypeDefinition.UniqueId.ToString()));
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Tab", ContentType.Tab.GetCaptionById(pt.TabId)));
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Mandatory", pt.Mandatory.ToString()));
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Validation", pt.ValidationRegExp));
+                    prop.AppendChild(XmlHelper.AddCDataNode(xd, "Description", pt.Description));
+                    // add this property to the tree
+                    props.AppendChild(prop) ; 
                 }
-            }
-            doc.AppendChild(pts);
 
-            //tabs
-            XmlElement tabs = xd.CreateElement("Tabs");
-            foreach (ContentType.TabI t in mt.getVirtualTabs.ToList())
-            {
-                //only add tabs that aren't from a master doctype
-                if (t.ContentType == mt.Id)
-                {
-                    XmlElement tabx = xd.CreateElement("Tab");
-                    tabx.AppendChild(XmlHelper.AddTextNode(xd, "Id", t.Id.ToString()));
-                    tabx.AppendChild(XmlHelper.AddTextNode(xd, "Caption", t.Caption));
-                    tabs.AppendChild(tabx);
-                }
+                
             }
-            doc.AppendChild(tabs);
+            // add properties to the doc
+            doc.AppendChild(props) ; 
+                                                
             return doc;
-
         }
 
+        public static void Import(XmlNode n) 
+        { 
+        }
+    }
+}
+
+/*
         public static void ImportMediaType(XmlNode n)
         {
              global::umbraco.BusinessLogic.User u = new global::umbraco.BusinessLogic.User(0) ; 
