@@ -21,14 +21,7 @@ namespace jumps.umbraco.usync.helpers
 
         static XmlDoc()
         {
-             uSyncSettings config = 
-                (uSyncSettings)System.Configuration.ConfigurationManager.GetSection("usync");
-
-            if (config != null)
-            {
-                _versions = config.Versions ; 
-            }
-
+            _versions = uSyncSettings.Versions;
         }
 
         public static XmlDocument CreateDoc()

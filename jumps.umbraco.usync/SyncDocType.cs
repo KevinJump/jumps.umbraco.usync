@@ -13,13 +13,6 @@ using umbraco.cms.businesslogic.packager;
 using umbraco.BusinessLogic;
 using Umbraco.Core.IO;
 
-//  Check list
-// ====================
-//  SaveOne         X
-//  SaveAll         X
-//  OnSave          X
-//  OnDelete        X
-//  ReadFromDisk    X
 
 namespace jumps.umbraco.usync
 {
@@ -42,9 +35,19 @@ namespace jumps.umbraco.usync
         /// <param name="item">DocumentType to save</param>
         public static void SaveToDisk(DocumentType item)
         {
-            XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-            xmlDoc.AppendChild(item.ToXml(xmlDoc));
-            helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString() + GetDocPath(item), item.Text, xmlDoc);
+            if (item != null)
+            {
+                try
+                {
+                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
+                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString() + GetDocPath(item), item.Text, xmlDoc);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(string.Format("Failed Saving Doctype:{0} to disk\n{1}", item.Text, e.ToString()));
+                }
+            }
         }
 
         /// <summary>
@@ -54,10 +57,23 @@ namespace jumps.umbraco.usync
         /// </summary>
         public static void SaveAllToDisk()
         {
-            foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
-            {                
-                SaveToDisk(item); 
+            string last ="start" ;
+            try
+            {
+                foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
+                {
+                    if (item != null)
+                    {
+                        last = item.Text;
+                        SaveToDisk(item);
+                    }
+                }
             }
+            catch (Exception e)
+            {
+                throw new Exception(string.Format("uSync Failure when Saving DocTypes: last DocType {0}\n, {1}", last, e.ToString())); 
+            }
+                
         }
         
         /// <summary>
@@ -73,16 +89,19 @@ namespace jumps.umbraco.usync
         {
             string path = "";
 
-            // does this documentType have a parent 
-            if (item.MasterContentType != 0)
+            if (item != null)
             {
-                // recurse in to the parent to build the path
-                path = GetDocPath(new DocumentType(item.MasterContentType));
-            }
+                // does this documentType have a parent 
+                if (item.MasterContentType != 0)
+                {
+                    // recurse in to the parent to build the path
+                    path = GetDocPath(new DocumentType(item.MasterContentType));
+                }
 
-            // buld the final path (as path is "" to start with we always get
-            // a preceeding '/' on the path, which is nice
-            path = string.Format(@"{0}\{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
+                // buld the final path (as path is "" to start with we always get
+                // a preceeding '/' on the path, which is nice
+                path = string.Format(@"{0}\{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
+            }
          
             return path; 
         }
@@ -120,7 +139,7 @@ namespace jumps.umbraco.usync
         private static void ReadFromDisk(string path) 
         {
 
-            if (Directory.Exists( path))
+            if (Directory.Exists(path))
             {
                 // get all the xml files in this folder 
                 // we are sort of assuming they are doctype ones.
@@ -168,9 +187,7 @@ namespace jumps.umbraco.usync
         static void DocumentType_BeforeDelete(DocumentType sender, DeleteEventArgs e)
         {
             helpers.XmlDoc.ArchiveFile(sender.GetType().ToString() + GetDocPath(sender), sender.Text);
-
             e.Cancel = false; 
-          
         }
 
         /// <summary>

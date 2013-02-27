@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 using System.Configuration;
 
+using Umbraco.Core.IO;
+using umbraco.BusinessLogic; 
+
 namespace jumps.umbraco.usync
 {
     /// <summary>
@@ -27,7 +30,7 @@ namespace jumps.umbraco.usync
     /// </uSync>
     /// 
     /// </summary>
-    public class uSyncSettings : ConfigurationSection
+    public class uSyncSettingsSection : ConfigurationSection
     {
         [ConfigurationProperty("read", DefaultValue = "true", IsRequired = false)]
         public Boolean Read
@@ -110,4 +113,60 @@ namespace jumps.umbraco.usync
 
 
     }
+     
+
+    public class uSyncSettings {
+
+        private static string _settingfile = "usyncSettings.config"; 
+        private static uSyncSettingsSection _settings ; 
+
+        static uSyncSettings()
+        {
+            try
+            {
+                ExeConfigurationFileMap fileMap = new ExeConfigurationFileMap();
+                fileMap.ExeConfigFilename = IOHelper.MapPath(string.Format("~/config/{0}", _settingfile));
+
+                // load the settings file
+                Configuration config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
+
+                _settings = (uSyncSettingsSection)config.GetSection("usync");
+            }
+            catch (Exception ex)
+            {
+                Log.Add(LogTypes.Error, 0, string.Format("Error loading settings file {0}", ex.ToString()));
+            }
+        }
+
+        public static bool Versions {
+            get { return _settings.Versions; }
+        }
+
+        public static bool Write
+        {
+            get { return _settings.Write  ; }
+        }
+
+        public static bool Read
+        {
+            get { return _settings.Read ; }
+        }
+
+        public static bool Attach
+        {
+            get { return _settings.Attach ; }
+        }
+
+        public static string Folder
+        {
+            get { return _settings.Folder ; }
+        }
+
+        public static string Archive
+        {
+            get { return _settings.Archive ; }
+        }
+
+    }
+  
 }

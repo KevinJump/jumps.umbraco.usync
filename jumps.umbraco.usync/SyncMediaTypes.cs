@@ -25,9 +25,19 @@ namespace jumps.umbraco.usync
     {
         public static void SaveToDisk(MediaType item)
         {
-            XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-            xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
-            helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
+            if (item != null)
+            {
+                try
+                {
+                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
+                    xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(string.Format("Error saving MediaType {0}", item.Text), ex);
+                }
+            }
         }
 
         public static void SaveAllToDisk()
@@ -107,6 +117,13 @@ namespace jumps.umbraco.usync
     {
         public static XmlElement ToXml(XmlDocument xd, MediaType mt)
         {
+            if (mt == null)
+                throw new ArgumentNullException("Mediatype cannot be null");
+
+            if (xd == null)
+                throw new ArgumentNullException("XmlDocument cannot be null"); 
+
+
             XmlElement doc = xd.CreateElement("MediaType");
 
             // build the info section (name and stuff)
@@ -119,7 +136,6 @@ namespace jumps.umbraco.usync
             info.AppendChild(XmlHelper.AddTextNode(xd, "Thumbnail", mt.Thumbnail));
             info.AppendChild(XmlHelper.AddTextNode(xd, "Description", mt.Description));
 
-            
             XmlElement structure = xd.CreateElement("Structure");
             foreach (int child in mt.AllowedChildContentTypeIDs.ToList())
             {
@@ -174,6 +190,9 @@ namespace jumps.umbraco.usync
 
         public static void Import(XmlNode n, bool ImportStructure)
         {
+            if (n == null)
+                throw new ArgumentNullException("Node cannot be null"); 
+
             //
             // using xmlHelper not XmlHelper because GetNodeValue has gone all 
             // Internall on us, this function probibly does belong in the core

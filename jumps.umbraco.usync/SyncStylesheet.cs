@@ -27,9 +27,19 @@ namespace jumps.umbraco.usync
     {
         public static void SaveToDisk(StyleSheet item)
         {
-            XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-            xmlDoc.AppendChild(item.ToXml(xmlDoc));
-            helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
+            if (item == null)
+            {
+                try
+                {
+                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
+                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(string.Format("error saving stylesheet {0}", item.Text), ex); 
+                }
+            }
         }
 
         public static void SaveAllToDisk()

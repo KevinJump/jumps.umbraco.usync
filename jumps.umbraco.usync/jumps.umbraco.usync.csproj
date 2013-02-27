@@ -84,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="PackageActions.txt" />
+    <None Include="uSyncSettings.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
@@ -92,7 +93,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\devumbraco\bin\$(TargetFileName)" /Y
-rem xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\targetumbraco\bin\$(TargetFileName)" /Y</PostBuildEvent>
+xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.4\bin\$(TargetFileName)" /Y</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

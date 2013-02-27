@@ -23,6 +23,8 @@ using umbraco.businesslogic;
 using Umbraco.Core.IO;
 using Umbraco.Core;
 
+using umbraco.BusinessLogic;
+
 #if UMBRACO4
 using Umbraco.Web;
 #endif
@@ -44,31 +46,41 @@ namespace jumps.umbraco.usync
         // TODO: Config this
         private bool _read;
         private bool _write;
-        private bool _attach; 
+        private bool _attach;
+
+        private bool _docTypeSaveWorks = false; 
 
         public uSync()
         {
-            uSyncSettings config = 
-                (uSyncSettings)System.Configuration.ConfigurationManager.GetSection("usync");
 
-            if (config != null)
-            {
+            _read = uSyncSettings.Read;
+            _write = uSyncSettings.Write;
+            _attach = uSyncSettings.Attach;
 
-                _read = config.Read;
-                _write = config.Write;
-                _attach = config.Attach;
-            }
-            else
+#if UMBRACO4
+            // better than 4.11.4 (upto 4.99.99)
+            if ((global::umbraco.GlobalSettings.VersionMajor == 4)
+                  && (global::umbraco.GlobalSettings.VersionMinor >= 11)
+                  && (global::umbraco.GlobalSettings.VersionPatch > 4))
             {
-                _read = true;
-                _write = false;
-                _attach = true;
+                _docTypeSaveWorks = true;
             }
+#else
+            // better than 6.0.0 -> forever...
+            if ((global::umbraco.GlobalSettings.VersionMajor >= 6)
+                  && (global::umbraco.GlobalSettings.VersionPatch > 0))
+            {
+                _docTypeSaveWorks = true;
+            }
+#endif
 
         }
 
         private void RunSync()
         {
+            Log.Add(LogTypes.Custom, 0, "uSync Starting");
+            Log.Add(LogTypes.Debug, 0, "========== uSync Starting"); 
+            
 
             // in theory when it is all working, 
             // this would only be done first time
@@ -77,18 +89,29 @@ namespace jumps.umbraco.usync
             
             if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write )
             {
+                Log.Add(LogTypes.Custom, 0, "uSync Saving All to Disk");
                 SyncDocType.SaveAllToDisk();
                 SyncMacro.SaveAllToDisk();
                 SyncMediaTypes.SaveAllToDisk(); 
                 SyncTemplate.SaveAllToDisk();
                 SyncStylesheet.SaveAllToDisk();
+                SyncDataType.SaveAllToDisk();
             }
 
             // bugs in the DataType EventHandling, mean it isn't fired 
             // onSave - so we just write it out to disk everyload.
             // this will make it hard 
             // to actually delete anything via the sync
-            SyncDataType.SaveAllToDisk();
+            // we only do this < 4.11.5 and < 6.0.1 
+            //
+            // this mimics attach.. so if you turn _attach off, this doesn't
+            // happen
+            //
+            if (!_docTypeSaveWorks && _attach)
+            {
+                Log.Add(LogTypes.Custom, 0, "uSync Saving DataTypes to Disk (Bug work)");
+                SyncDataType.SaveAllToDisk();
+            }
 
             //
             // we take the disk and sync it to the DB, this is how 
@@ -97,6 +120,7 @@ namespace jumps.umbraco.usync
             
             if (_read)
             {
+                Log.Add(LogTypes.Custom, 0, "uSync Syncing from to Disk");
                 SyncTemplate.ReadAllFromDisk();
                 SyncStylesheet.ReadAllFromDisk();
                 SyncDataType.ReadAllFromDisk();
@@ -108,7 +132,9 @@ namespace jumps.umbraco.usync
             if (_attach)
             {
                 // everytime. register our events to all the saves..
-                // that way we capture things as they are done. 
+                // that way we capture things as they are done.
+                Log.Add(LogTypes.Custom, 0, "uSync Attaching to Events"); 
+
                 SyncDataType.AttachEvents();
                 SyncDocType.AttachEvents();
                 SyncMediaTypes.AttachEvents(); 
@@ -132,8 +158,7 @@ namespace jumps.umbraco.usync
                         // on application start, so we should be 
                         // quick. 
                         RunSync();
-
-
+                        
                         _synced = true;
                     }
                 }

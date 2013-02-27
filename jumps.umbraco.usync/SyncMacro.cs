@@ -12,23 +12,25 @@ using umbraco.cms.businesslogic.macro ;
 using umbraco.cms.businesslogic.packager ; 
 using Umbraco.Core.IO ; 
 
-//  Check list
-// ====================
-//  SaveOne         X
-//  SaveAll         X
-//  OnSave          X
-//  OnDelete        X
-//  ReadFromDisk    X
-
 namespace jumps.umbraco.usync
 {
     public class SyncMacro
     {
         public static void SaveToDisk(Macro item)
         {
-            XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-            xmlDoc.AppendChild(item.ToXml(xmlDoc));
-            helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Name, xmlDoc);
+            if (item != null)
+            {
+                try
+                {
+                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
+                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Name, xmlDoc);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(string.Format("Error Saving Macro {0}", item.Name), ex);
+                }
+            }
         }
 
         public static void SaveAllToDisk()
@@ -66,14 +68,9 @@ namespace jumps.umbraco.usync
                         Macro m = Macro.Import(node);
                         m.Save();
                     }
-                         
                 }
-
-
             }
-
         }
-
 
         public static void AttachEvents()
         {
@@ -92,7 +89,5 @@ namespace jumps.umbraco.usync
         {
             SaveToDisk(sender); 
         }
-
-
     }
 }

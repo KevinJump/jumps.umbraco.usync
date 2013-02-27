@@ -27,12 +27,22 @@ namespace jumps.umbraco.usync
     {
         public static void SaveToDisk(Template item)
         {
-            XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-            xmlDoc.AppendChild(item.ToXml(xmlDoc));
-            helpers.XmlDoc.SaveXmlDoc(
-                item.GetType().ToString() + GetDocPath(item), 
-                item.Text, 
-                xmlDoc);
+            if (item != null)
+            {
+                try
+                {
+                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
+                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    helpers.XmlDoc.SaveXmlDoc(
+                        item.GetType().ToString() + GetDocPath(item),
+                        item.Text,
+                        xmlDoc);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(string.Format("error saving template {0}", item.Text), ex);
+                }
+            }
         }
 
         public static void SaveAllToDisk()
@@ -46,13 +56,15 @@ namespace jumps.umbraco.usync
         private static string GetDocPath(Template item)
         {
             string path = "";
-            if (item.MasterTemplate != 0)
+            if (item != null)
             {
-                path = GetDocPath(new Template(item.MasterTemplate));
+                if (item.MasterTemplate != 0)
+                {
+                    path = GetDocPath(new Template(item.MasterTemplate));
+                }
+
+                path = string.Format("{0}//{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
             }
-
-            path = string.Format("{0}//{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
-
             return path;
         }
 
@@ -89,10 +101,6 @@ namespace jumps.umbraco.usync
                     ReadFromDisk(folder);
                 }
             }
-
-
-        
-        
         }
 
         public static void AttachEvents()
@@ -112,7 +120,7 @@ namespace jumps.umbraco.usync
         static void Template_AfterSave(Template sender, SaveEventArgs e)
         {
             // save
-            SaveToDisk(sender); 
+            SaveToDisk(sender);
         }
         
     }

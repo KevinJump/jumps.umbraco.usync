@@ -11,13 +11,7 @@ namespace jumps.umbraco.usync.helpers
 
         public static string RootFolder {
             get {
-                uSyncSettings config =
-                   (uSyncSettings)System.Configuration.ConfigurationManager.GetSection("usync");
-
-                if (config != null)
-                    return config.Folder;
-                else
-                    return "~/uSync/"; 
+                return uSyncSettings.Folder ; 
             }
         }
 
@@ -25,13 +19,7 @@ namespace jumps.umbraco.usync.helpers
         {
             get
             {
-                uSyncSettings config =
-                    (uSyncSettings)System.Configuration.ConfigurationManager.GetSection("usync");
-
-                if (config != null)
-                    return config.Archive;
-                else
-                    return "~/uSync.Archive/"; 
+                return uSyncSettings.Archive;
             }
         }
 
