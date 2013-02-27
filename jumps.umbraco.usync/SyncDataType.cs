@@ -140,6 +140,7 @@ namespace jumps.umbraco.usync
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
         }
 
+
         public static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
         {
             SaveToDisk((DataTypeDefinition)sender);
@@ -152,7 +153,10 @@ namespace jumps.umbraco.usync
 
         public static void DataTypeDefinition_AfterDelete(object sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), ((DataTypeDefinition)sender).Text);
+            if (typeof(DataTypeDefinition) == sender.GetType())
+            {
+                helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), ((DataTypeDefinition)sender).Text);
+            }
 
             e.Cancel = false;
        

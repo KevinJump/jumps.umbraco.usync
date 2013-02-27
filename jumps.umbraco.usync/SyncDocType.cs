@@ -139,7 +139,6 @@ namespace jumps.umbraco.usync
                         Installer.ImportDocumentType(node, User.GetUser(0), true);
                     }
                 }
-
                 // now see if there are any folders we should pop into
                 foreach (string folder in Directory.GetDirectories(path))
                 {

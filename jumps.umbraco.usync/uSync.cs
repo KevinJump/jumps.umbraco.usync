@@ -102,7 +102,7 @@ namespace jumps.umbraco.usync
                 SyncDataType.ReadAllFromDisk();
                 SyncDocType.ReadAllFromDisk();
                 SyncMacro.ReadAllFromDisk();
-                //SyncMediaTypes.ReadAllFromDisk(); 
+                SyncMediaTypes.ReadAllFromDisk(); 
             }
 
             if (_attach)
