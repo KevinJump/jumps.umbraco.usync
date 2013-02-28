@@ -20,7 +20,7 @@ using Umbraco.Core.IO;
 //  SaveAll         X
 //  OnSave          (Works in 4.11.5)
 //  OnDelete        X
-//  ReadFromDisk    X - first time only ! 
+//  ReadFromDisk    X
 
 namespace jumps.umbraco.usync
 {
@@ -100,13 +100,12 @@ namespace jumps.umbraco.usync
                         DataTypeDefinition d = Import(node, u);
                         if (d != null)
                         {
-                            Log.Add(LogTypes.Custom, 0, string.Format("DataType: {0} saving", file));
                             d.Save();
                         }
 
                         else
                         {
-                            Log.Add(LogTypes.Custom, 0, string.Format("NULL NODE FOR {0}", file));
+                            Log.Add(LogTypes.Debug, 0, string.Format("NULL NODE FOR {0}", file));
                         }
                     }
                     
@@ -150,6 +149,8 @@ namespace jumps.umbraco.usync
                     var dataType = f.DataType(new Guid(_id));
                     if (dataType == null)
                         throw new NullReferenceException("Could not resolve a data type with id " + _id);
+
+                   
 
                     dtd.DataType = dataType;
                     dtd.Save();
@@ -196,14 +197,19 @@ namespace jumps.umbraco.usync
                     }
                 }
 
-                
+
                 // ok now delete any values that have gone missing between syncs..
-                foreach( DictionaryEntry oldval in oldvals ) 
+   
+                if ( !uSyncSettings.Preserve || !uSyncSettings.PreservedPreValueDataTypes.Contains(_id))
                 {
-                    if (!newvals.ContainsValue(oldval.Value)) {
-                        PreValue o = new PreValue( (int)oldval.Key ) ;
-                        Log.Add(LogTypes.Debug, 0, string.Format("Deleting prevalue [{0}]", oldval.Value ));
-                        o.Delete();
+                    foreach (DictionaryEntry oldval in oldvals)
+                    {
+                        if (!newvals.ContainsValue(oldval.Value))
+                        {
+                            PreValue o = new PreValue((int)oldval.Key);
+                            Log.Add(LogTypes.Debug, 0, string.Format("In {0} Deleting prevalue [{1}]", dtd.Text, oldval.Value));
+                            o.Delete();
+                        }
                     }
                 }
                 

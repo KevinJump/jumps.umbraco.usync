@@ -346,7 +346,7 @@ namespace jumps.umbraco.usync
             }
 
             mt.Save();
-
+            /*
             foreach (MediaType.TabI t in mt.getVirtualTabs.ToList())
             {
                 MediaType.FlushTabCache(t.Id, mt.Id);
@@ -354,6 +354,7 @@ namespace jumps.umbraco.usync
 
             // need to do this more i think
             MediaType.FlushFromCache(mt.Id); 
+             */
 
         }
 

@@ -1,4 +1,4 @@
-﻿#define UMBRACO4
+﻿//#define UMBRACO4
 
 // IApplicationEventHanlder moved from Umbraco.Web to Umbraco.Core
 // between v4 and v6 
@@ -37,7 +37,8 @@ namespace jumps.umbraco.usync
     /// 
     /// first thing, lets register ourselfs with the umbraco install
     /// </summary>
-    public class uSync : IApplicationEventHandler
+    // public class uSync : IApplicationEventHandler
+    public class uSync : ApplicationStartupHandler
     {
         // mutex stuff, so we only do this once.
         private static object _syncObj = new object(); 
@@ -52,6 +53,7 @@ namespace jumps.umbraco.usync
 
         public uSync()
         {
+            Log.Add(LogTypes.Custom, 0, "Usync Starting (Contstructor)"); 
 
             _read = uSyncSettings.Read;
             _write = uSyncSettings.Write;
@@ -64,6 +66,7 @@ namespace jumps.umbraco.usync
                   && (global::umbraco.GlobalSettings.VersionPatch > 4))
             {
                 _docTypeSaveWorks = true;
+
             }
 #else
             // better than 6.0.0 -> forever...
@@ -73,6 +76,7 @@ namespace jumps.umbraco.usync
                 _docTypeSaveWorks = true;
             }
 #endif
+            DoOnStart();
 
         }
 
@@ -181,7 +185,7 @@ namespace jumps.umbraco.usync
         }
 #else 
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
+        {            
             DoOnStart();
         }
         

@@ -110,10 +110,96 @@ namespace jumps.umbraco.usync
             }
         }
 
+        [ConfigurationProperty("preserve", DefaultValue = "true", IsRequired = false)]
+        public Boolean Preserve
+        {
+            get
+            {
+                return (Boolean)this["preserve"];
+            }
+            set
+            {
+                this["preserve"] = value;
+            }
+        }
 
+        [ConfigurationProperty("PreservedPreValues")]
+        public uSyncPreservedPreValues PreservedPreValues
+        {
+            get { return (uSyncPreservedPreValues)this["PreservedPreValues"]; }
+        }
+    }
+
+    public class PreservedPreValue : ConfigurationElement 
+    {
+        [ConfigurationProperty("key", IsRequired=true)]
+        public string Key 
+        {
+            get { return (string)base["key"]; }
+        }
+
+        [ConfigurationProperty("value", IsRequired=false, DefaultValue="ting")]
+        public string Value 
+        {
+            get { return (string)base["value"]; }
+        }
+
+        internal string key {
+            get { return Key ; }
+        }
+    }
+
+               
+    [ConfigurationCollection(typeof(PreservedPreValue), AddItemName = "add", CollectionType = ConfigurationElementCollectionType.BasicMap)]
+    public class uSyncPreservedPreValues : ConfigurationElementCollection
+    {
+        protected override ConfigurationElement CreateNewElement()
+        {
+            return new PreservedPreValue(); 
+        }
+        
+        protected override object GetElementKey(ConfigurationElement element)
+        {
+            return ((PreservedPreValue)element).key;
+        }
+
+        public int IndexOf( PreservedPreValue element)
+        {
+            return BaseIndexOf(element) ;
+        }
+
+        public PreservedPreValue this[int index]
+        {
+            get { return (PreservedPreValue)BaseGet(index); }
+        }
+
+        public string[] GetAll()
+        {
+            
+            return BaseGetAllKeys().Cast<string>().ToArray() ; 
+        }
 
     }
-     
+
+
+/*
+        public static List<string> PreservedPreValues
+        {
+            get
+            {
+                List<string> datalisttypes = new List<string>();
+                datalisttypes.Add("f8d60f68-ec59-4974-b43b-c46eb5677985"); // ApprovedColour
+                datalisttypes.Add("b4471851-82b6-4c75-afa4-39fa9c6a75e9"); // Checkbox List
+                datalisttypes.Add("a74ea9c9-8e18-4d2a-8cf6-73c6206c5da6"); // dropdown 
+                datalisttypes.Add("928639ed-9c73-4028-920c-1e55dbb68783"); // dropdown-multiple
+                datalisttypes.Add("a52c7c1c-c330-476e-8605-d63d3b84b6a6"); // radiobox
+
+                return datalisttypes; 
+            }
+        }
+
+    }
+  */   
 
     public class uSyncSettings {
 
@@ -165,6 +251,16 @@ namespace jumps.umbraco.usync
         public static string Archive
         {
             get { return _settings.Archive ; }
+        }
+
+        public static bool Preserve
+        {
+            get { return _settings.Preserve; }
+        }
+
+        public static string[] PreservedPreValueDataTypes
+        {
+            get { return _settings.PreservedPreValues.GetAll(); }
         }
 
     }
