@@ -86,9 +86,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>ECHO Copy to DevUmbraco
-REM xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\devumbraco\bin\$(TargetFileName)" /Y
-ECHO Copy to Umbraco 4.11.4
-REM xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.4\bin\$(TargetFileName)" /Y
+xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\devumbraco\bin\$(TargetFileName)" /Y
+ECHO Copy to Umbraco 4.11.5
+xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.5\bin\$(TargetFileName)" /Y
 xcopy "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.0.1\bin\$(TargetFileName)" /Y</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

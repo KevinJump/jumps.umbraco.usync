@@ -112,6 +112,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public static void ReadAllFromDisk()
         {
+            Log.Add(LogTypes.Debug, 0, "Reading DocTypes from disk");
             // start the enumberation, get the root
 
             // TODO: nicer way of getting the type string 

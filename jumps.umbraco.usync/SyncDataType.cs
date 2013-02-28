@@ -73,6 +73,8 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Log.Add(LogTypes.Debug, 0, "Reading DataTypes from disk"); 
+
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "umbraco.cms.businesslogic.datatype.DataTypeDefinition"));

@@ -24,10 +24,7 @@ using Umbraco.Core.IO;
 using Umbraco.Core;
 
 using umbraco.BusinessLogic;
-
-#if UMBRACO4
 using Umbraco.Web;
-#endif
 
 namespace jumps.umbraco.usync
 {
@@ -38,7 +35,7 @@ namespace jumps.umbraco.usync
     /// first thing, lets register ourselfs with the umbraco install
     /// </summary>
     // public class uSync : IApplicationEventHandler
-    public class uSync : ApplicationBase
+    public class uSync : IApplicationEventHandler
     {
         // mutex stuff, so we only do this once.
         private static object _syncObj = new object(); 
@@ -53,31 +50,36 @@ namespace jumps.umbraco.usync
 
         public uSync()
         {
+            // GetSettings(); 
+        }
+
+        private void GetSettings() 
+        {
             Log.Add(LogTypes.Custom, 0, "Usync Starting (Contstructor)"); 
 
             _read = uSyncSettings.Read;
+            Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Read = {0}", _read));
             _write = uSyncSettings.Write;
+            Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Write = {0}", _write));
             _attach = uSyncSettings.Attach;
+            Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Attach = {0}", _attach)); 
 
-#if UMBRACO4
             // better than 4.11.4 (upto 4.99.99)
             if ((global::umbraco.GlobalSettings.VersionMajor == 4)
                   && (global::umbraco.GlobalSettings.VersionMinor >= 11)
                   && (global::umbraco.GlobalSettings.VersionPatch > 4))
             {
                 _docTypeSaveWorks = true;
+                Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Post 4.11.5" )); 
 
             }
-#else
             // better than 6.0.0 -> forever...
             if ((global::umbraco.GlobalSettings.VersionMajor >= 6)
                   && (global::umbraco.GlobalSettings.VersionPatch > 0))
             {
+                Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Post = 6.0.0"));
                 _docTypeSaveWorks = true;
             }
-#endif
-            DoOnStart();
-
         }
 
         private void RunSync()
@@ -161,6 +163,8 @@ namespace jumps.umbraco.usync
                         // everything we do here is blocking
                         // on application start, so we should be 
                         // quick. 
+                        GetSettings(); 
+
                         RunSync();
                         
                         _synced = true;
@@ -171,6 +175,7 @@ namespace jumps.umbraco.usync
 #if UMBRACO4
         public void OnApplicationStarted(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
+            Log.Add(LogTypes.Debug, 0, "On Application Started"); 
             DoOnStart();
         }
 
@@ -183,7 +188,7 @@ namespace jumps.umbraco.usync
         {
             // don't think i do it here.
         }
-#else 
+#else
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {            
             DoOnStart();
@@ -198,7 +203,6 @@ namespace jumps.umbraco.usync
         {
             // don't think i do it here.
         }
-
 #endif
     }
 }

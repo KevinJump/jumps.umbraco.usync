@@ -70,6 +70,7 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "umbraco.cms.businesslogic.template.Template"));

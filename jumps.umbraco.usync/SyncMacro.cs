@@ -10,7 +10,8 @@ using System.IO;
 using umbraco.cms.businesslogic; 
 using umbraco.cms.businesslogic.macro ;
 using umbraco.cms.businesslogic.packager ; 
-using Umbraco.Core.IO ; 
+using Umbraco.Core.IO ;
+using umbraco.BusinessLogic; 
 
 namespace jumps.umbraco.usync
 {
@@ -43,6 +44,8 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Log.Add(LogTypes.Debug, 0, "Reading Macros from disk"); 
+
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "umbraco.cms.businesslogic.macro.Macro"));

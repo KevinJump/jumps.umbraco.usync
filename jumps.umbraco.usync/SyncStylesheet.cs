@@ -27,7 +27,7 @@ namespace jumps.umbraco.usync
     {
         public static void SaveToDisk(StyleSheet item)
         {
-            if (item == null)
+            if (item != null)
             {
                 try
                 {
@@ -52,6 +52,7 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "umbraco.cms.businesslogic.web.StyleSheet" )) ;
@@ -100,6 +101,7 @@ namespace jumps.umbraco.usync
 
         static void StyleSheet_AfterSave(StyleSheet sender, SaveEventArgs e)
         {
+            Log.Add(LogTypes.Debug, 0, "Aftersave stylesheet fired"); 
             SaveToDisk(sender); 
         }
     }

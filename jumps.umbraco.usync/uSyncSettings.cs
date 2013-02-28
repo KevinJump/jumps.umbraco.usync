@@ -215,7 +215,7 @@ namespace jumps.umbraco.usync
 
                 // load the settings file
                 Configuration config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
-
+                
                 _settings = (uSyncSettingsSection)config.GetSection("usync");
             }
             catch (Exception ex)
