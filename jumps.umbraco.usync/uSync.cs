@@ -38,7 +38,7 @@ namespace jumps.umbraco.usync
     /// first thing, lets register ourselfs with the umbraco install
     /// </summary>
     // public class uSync : IApplicationEventHandler
-    public class uSync : ApplicationStartupHandler
+    public class uSync : ApplicationBase
     {
         // mutex stuff, so we only do this once.
         private static object _syncObj = new object(); 
