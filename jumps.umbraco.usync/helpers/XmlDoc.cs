@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 using System.IO ; 
 using System.Xml ;
-using Umbraco.Core.IO ; 
+
+using umbraco.BusinessLogic ; 
+using Umbraco.Core.IO ;
+using System.Runtime.InteropServices; 
 
 namespace jumps.umbraco.usync.helpers
 {
@@ -17,6 +20,11 @@ namespace jumps.umbraco.usync.helpers
     /// </summary>
     public class XmlDoc
     {
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern bool DeleteFile(string path);
+
+
+
         private static bool _versions = false;  
 
         static XmlDoc()
@@ -35,7 +43,7 @@ namespace jumps.umbraco.usync.helpers
 
         public static void SaveXmlDoc(string type, string name, XmlDocument doc)
         {
-            string savePath = string.Format("{0}/{1}.config", type, ScrubFile(name)) ;
+            string savePath = string.Format("{0}/{1}.config", GetTypeFolder(type), ScrubFile(name)) ;
             SaveXmlDoc(savePath, doc) ; 
         }
 
@@ -81,32 +89,40 @@ namespace jumps.umbraco.usync.helpers
             string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder);
 
             string currentFile = string.Format(@"{0}\{1}\{2}.config",
-                liveRoot, type, ScrubFile(name));
+                liveRoot, GetTypeFolder(type), ScrubFile(name));
 
 
             string archiveFile = string.Format(@"{0}\{1}\{2}_{3}.config",
-                archiveRoot, type, ScrubFile(name), DateTime.Now.ToString("ddMMyy_HHmmss"));
+                archiveRoot, GetTypeFolder(type), ScrubFile(name), DateTime.Now.ToString("ddMMyy_HHmmss"));
 
 
-            // we need to confirm the archive directory exists 
-            if (!Directory.Exists(Path.GetDirectoryName(archiveFile)))
+            try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(archiveFile));
-            }
 
-            if (File.Exists(currentFile))
-            {
-                // it shouldn't happen as we are going for a unique name
-                // but it might be called twice v'quickly
-
-                if (File.Exists(archiveFile))
+                // we need to confirm the archive directory exists 
+                if (!Directory.Exists(Path.GetDirectoryName(archiveFile)))
                 {
-                    File.Delete(archiveFile);
+                    Directory.CreateDirectory(Path.GetDirectoryName(archiveFile));
                 }
 
-                // 
-                File.Copy(currentFile, archiveFile);
-                File.Delete(currentFile); 
+                if (File.Exists(currentFile))
+                {
+                    // it shouldn't happen as we are going for a unique name
+                    // but it might be called twice v'quickly
+
+                    if (File.Exists(archiveFile))
+                    {
+                        File.Delete(archiveFile);
+                    }
+
+                    // 
+                    File.Copy(currentFile, archiveFile);
+                    File.Delete(currentFile);
+                }
+            }
+            catch
+            {
+               Log.Add(LogTypes.Error, 0, "Failed to archive") ; 
             }
 
         }
@@ -138,6 +154,11 @@ namespace jumps.umbraco.usync.helpers
                 return "";
             else
                 return value;
+        }
+
+        private static string GetTypeFolder(string type)
+        {
+            return type.Substring(type.LastIndexOf('.') + 1);
         }
         
     }

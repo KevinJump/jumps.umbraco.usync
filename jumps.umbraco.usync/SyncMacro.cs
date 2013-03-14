@@ -25,11 +25,11 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Name, xmlDoc);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc);
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(string.Format("Error Saving Macro {0}", item.Name), ex);
+                    Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Saving Macro {0} - {1}", item.Name, ex.ToString()));
                 }
             }
         }
@@ -44,11 +44,9 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
-            Log.Add(LogTypes.Debug, 0, "Reading Macros from disk"); 
-
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
-                "umbraco.cms.businesslogic.macro.Macro"));
+                "Macro"));
 
             ReadFromDisk(path); 
 
@@ -58,7 +56,6 @@ namespace jumps.umbraco.usync
         {
             if ( Directory.Exists(path) )
             {
-
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
                     XmlDocument xmlDoc = new XmlDocument();
@@ -83,7 +80,7 @@ namespace jumps.umbraco.usync
 
         static void Macro_AfterDelete(Macro sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Name);
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Alias);
 
             e.Cancel = false;
         }

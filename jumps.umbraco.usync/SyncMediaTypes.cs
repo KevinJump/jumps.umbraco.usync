@@ -31,11 +31,11 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc);
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(string.Format("Error saving MediaType {0}", item.Text), ex);
+                    Log.Add(LogTypes.Error,0, string.Format("uSync: Error Saving Media Type {0}, {1}", item.Text, ex.ToString())); 
                 }
             }
         }
@@ -53,7 +53,7 @@ namespace jumps.umbraco.usync
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
-                "umbraco.cms.businesslogic.media.MediaType"));
+                "MediaType"));
 
             ReadFromDisk(path);
         }
@@ -61,37 +61,45 @@ namespace jumps.umbraco.usync
         
         public static void ReadFromDisk(string path)
         {
-            // actually read it in....
-            if (Directory.Exists(path))
+            try
             {
-                foreach (string file in Directory.GetFiles(path, "*.config"))
+                // actually read it in....
+                if (Directory.Exists(path))
                 {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
-
-                    XmlNode node = xmlDoc.SelectSingleNode("//MediaType");
-
-                    if (node != null)
+                    foreach (string file in Directory.GetFiles(path, "*.config"))
                     {
-                        MediaTypeHelper.Import(node, false); 
+                        XmlDocument xmlDoc = new XmlDocument();
+                        xmlDoc.Load(file);
+
+                        XmlNode node = xmlDoc.SelectSingleNode("//MediaType");
+
+                        if (node != null)
+                        {
+                            MediaTypeHelper.Import(node, false);
+                        }
                     }
-                }
 
-                // bit of a hack and slash, do it once, do it again for structure to work
-                // would be nicer just to have structure function ? 
-                foreach (string file in Directory.GetFiles(path, "*.config"))
-                {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
-
-                    XmlNode node = xmlDoc.SelectSingleNode("//MediaType");
-
-                    if (node != null)
+                    // bit of a hack and slash, do it once, do it again for structure to work
+                    // would be nicer just to have structure function ? 
+                    foreach (string file in Directory.GetFiles(path, "*.config"))
                     {
-                        MediaTypeHelper.Import(node, true);
-                    }
-                }
+                        XmlDocument xmlDoc = new XmlDocument();
+                        xmlDoc.Load(file);
 
+                        XmlNode node = xmlDoc.SelectSingleNode("//MediaType");
+
+                        if (node != null)
+                        {
+                            MediaTypeHelper.Import(node, true);
+                        }
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add(LogTypes.Error, 0, string.Format("Read MediaType Failed {0}", ex.ToString()));
+                throw new SystemException(String.Format("Read MediaType failed {0}", ex.ToString()));
             }
         }
 
@@ -103,7 +111,7 @@ namespace jumps.umbraco.usync
 
         static void MediaType_BeforeDelete(MediaType sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Text);
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Alias);
             e.Cancel = false; 
         }
 

@@ -1,13 +1,11 @@
-﻿//#define UMBRACO4
-
-// IApplicationEventHanlder moved from Umbraco.Web to Umbraco.Core
-// between v4 and v6 
+﻿//
+// uSync 1.0 For Umbraco 4.11.x
 //
-// Arguments also changed. the UMBRACO4 defines the functions.
+// due to a number of changes in the API (noteably the MediaTypes) 
+// this version of uSync is for v4.11.x of Umbraco Only
 //
-// when you compile for 4 or 6 you will also need to change
-// the dll refrences as Umbraco.Web no longer contains the
-// names of the functions in 6.
+// uSync for v6 is going to be written diffrently. 
+//
 //
 
 using System;
@@ -34,8 +32,7 @@ namespace jumps.umbraco.usync
     /// 
     /// first thing, lets register ourselfs with the umbraco install
     /// </summary>
-    // public class uSync : IApplicationEventHandler
-    public class uSync : IApplicationEventHandler
+    public class uSync : IApplicationEventHandler // works with 4.11.4/5 
     {
         // mutex stuff, so we only do this once.
         private static object _syncObj = new object(); 
@@ -48,21 +45,47 @@ namespace jumps.umbraco.usync
 
         private bool _docTypeSaveWorks = false; 
 
-        public uSync()
+        
+
+
+        /// <summary>
+        /// do the stuff we do when we start, using locks, and flags so
+        /// we only do the stuff once..
+        /// </summary>
+        private void DoOnStart()
         {
-            // GetSettings(); 
+
+            // lock
+            if (!_synced)
+            {
+                lock (_syncObj)
+                {
+                    if (!_synced)
+                    {
+                        // everything we do here is blocking
+                        // on application start, so we should be 
+                        // quick. 
+                        GetSettings(); 
+
+                        RunSync();
+                        
+                        _synced = true;
+                    }
+                }
+            }
         }
 
         private void GetSettings() 
         {
-            Log.Add(LogTypes.Custom, 0, "Usync Starting (Contstructor)"); 
-
+            Log.Add(LogTypes.Debug, 0, "uSync: Getting Settings"); 
+           
             _read = uSyncSettings.Read;
             Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Read = {0}", _read));
             _write = uSyncSettings.Write;
             Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Write = {0}", _write));
             _attach = uSyncSettings.Attach;
             Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Attach = {0}", _attach)); 
+            
 
             // better than 4.11.4 (upto 4.99.99)
             if ((global::umbraco.GlobalSettings.VersionMajor == 4)
@@ -72,14 +95,7 @@ namespace jumps.umbraco.usync
                 _docTypeSaveWorks = true;
                 Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Post 4.11.5" )); 
 
-            }
-            // better than 6.0.0 -> forever...
-            if ((global::umbraco.GlobalSettings.VersionMajor >= 6)
-                  && (global::umbraco.GlobalSettings.VersionPatch > 0))
-            {
-                Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Post = 6.0.0"));
-                _docTypeSaveWorks = true;
-            }
+            }       
         }
 
         private void RunSync()
@@ -95,13 +111,14 @@ namespace jumps.umbraco.usync
             
             if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write )
             {
-                Log.Add(LogTypes.Custom, 0, "uSync Saving All to Disk");
+                Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - Start");
                 SyncDocType.SaveAllToDisk();
                 SyncMacro.SaveAllToDisk();
-                SyncMediaTypes.SaveAllToDisk(); 
+                SyncMediaTypes.SaveAllToDisk();
                 SyncTemplate.SaveAllToDisk();
                 SyncStylesheet.SaveAllToDisk();
                 SyncDataType.SaveAllToDisk();
+                Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - End"); 
             }
 
             // bugs in the DataType EventHandling, mean it isn't fired 
@@ -126,20 +143,22 @@ namespace jumps.umbraco.usync
             
             if (_read)
             {
-                Log.Add(LogTypes.Custom, 0, "uSync Syncing from to Disk");
+                Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - Starting");
                 SyncTemplate.ReadAllFromDisk();
                 SyncStylesheet.ReadAllFromDisk();
                 SyncDataType.ReadAllFromDisk();
                 SyncDocType.ReadAllFromDisk();
                 SyncMacro.ReadAllFromDisk();
-                SyncMediaTypes.ReadAllFromDisk(); 
+                SyncMediaTypes.ReadAllFromDisk();
+
+                Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - End"); 
             }
 
             if (_attach)
             {
                 // everytime. register our events to all the saves..
                 // that way we capture things as they are done.
-                Log.Add(LogTypes.Custom, 0, "uSync Attaching to Events"); 
+                Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - Start"); 
 
                 SyncDataType.AttachEvents();
                 SyncDocType.AttachEvents();
@@ -147,35 +166,15 @@ namespace jumps.umbraco.usync
                 SyncMacro.AttachEvents();
                 SyncTemplate.AttachEvents();
                 SyncStylesheet.AttachEvents();
+            
+                Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - End");
             }
+
+            Log.Add(LogTypes.Custom, 0, "uSync: Initizlized"); 
         }
 
-        private void DoOnStart()
-        {
-
-            // lock
-            if (!_synced)
-            {
-                lock (_syncObj)
-                {
-                    if (!_synced)
-                    {
-                        // everything we do here is blocking
-                        // on application start, so we should be 
-                        // quick. 
-                        GetSettings(); 
-
-                        RunSync();
-                        
-                        _synced = true;
-                    }
-                }
-            }
-        }
-#if UMBRACO4
         public void OnApplicationStarted(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
-            Log.Add(LogTypes.Debug, 0, "On Application Started"); 
             DoOnStart();
         }
 
@@ -188,21 +187,5 @@ namespace jumps.umbraco.usync
         {
             // don't think i do it here.
         }
-#else
-        public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {            
-            DoOnStart();
-        }
-        
-        public void OnApplicationStarting(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
-            // don't think i do it here.
-        }
-
-        public void OnApplicationInitialized(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
-            // don't think i do it here.
-        }
-#endif
     }
 }

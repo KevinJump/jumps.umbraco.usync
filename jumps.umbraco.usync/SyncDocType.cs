@@ -14,6 +14,8 @@ using umbraco.BusinessLogic;
 using Umbraco.Core.IO;
 
 
+
+
 namespace jumps.umbraco.usync
 {
     /// <summary>
@@ -41,11 +43,11 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString() + GetDocPath(item), item.Text, xmlDoc);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString() + GetDocPath(item), "dt", xmlDoc);
                 }
                 catch (Exception e)
                 {
-                    throw new Exception(string.Format("Failed Saving Doctype:{0} to disk\n{1}", item.Text, e.ToString()));
+                    Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Saving DocumentType {0} - {1}", item.Alias, e.ToString()));
                 }
             }
         }
@@ -57,23 +59,13 @@ namespace jumps.umbraco.usync
         /// </summary>
         public static void SaveAllToDisk()
         {
-            string last ="start" ;
-            try
+            foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
             {
-                foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
+                if (item != null)
                 {
-                    if (item != null)
-                    {
-                        last = item.Text;
-                        SaveToDisk(item);
-                    }
+                    SaveToDisk(item);
                 }
             }
-            catch (Exception e)
-            {
-                throw new Exception(string.Format("uSync Failure when Saving DocTypes: last DocType {0}\n, {1}", last, e.ToString())); 
-            }
-                
         }
         
         /// <summary>
@@ -100,7 +92,7 @@ namespace jumps.umbraco.usync
 
                 // buld the final path (as path is "" to start with we always get
                 // a preceeding '/' on the path, which is nice
-                path = string.Format(@"{0}\{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
+                path = string.Format(@"{0}\{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
             }
          
             return path; 
@@ -112,14 +104,13 @@ namespace jumps.umbraco.usync
         /// </summary>
         public static void ReadAllFromDisk()
         {
-            Log.Add(LogTypes.Debug, 0, "Reading DocTypes from disk");
             // start the enumberation, get the root
 
             // TODO: nicer way of getting the type string 
             //       (without creating a dummy doctype?)
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
-                "umbraco.cms.businesslogic.web.DocumentType"));
+                "DocumentType"));
 
             // recurse in
             ReadFromDisk(path); 
@@ -187,7 +178,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         static void DocumentType_BeforeDelete(DocumentType sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString() + GetDocPath(sender), sender.Text);
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString() + GetDocPath(sender), "dt");
             e.Cancel = false; 
         }
 

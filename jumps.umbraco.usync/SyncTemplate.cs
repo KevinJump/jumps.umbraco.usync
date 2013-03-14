@@ -35,12 +35,12 @@ namespace jumps.umbraco.usync
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
                     helpers.XmlDoc.SaveXmlDoc(
                         item.GetType().ToString() + GetDocPath(item),
-                        item.Text,
+                        "tp",
                         xmlDoc);
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(string.Format("error saving template {0}", item.Text), ex);
+                    Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Saving Template {0} - {1}", item.Text, ex.ToString()));
                 }
             }
         }
@@ -49,7 +49,8 @@ namespace jumps.umbraco.usync
         {
             foreach (Template item in Template.GetAllAsList().ToArray())
             {
-                SaveToDisk(item);                
+                SaveToDisk(item);   
+                
             }
         }
 
@@ -63,7 +64,7 @@ namespace jumps.umbraco.usync
                     path = GetDocPath(new Template(item.MasterTemplate));
                 }
 
-                path = string.Format("{0}//{1}", path, helpers.XmlDoc.ScrubFile(item.Text));
+                path = string.Format("{0}//{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
             }
             return path;
         }
@@ -73,7 +74,7 @@ namespace jumps.umbraco.usync
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
-                "umbraco.cms.businesslogic.template.Template"));
+                "Template"));
 
             ReadFromDisk(path);
         }
@@ -113,7 +114,7 @@ namespace jumps.umbraco.usync
 
         static void Template_AfterDelete(Template sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString() + GetDocPath(sender), sender.Text);
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString() + GetDocPath(sender), "tp");
 
             e.Cancel = false; 
         }

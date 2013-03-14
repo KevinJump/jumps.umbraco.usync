@@ -37,7 +37,8 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(string.Format("error saving stylesheet {0}", item.Text), ex); 
+                    Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Reading Stylesheet {0} - {1}", item.Text, ex.ToString()));
+                    throw new SystemException(string.Format("error saving stylesheet {0}", item.Text), ex); 
                 }
             }
         }
@@ -55,7 +56,7 @@ namespace jumps.umbraco.usync
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
-                "umbraco.cms.businesslogic.web.StyleSheet" )) ;
+                "StyleSheet" )) ;
 
             ReadFromDisk(path); 
         }
@@ -101,7 +102,6 @@ namespace jumps.umbraco.usync
 
         static void StyleSheet_AfterSave(StyleSheet sender, SaveEventArgs e)
         {
-            Log.Add(LogTypes.Debug, 0, "Aftersave stylesheet fired"); 
             SaveToDisk(sender); 
         }
     }

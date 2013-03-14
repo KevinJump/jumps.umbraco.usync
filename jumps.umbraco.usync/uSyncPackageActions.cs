@@ -1,4 +1,10 @@
-﻿using System;
+﻿/*
+ * 
+ *  We don't do this anymore, we moved to our own config file, so 
+ *  we don't need to minuplate xml anymore :o) 
+ * 
+ * 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -57,3 +63,4 @@ namespace jumps.umbraco.usync
         }
     }
 }
+*/

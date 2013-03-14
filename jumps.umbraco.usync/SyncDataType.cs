@@ -41,8 +41,7 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    Log.Add(LogTypes.Error, 0, string.Format("Saving DataType Failed {0}", item.Text));
-                    throw new Exception(string.Format("Failed to save DataType:{0} to disk\n{1}", item.Text), ex);
+                    Log.Add(LogTypes.Error, 0, string.Format("Saving DataType Failed {0} {1}", item.Text, ex.ToString() ));
                 }
             }
             else
@@ -53,31 +52,20 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            string last = "start";
-            try
+            foreach (DataTypeDefinition item in DataTypeDefinition.GetAll())
             {
-                foreach (DataTypeDefinition item in DataTypeDefinition.GetAll())
+                if (item != null)
                 {
-                    if (item != null)
-                    {
-                        last = item.Text; 
-                        SaveToDisk(item);
-                    }
+                    SaveToDisk(item);
                 }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(string.Format("failed on DocTypeSaveAll - Last {0}", last), ex);
             }
         }
 
         public static void ReadAllFromDisk()
         {
-            Log.Add(LogTypes.Debug, 0, "Reading DataTypes from disk"); 
-
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
-                "umbraco.cms.businesslogic.datatype.DataTypeDefinition"));
+                "DataTypeDefinition"));
 
             ReadFromDisk(path); 
         }
@@ -130,8 +118,6 @@ namespace jumps.umbraco.usync
                 string _name = xmlData.Attributes["Name"].Value;
                 string _id = xmlData.Attributes["Id"].Value;
                 string _def = xmlData.Attributes["Definition"].Value;
-
-                Log.Add(LogTypes.Debug, 0, string.Format("Import DataType Started {0}", _name));
 
                 DataTypeDefinition dtd;
 
@@ -225,20 +211,13 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents()
         {
-            // these are not firing...
+            // this only fires in 4.11.5 + 
             DataTypeDefinition.Saving += new DataTypeDefinition.SaveEventHandler(DataTypeDefinition_Saving);
-            //DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
-            //DataTypeDefinition.BeforeSave += new EventHandler<SaveEventArgs>(DataTypeDefinition_AfterSave);
             
             // but this is 
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
         }
 
-
-        public static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
-        {
-            SaveToDisk((DataTypeDefinition)sender);
-        }
 
         public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
         {
@@ -252,8 +231,7 @@ namespace jumps.umbraco.usync
                 helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), ((DataTypeDefinition)sender).Text);
             }
 
-            e.Cancel = false;
-       
+            e.Cancel = false; 
         }
         
     }
