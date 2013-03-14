@@ -122,6 +122,8 @@ namespace jumps.umbraco.usync.helpers
             }
             catch
             {
+               // archive is a non critical thing - if it fails we are not stopping
+               // umbraco, but we are going to log that it didn't work. 
                Log.Add(LogTypes.Error, 0, "Failed to archive") ; 
             }
 
