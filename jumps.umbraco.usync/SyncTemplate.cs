@@ -34,9 +34,7 @@ namespace jumps.umbraco.usync
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
                     helpers.XmlDoc.SaveXmlDoc(
-                        item.GetType().ToString() + GetDocPath(item),
-                        "tp",
-                        xmlDoc);
+                        item.GetType().ToString(), GetDocPath(item) , "def", xmlDoc);
                 }
                 catch (Exception ex)
                 {
@@ -114,7 +112,9 @@ namespace jumps.umbraco.usync
 
         static void Template_AfterDelete(Template sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString() + GetDocPath(sender), "tp");
+            // helpers.XmlDoc.ArchiveFile( helpers.XmlDoc.GetTypeFolder(sender.GetType().ToString()) + GetDocPath(sender), "def");
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), GetDocPath(sender), "def"); 
+
 
             e.Cancel = false; 
         }

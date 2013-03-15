@@ -20,11 +20,6 @@ namespace jumps.umbraco.usync.helpers
     /// </summary>
     public class XmlDoc
     {
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool DeleteFile(string path);
-
-
-
         private static bool _versions = false;  
 
         static XmlDoc()
@@ -41,11 +36,18 @@ namespace jumps.umbraco.usync.helpers
             return doc;
         }
 
+        public static void SaveXmlDoc(string type, string path, string name, XmlDocument doc)
+        {
+            string savePath = string.Format("{0}/{1}/{2}.config", GetTypeFolder(type), path, name) ;
+            SaveXmlDoc(savePath, doc); 
+        }
+
         public static void SaveXmlDoc(string type, string name, XmlDocument doc)
         {
             string savePath = string.Format("{0}/{1}.config", GetTypeFolder(type), ScrubFile(name)) ;
             SaveXmlDoc(savePath, doc) ; 
         }
+              
 
         public static void SaveXmlDoc(string path, XmlDocument doc)
         {
@@ -79,6 +81,12 @@ namespace jumps.umbraco.usync.helpers
             ArchiveFile(path, name, true);
         }
 
+        public static void ArchiveFile(string type, string path, string name)
+        {
+            string savePath = string.Format(@"{0}\{1}\", GetTypeFolder(type), path);
+            ArchiveFile(savePath, name, true);
+        }
+
         /// <summary>
         /// archive a file, and optionally delete the orgiinal, allows us to use archive 
         /// as a versioning tool :) 
@@ -89,7 +97,7 @@ namespace jumps.umbraco.usync.helpers
             string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder);
 
             string currentFile = string.Format(@"{0}\{1}\{2}.config",
-                liveRoot, GetTypeFolder(type), ScrubFile(name));
+                liveRoot, GetTypeFolder(type),ScrubFile(name));
 
 
             string archiveFile = string.Format(@"{0}\{1}\{2}_{3}.config",
@@ -125,6 +133,8 @@ namespace jumps.umbraco.usync.helpers
                // archive is a non critical thing - if it fails we are not stopping
                // umbraco, but we are going to log that it didn't work. 
                Log.Add(LogTypes.Error, 0, "Failed to archive") ; 
+
+                // to do some dialog popup text like intergration 
             }
 
         }
@@ -158,7 +168,7 @@ namespace jumps.umbraco.usync.helpers
                 return value;
         }
 
-        private static string GetTypeFolder(string type)
+        public static string GetTypeFolder(string type)
         {
             return type.Substring(type.LastIndexOf('.') + 1);
         }

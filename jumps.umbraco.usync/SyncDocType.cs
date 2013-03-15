@@ -13,9 +13,6 @@ using umbraco.cms.businesslogic.packager;
 using umbraco.BusinessLogic;
 using Umbraco.Core.IO;
 
-
-
-
 namespace jumps.umbraco.usync
 {
     /// <summary>
@@ -43,7 +40,7 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString() + GetDocPath(item), "dt", xmlDoc);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", xmlDoc);
                 }
                 catch (Exception e)
                 {
@@ -178,8 +175,9 @@ namespace jumps.umbraco.usync
         /// </summary>
         static void DocumentType_BeforeDelete(DocumentType sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString() + GetDocPath(sender), "dt");
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), GetDocPath(sender), "def");
             e.Cancel = false; 
+            
         }
 
         /// <summary>

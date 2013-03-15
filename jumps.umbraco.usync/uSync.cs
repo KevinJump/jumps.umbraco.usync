@@ -4,9 +4,12 @@
 // due to a number of changes in the API (noteably the MediaTypes) 
 // this version of uSync is for v4.11.x of Umbraco Only
 //
-// uSync for v6 is going to be written diffrently. 
 //
 //
+// #define Umbraco6
+// uSync 1.0 for Umbraco 6.0.3+
+//  
+// the Interface is diffrent, 
 
 using System;
 using System.Collections.Generic;
@@ -44,9 +47,6 @@ namespace jumps.umbraco.usync
         private bool _attach;
 
         private bool _docTypeSaveWorks = false; 
-
-        
-
 
         /// <summary>
         /// do the stuff we do when we start, using locks, and flags so
@@ -173,6 +173,24 @@ namespace jumps.umbraco.usync
             Log.Add(LogTypes.Custom, 0, "uSync: Initizlized"); 
         }
 
+#if Umbraco6
+        public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
+        {
+            DoOnStart();
+        }
+
+        public void OnApplicationStarting(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
+        {
+            // don't think i do it here.
+        }
+
+        public void OnApplicationInitialized(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
+        {
+            // don't think i do it here.
+        }
+
+#else
+
         public void OnApplicationStarted(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
             DoOnStart();
@@ -187,5 +205,6 @@ namespace jumps.umbraco.usync
         {
             // don't think i do it here.
         }
+#endif
     }
 }
