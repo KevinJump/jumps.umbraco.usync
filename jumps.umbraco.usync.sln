@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2012 for Web
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "jumps.umbraco.usync_4", "jumps.umbraco.usync\jumps.umbraco.usync_4.csproj", "{30F3E02E-C93E-421A-BC65-90F815681BDD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "jumps.umbraco.usync_6", "jumps.umbraco.usync_6\jumps.umbraco.usync_6.csproj", "{83F9F4DC-7907-4EA1-843D-F3ED5CE39E5B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,10 +13,6 @@ Global
 		{30F3E02E-C93E-421A-BC65-90F815681BDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30F3E02E-C93E-421A-BC65-90F815681BDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30F3E02E-C93E-421A-BC65-90F815681BDD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{83F9F4DC-7907-4EA1-843D-F3ED5CE39E5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{83F9F4DC-7907-4EA1-843D-F3ED5CE39E5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{83F9F4DC-7907-4EA1-843D-F3ED5CE39E5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{83F9F4DC-7907-4EA1-843D-F3ED5CE39E5B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

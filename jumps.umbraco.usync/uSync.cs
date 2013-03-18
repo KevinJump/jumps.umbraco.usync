@@ -4,9 +4,6 @@
 // due to a number of changes in the API (noteably the MediaTypes) 
 // this version of uSync is for v4.11.x of Umbraco Only
 //
-//
-//
-// #define Umbraco6
 // uSync 1.0 for Umbraco 6.0.3+
 //  
 // the Interface is diffrent, 
@@ -84,18 +81,37 @@ namespace jumps.umbraco.usync
             _write = uSyncSettings.Write;
             Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Write = {0}", _write));
             _attach = uSyncSettings.Attach;
-            Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Attach = {0}", _attach)); 
-            
+            Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Attach = {0}", _attach));
 
-            // better than 4.11.4 (upto 4.99.99)
-            if ((global::umbraco.GlobalSettings.VersionMajor == 4)
-                  && (global::umbraco.GlobalSettings.VersionMinor >= 11)
-                  && (global::umbraco.GlobalSettings.VersionPatch > 4))
+            // version 6+ here
+
+
+#if Umbraco6
+            // if it's more than 6 or more than 6.0.x it should work
+            if ((global::umbraco.GlobalSettings.VersionMajor > 6) ||
+                (global::umbraco.GlobalSettings.VersionMinor > 0) )
+            {
+                // we are runining at least 7.0 or 6.0 (i.e 6.1.0)
+                _docTypeSaveWorks = true ; 
+            }
+            else if (global::umbraco.GlobalSettings.VersionPatch > 0)
+            {
+                // we are better than 6.0.0 (i.e 6.0.1+)
+                _docTypeSaveWorks = true;
+            }
+#else
+
+            // let's assume it's always v4 (because this version crashes v6+)
+            if (global::umbraco.GlobalSettings.VersionMinor > 11)
             {
                 _docTypeSaveWorks = true;
-                Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Post 4.11.5" )); 
-
-            }       
+            }
+            else if ((global::umbraco.GlobalSettings.VersionMinor == 11)
+                 && (global::umbraco.GlobalSettings.VersionPatch > 4))
+            {
+                _docTypeSaveWorks = true;
+            }
+#endif
         }
 
         private void RunSync()
