@@ -56,12 +56,20 @@ namespace jumps.umbraco.usync
         /// </summary>
         public static void SaveAllToDisk()
         {
-            foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
+            try
             {
-                if (item != null)
+                foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
                 {
-                    SaveToDisk(item);
+                    if (item != null)
+                    {
+                        SaveToDisk(item);
+                    }
                 }
+            }
+            catch( Exception ex )
+            {
+                // error saving to disk, can happen if Umbraco has orphaned doctypes & GetAll thows an error! 
+                Log.Add(LogTypes.Error, 0, string.Format("uSync: Error Writing doctypes to disk {0}", ex.ToString())); 
             }
         }
         

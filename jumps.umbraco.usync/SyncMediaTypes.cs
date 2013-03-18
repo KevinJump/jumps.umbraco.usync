@@ -42,9 +42,17 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            foreach (MediaType item in MediaType.GetAllAsList())
+            try
             {
-                SaveToDisk(item);
+
+                foreach (MediaType item in MediaType.GetAllAsList())
+                {
+                    SaveToDisk(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add(LogTypes.Error, 0, String.Format("uSync: Error saving all media types {0}", ex.ToString()));
             }
         }
 

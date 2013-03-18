@@ -36,9 +36,16 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            foreach (Macro item in Macro.GetAll())
+            try
             {
-                SaveToDisk(item);
+                foreach (Macro item in Macro.GetAll())
+                {
+                    SaveToDisk(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Saving All Macros {0}", ex.ToString()));
             }
         }
 

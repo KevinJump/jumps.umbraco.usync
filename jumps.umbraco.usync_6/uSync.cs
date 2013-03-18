@@ -45,8 +45,7 @@ namespace jumps.umbraco.usync
         {
             if (_write)
             {
-                SyncMediaTypes m = new SyncMediaTypes();
-                m.Write();
+                SyncScripts.Attach();  
             }
 
         }

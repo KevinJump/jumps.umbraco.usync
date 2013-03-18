@@ -52,12 +52,20 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            foreach (DataTypeDefinition item in DataTypeDefinition.GetAll())
+            try
             {
-                if (item != null)
+              
+                foreach (DataTypeDefinition item in DataTypeDefinition.GetAll())
                 {
-                    SaveToDisk(item);
+                    if (item != null)
+                    {
+                        SaveToDisk(item);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Add(LogTypes.Error, 0, string.Format("Error saving all DataTypes, {0}", ex.ToString()));
             }
         }
 

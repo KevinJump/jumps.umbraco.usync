@@ -61,7 +61,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SyncMediaTypes.cs" />
+    <Compile Include="SyncScripts.cs" />
     <Compile Include="uSync.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

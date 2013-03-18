@@ -45,9 +45,16 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            foreach (StyleSheet item in StyleSheet.GetAll())
+            try
             {
-                SaveToDisk(item);
+                foreach (StyleSheet item in StyleSheet.GetAll())
+                {
+                    SaveToDisk(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Saving all Stylesheets {0}", ex.ToString()));
             }
         }
 
@@ -90,6 +97,7 @@ namespace jumps.umbraco.usync
             StyleSheet.AfterSave += StyleSheet_AfterSave;
             StyleSheet.BeforeDelete += StyleSheet_BeforeDelete;
 
+            
         }
 
         static void StyleSheet_BeforeDelete(StyleSheet sender, DeleteEventArgs e)

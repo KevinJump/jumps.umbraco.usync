@@ -45,10 +45,16 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            foreach (Template item in Template.GetAllAsList().ToArray())
+            try
             {
-                SaveToDisk(item);   
-                
+                foreach (Template item in Template.GetAllAsList().ToArray())
+                {
+                    SaveToDisk(item);
+                }
+            }
+            catch( Exception ex )
+            {
+                Log.Add(LogTypes.Error, 0, String.Format("uSync: Error saving all templates {0}", ex.ToString())); 
             }
         }
 
