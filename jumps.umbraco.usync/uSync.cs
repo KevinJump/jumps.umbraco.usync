@@ -8,6 +8,8 @@
 //  
 // the Interface is diffrent, 
 
+#define Umbraco6
+
 using System;
 using System.Collections.Generic;
 using System.Linq;

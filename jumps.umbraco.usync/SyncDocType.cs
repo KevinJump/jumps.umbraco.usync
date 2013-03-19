@@ -118,7 +118,8 @@ namespace jumps.umbraco.usync
                 "DocumentType"));
 
             // recurse in
-            ReadFromDisk(path); 
+            ReadFromDisk(path, false);
+            ReadFromDisk(path, true); // second pass, adds the childnode stuff...
         }
 
         /// <summary>
@@ -133,7 +134,7 @@ namespace jumps.umbraco.usync
         /// than how the package manager does it with one massive XML file. 
         /// </summary>
         /// <param name="path"></param>
-        private static void ReadFromDisk(string path) 
+        private static void ReadFromDisk(string path, bool structure) 
         {
 
             if (Directory.Exists(path))
@@ -152,13 +153,13 @@ namespace jumps.umbraco.usync
                     if (node != null)
                     {
                         // use the umbraco package installer to import
-                        Installer.ImportDocumentType(node, User.GetUser(0), true);
+                        Installer.ImportDocumentType(node, User.GetUser(0), structure);
                     }
                 }
                 // now see if there are any folders we should pop into
                 foreach (string folder in Directory.GetDirectories(path))
                 {
-                    ReadFromDisk(folder);
+                    ReadFromDisk(folder, structure);
                 }
                 
             }
