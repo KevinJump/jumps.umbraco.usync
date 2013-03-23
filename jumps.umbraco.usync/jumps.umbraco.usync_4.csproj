@@ -108,7 +108,6 @@
 REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.0.3\bin\" /y /i /q
 REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.0.3\config\" /y /i /q
 
-
 @XCOPY "$(TargetPath)" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q
 @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q</PostBuildEvent>
   </PropertyGroup>
