@@ -8,7 +8,7 @@
 //  
 // the Interface is diffrent, 
 
-// #define Umbraco6
+// #define UMBRACO6
 
 using System;
 using System.Collections.Generic;
@@ -88,7 +88,7 @@ namespace jumps.umbraco.usync
             // version 6+ here
 
 
-#if Umbraco6
+#if UMBRACO6
             // if it's more than 6 or more than 6.0.x it should work
             if ((global::umbraco.GlobalSettings.VersionMajor > 6) ||
                 (global::umbraco.GlobalSettings.VersionMinor > 0) )
