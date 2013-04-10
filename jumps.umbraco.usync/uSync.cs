@@ -129,14 +129,15 @@ namespace jumps.umbraco.usync
             
             if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write )
             {
-                Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - Start");
-                SyncDocType.SaveAllToDisk();
-                SyncMacro.SaveAllToDisk();
-                SyncMediaTypes.SaveAllToDisk();
-                SyncTemplate.SaveAllToDisk();
-                SyncStylesheet.SaveAllToDisk();
-                SyncDataType.SaveAllToDisk();
-                Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - End"); 
+                    Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - Start");
+                    SyncDocType.SaveAllToDisk();
+                    SyncMacro.SaveAllToDisk();
+                    SyncMediaTypes.SaveAllToDisk();
+                    SyncTemplate.SaveAllToDisk();
+                    SyncStylesheet.SaveAllToDisk();
+                    SyncDataType.SaveAllToDisk();
+                    Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - End");
+               
             }
 
             // bugs in the DataType EventHandling, mean it isn't fired 
@@ -158,18 +159,36 @@ namespace jumps.umbraco.usync
             // we take the disk and sync it to the DB, this is how 
             // you can then distribute using uSync.
             //
-            
+
             if (_read)
             {
-                Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - Starting");
-                SyncTemplate.ReadAllFromDisk();
-                SyncStylesheet.ReadAllFromDisk();
-                SyncDataType.ReadAllFromDisk();
-                SyncDocType.ReadAllFromDisk();
-                SyncMacro.ReadAllFromDisk();
-                SyncMediaTypes.ReadAllFromDisk();
+                if (!File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop")))
+                {
 
-                Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - End"); 
+                    Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - Starting");
+                    SyncTemplate.ReadAllFromDisk();
+                    SyncStylesheet.ReadAllFromDisk();
+                    SyncDataType.ReadAllFromDisk();
+                    SyncDocType.ReadAllFromDisk();
+                    SyncMacro.ReadAllFromDisk();
+                    SyncMediaTypes.ReadAllFromDisk();
+
+                    Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - End");
+
+
+                    if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
+                    {
+                        Log.Add(LogTypes.Debug, 0, "uSync: Renaming once file..."); 
+                        File.Move(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once"),
+                            Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
+                        Log.Add(LogTypes.Debug, 0, "uSync: Once renamed to stop");
+                    }
+                }
+                else
+                {
+                    Log.Add(LogTypes.Debug, 0, "uSync: Read stopped by usync.stop");
+                }
+
             }
 
             if (_attach)
