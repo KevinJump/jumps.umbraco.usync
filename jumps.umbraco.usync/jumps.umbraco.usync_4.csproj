@@ -39,8 +39,7 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="businesslogic, Version=1.0.4779.24223, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="businesslogic">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\businesslogic.dll</HintPath>
     </Reference>
     <Reference Include="cms, Version=1.0.4779.24224, Culture=neutral, processorArchitecture=MSIL">
@@ -99,14 +98,11 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.4\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\4.11.4\config\" /y /i /q
+    <PostBuildEvent>@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.7\bin\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\4.11.7\config\" /y /i /q
 
-@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.5\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\4.11.5\config\" /y /i /q
-
-REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.0.3\bin\" /y /i /q
-REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.0.3\config\" /y /i /q
+REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.0.4\bin\" /y /i /q
+REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.0.4\config\" /y /i /q
 
 @XCOPY "$(TargetPath)" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q
 @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q</PostBuildEvent>

@@ -12,7 +12,8 @@ using umbraco.cms.businesslogic.datatype ;
 using umbraco.BusinessLogic ; 
 
 using System.IO;
-using Umbraco.Core.IO; 
+using Umbraco.Core.IO;
+using umbraco;
 
 //  Check list
 // ====================
@@ -36,7 +37,7 @@ namespace jumps.umbraco.usync
                 try
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    xmlDoc.AppendChild(DataTypeToXml(item, xmlDoc));
                     helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
                 }
                 catch (Exception ex)
@@ -216,6 +217,43 @@ namespace jumps.umbraco.usync
             return null;
         }
 
+        /// <summary>
+        /// DataType ToXML - taken from the core (must learn to patch sometime)
+        /// 
+        /// fixing basic problem, of prevalues not coming out sorted by id (and sort-order)
+        /// with thanks to Kenn Jacobsen for info on this. 
+        /// </summary>
+        /// <param name="dataType">the datatype to export</param>
+        /// <param name="xd">the xmldocument</param>
+        /// <returns>the xmlelement representation of the type</returns>
+        public static XmlElement DataTypeToXml(DataTypeDefinition dataType, XmlDocument xd)
+        {
+            XmlElement dt = xd.CreateElement("DataType");
+            dt.Attributes.Append(xmlHelper.addAttribute(xd, "Name", dataType.Text));
+            dt.Attributes.Append(xmlHelper.addAttribute(xd, "Id", dataType.DataType.Id.ToString()));
+            dt.Attributes.Append(xmlHelper.addAttribute(xd, "Definition", dataType.UniqueId.ToString()));
+
+            // templates
+            XmlElement prevalues = xd.CreateElement("PreValues");
+            foreach (PreValue item in GetPreValues(dataType))
+            {
+                
+                XmlElement prevalue = xd.CreateElement("PreValue");
+                prevalue.Attributes.Append(xmlHelper.addAttribute(xd, "Id", item.Id.ToString()));
+                prevalue.Attributes.Append(xmlHelper.addAttribute(xd, "Value", item.Value));
+
+                prevalues.AppendChild(prevalue);
+            }
+
+            dt.AppendChild(prevalues);
+
+            return dt;
+        }
+
+        private static List<PreValue> GetPreValues(DataTypeDefinition dataType)
+        {
+            return PreValues.GetPreValues(dataType.Id).Values.OfType<PreValue>().OrderBy(p => p.SortOrder).ThenBy(p => p.Id).ToList();
+        }
 
         public static void AttachEvents()
         {

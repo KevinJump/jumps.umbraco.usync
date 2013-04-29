@@ -12,6 +12,7 @@ using umbraco.cms.businesslogic.web;
 using umbraco.cms.businesslogic.packager;
 using umbraco.BusinessLogic;
 using Umbraco.Core.IO;
+using umbraco;
 
 namespace jumps.umbraco.usync
 {
@@ -154,6 +155,7 @@ namespace jumps.umbraco.usync
                     {
                         // use the umbraco package installer to import
                         Installer.ImportDocumentType(node, User.GetUser(0), structure);
+           
                     }
                 }
                 // now see if there are any folders we should pop into

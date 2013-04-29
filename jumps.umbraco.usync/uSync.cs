@@ -116,28 +116,65 @@ namespace jumps.umbraco.usync
 #endif
         }
 
+        /// <summary>
+        /// save everything in the DB to disk. 
+        /// </summary>
+        public void SaveAllToDisk()
+        {
+            Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - Start");
+            SyncDocType.SaveAllToDisk();
+            SyncMacro.SaveAllToDisk();
+            SyncMediaTypes.SaveAllToDisk();
+            SyncTemplate.SaveAllToDisk();
+            SyncStylesheet.SaveAllToDisk();
+            SyncDataType.SaveAllToDisk();
+            Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - End");
+        }
+
+        /// <summary>
+        /// read all settings from disk and sync to the database
+        /// </summary>
+        public void ReadAllFromDisk()
+        {
+            Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - Starting");
+            SyncTemplate.ReadAllFromDisk();
+            SyncStylesheet.ReadAllFromDisk();
+            SyncDataType.ReadAllFromDisk();
+            SyncDocType.ReadAllFromDisk();
+            SyncMacro.ReadAllFromDisk();
+            SyncMediaTypes.ReadAllFromDisk();
+            Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - End");
+        }
+
+        /// <summary>
+        /// attach to the onSave and onDelete event for all types
+        /// </summary>
+        public void AttachToAll()
+        {
+            Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - Start");
+            SyncDataType.AttachEvents();
+            SyncDocType.AttachEvents();
+            SyncMediaTypes.AttachEvents();
+            SyncMacro.AttachEvents();
+            SyncTemplate.AttachEvents();
+            SyncStylesheet.AttachEvents();
+            Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - End");
+        }
+
+        /// <summary>
+        ///  run through the first sync (called at startup)
+        /// </summary>
         private void RunSync()
         {
             Log.Add(LogTypes.Custom, 0, "uSync Starting");
             Log.Add(LogTypes.Debug, 0, "========== uSync Starting"); 
             
 
-            // in theory when it is all working, 
-            // this would only be done first time
-
-            //
-            
+            // Save Everything to disk.
+            // only done first time or when write = true           
             if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write )
             {
-                    Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - Start");
-                    SyncDocType.SaveAllToDisk();
-                    SyncMacro.SaveAllToDisk();
-                    SyncMediaTypes.SaveAllToDisk();
-                    SyncTemplate.SaveAllToDisk();
-                    SyncStylesheet.SaveAllToDisk();
-                    SyncDataType.SaveAllToDisk();
-                    Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - End");
-               
+                SaveAllToDisk();
             }
 
             // bugs in the DataType EventHandling, mean it isn't fired 
@@ -165,16 +202,7 @@ namespace jumps.umbraco.usync
                 if (!File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop")))
                 {
 
-                    Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - Starting");
-                    SyncTemplate.ReadAllFromDisk();
-                    SyncStylesheet.ReadAllFromDisk();
-                    SyncDataType.ReadAllFromDisk();
-                    SyncDocType.ReadAllFromDisk();
-                    SyncMacro.ReadAllFromDisk();
-                    SyncMediaTypes.ReadAllFromDisk();
-
-                    Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - End");
-
+                    ReadAllFromDisk(); 
 
                     if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
                     {
@@ -195,22 +223,13 @@ namespace jumps.umbraco.usync
             {
                 // everytime. register our events to all the saves..
                 // that way we capture things as they are done.
-                Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - Start"); 
-
-                SyncDataType.AttachEvents();
-                SyncDocType.AttachEvents();
-                SyncMediaTypes.AttachEvents(); 
-                SyncMacro.AttachEvents();
-                SyncTemplate.AttachEvents();
-                SyncStylesheet.AttachEvents();
-            
-                Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - End");
+                AttachToAll(); 
             }
 
             Log.Add(LogTypes.Custom, 0, "uSync: Initizlized"); 
         }
 
-#if Umbraco6
+#if UMBRACO6
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
             DoOnStart();
