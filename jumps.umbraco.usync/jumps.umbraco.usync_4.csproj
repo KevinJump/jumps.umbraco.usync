@@ -42,12 +42,10 @@
     <Reference Include="businesslogic">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\businesslogic.dll</HintPath>
     </Reference>
-    <Reference Include="cms, Version=1.0.4779.24224, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="cms">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\cms.dll</HintPath>
     </Reference>
-    <Reference Include="interfaces, Version=1.0.4779.24221, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="interfaces">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -59,20 +57,16 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="umbraco, Version=1.0.4779.24225, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="umbraco">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\umbraco.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Core, Version=1.0.4779.24222, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Umbraco.Core">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\Umbraco.Core.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.DataLayer, Version=1.0.4779.24223, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="umbraco.DataLayer">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\umbraco.DataLayer.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Web.UI, Version=1.0.4779.24227, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Umbraco.Web.UI">
       <HintPath>..\..\..\..\..\..\Dev\Umbraco\devumbraco\bin\Umbraco.Web.UI.dll</HintPath>
     </Reference>
   </ItemGroup>

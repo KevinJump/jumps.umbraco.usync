@@ -147,7 +147,7 @@ namespace jumps.umbraco.usync
                     if (dataType == null)
                         throw new NullReferenceException("Could not resolve a data type with id " + _id);
 
-                   
+
 
                     dtd.DataType = dataType;
                     dtd.Save();
@@ -168,13 +168,14 @@ namespace jumps.umbraco.usync
                 Hashtable oldvals = new Hashtable();
                 foreach (DictionaryEntry v in prevals)
                 {
-                    if (!String.IsNullOrEmpty(((PreValue)v.Value).Value.ToString()))
+                    if ((PreValue)v.Value != null)
+                    // if (!String.IsNullOrEmpty(((PreValue)v.Value).Value.ToString()))
                     {
                         oldvals.Add(((PreValue)v.Value).Id, ((PreValue)v.Value).Value.ToString());
                     }
                 }
-                
-                Hashtable newvals = new Hashtable();                 
+
+                Hashtable newvals = new Hashtable();
                 foreach (XmlNode xmlPv in xmlData.SelectNodes("PreValues/PreValue"))
                 {
                     XmlAttribute val = xmlPv.Attributes["Value"];
@@ -182,22 +183,22 @@ namespace jumps.umbraco.usync
                     if (val != null)
                     {
                         // add new values only - because if we mess with old ones. it all goes pete tong..
-                        if ( (!String.IsNullOrEmpty(val.Value)) && (!oldvals.ContainsValue(val.Value)) )
+                        if ((val.Value != null) && (!oldvals.ContainsValue(val.Value)))
                         {
-                            Log.Add(LogTypes.Debug, 0, string.Format("Adding Prevalue [{0}]", val.Value)); 
+                            Log.Add(LogTypes.Debug, 0, string.Format("Adding Prevalue [{0}]", val.Value));
                             PreValue p = new PreValue(0, 0, val.Value);
                             p.DataTypeId = dtd.Id;
                             p.Save();
                         }
 
-                        newvals.Add(xmlPv.Attributes["Id"], val.Value); 
+                        newvals.Add(xmlPv.Attributes["Id"], val.Value);
                     }
                 }
 
 
                 // ok now delete any values that have gone missing between syncs..
-   
-                if ( !uSyncSettings.Preserve || !uSyncSettings.PreservedPreValueDataTypes.Contains(_id))
+
+                if (!uSyncSettings.Preserve || !uSyncSettings.PreservedPreValueDataTypes.Contains(_id))
                 {
                     foreach (DictionaryEntry oldval in oldvals)
                     {
@@ -209,10 +210,7 @@ namespace jumps.umbraco.usync
                         }
                     }
                 }
-                
-
                 return dtd;
-
             }
             return null;
         }
@@ -264,20 +262,31 @@ namespace jumps.umbraco.usync
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
         }
 
-
         public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
         {
             SaveToDisk((DataTypeDefinition)sender);
         }
-
+#if UMBRACO6
+        //
+        // umbraco 6.0.4 changed the defintion of this event! 
+        //
+        public static void DataTypeDefinition_AfterDelete(DataTypeDefinition sender, EventArgs e)
+#else 
         public static void DataTypeDefinition_AfterDelete(object sender, DeleteEventArgs e)
+
+#endif 
         {
             if (typeof(DataTypeDefinition) == sender.GetType())
             {
                 helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), ((DataTypeDefinition)sender).Text);
             }
 
+#if UMBRACO6
+            // no cancel... 
+#else
             e.Cancel = false; 
+#endif
+            
         }
         
     }
