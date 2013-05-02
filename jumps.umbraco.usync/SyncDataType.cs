@@ -1,4 +1,6 @@
-﻿using System;
+﻿// #define UMBRACO6
+
+using System;
 using System.Collections; 
 using System.Collections.Generic;
 using System.Linq;
@@ -257,7 +259,7 @@ namespace jumps.umbraco.usync
         {
             // this only fires in 4.11.5 + 
             DataTypeDefinition.Saving += new DataTypeDefinition.SaveEventHandler(DataTypeDefinition_Saving);
-            
+
             // but this is 
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
         }
@@ -266,6 +268,7 @@ namespace jumps.umbraco.usync
         {
             SaveToDisk((DataTypeDefinition)sender);
         }
+
 #if UMBRACO6
         //
         // umbraco 6.0.4 changed the defintion of this event! 

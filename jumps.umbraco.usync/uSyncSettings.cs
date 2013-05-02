@@ -128,6 +128,13 @@ namespace jumps.umbraco.usync
         {
             get { return (uSyncPreservedPreValues)this["PreservedPreValues"]; }
         }
+
+        [ConfigurationProperty("Elements", IsRequired=false)]
+        public uSyncElements Elements
+        {
+            get { return (uSyncElements)this["Elements"]; }
+        }
+
     }
 
     public class PreservedPreValue : ConfigurationElement 
@@ -181,7 +188,44 @@ namespace jumps.umbraco.usync
 
     }
 
+    public class uSyncElements : ConfigurationElement
+    {
+        [ConfigurationProperty("docTypes", DefaultValue = "true", IsRequired = true)]
+        public Boolean DocumentTypes
+        {
+            get { return (Boolean)this["docTypes"]; }
+        }
 
+        [ConfigurationProperty("mediaTypes", DefaultValue = "true", IsRequired = true)]
+        public Boolean MediaTypes
+        {
+            get { return (Boolean)this["mediaTypes"]; }
+        }
+
+        [ConfigurationProperty("dataTypes", DefaultValue = "true", IsRequired = true)]
+        public Boolean DataTypes
+        {
+            get { return (Boolean)this["dataTypes"]; }
+        }
+
+        [ConfigurationProperty("templates", DefaultValue = "true", IsRequired = true)]
+        public Boolean Templates
+        {
+            get { return (Boolean)this["templates"]; }
+        }
+
+        [ConfigurationProperty("stylesheets", DefaultValue = "true", IsRequired = true)]
+        public Boolean Stylesheets
+        {
+            get { return (Boolean)this["stylesheets"]; }
+        }
+
+        [ConfigurationProperty("macros", DefaultValue = "true", IsRequired = true)]
+        public Boolean Macros
+        {
+            get { return (Boolean)this["macros"]; }
+        }
+    }
 /*
         public static List<string> PreservedPreValues
         {
@@ -262,6 +306,13 @@ namespace jumps.umbraco.usync
         {
             get { return _settings.PreservedPreValues.GetAll(); }
         }
+        
+        public static uSyncElements Elements
+        {
+            get { return _settings.Elements; }
+        }
+         
+
 
     }
   

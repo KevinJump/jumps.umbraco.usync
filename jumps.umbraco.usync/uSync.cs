@@ -122,12 +122,25 @@ namespace jumps.umbraco.usync
         public void SaveAllToDisk()
         {
             Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - Start");
-            SyncDocType.SaveAllToDisk();
-            SyncMacro.SaveAllToDisk();
-            SyncMediaTypes.SaveAllToDisk();
-            SyncTemplate.SaveAllToDisk();
-            SyncStylesheet.SaveAllToDisk();
-            SyncDataType.SaveAllToDisk();
+
+            if ( uSyncSettings.Elements.DocumentTypes ) 
+                SyncDocType.SaveAllToDisk();
+
+            if ( uSyncSettings.Elements.Macros ) 
+                SyncMacro.SaveAllToDisk();
+
+            if ( uSyncSettings.Elements.MediaTypes ) 
+                SyncMediaTypes.SaveAllToDisk();
+
+            if ( uSyncSettings.Elements.Templates ) 
+                SyncTemplate.SaveAllToDisk();
+
+            if ( uSyncSettings.Elements.Stylesheets ) 
+                SyncStylesheet.SaveAllToDisk();
+
+            if ( uSyncSettings.Elements.DataTypes ) 
+                SyncDataType.SaveAllToDisk();
+
             Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - End");
         }
 
@@ -137,12 +150,25 @@ namespace jumps.umbraco.usync
         public void ReadAllFromDisk()
         {
             Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - Starting");
-            SyncTemplate.ReadAllFromDisk();
-            SyncStylesheet.ReadAllFromDisk();
-            SyncDataType.ReadAllFromDisk();
-            SyncDocType.ReadAllFromDisk();
-            SyncMacro.ReadAllFromDisk();
-            SyncMediaTypes.ReadAllFromDisk();
+
+            if ( uSyncSettings.Elements.Templates ) 
+                SyncTemplate.ReadAllFromDisk();
+
+            if ( uSyncSettings.Elements.Stylesheets ) 
+                SyncStylesheet.ReadAllFromDisk();
+
+            if ( uSyncSettings.Elements.DataTypes ) 
+                SyncDataType.ReadAllFromDisk();
+
+            if ( uSyncSettings.Elements.DocumentTypes ) 
+                SyncDocType.ReadAllFromDisk();
+
+            if ( uSyncSettings.Elements.Macros ) 
+                SyncMacro.ReadAllFromDisk();
+
+            if ( uSyncSettings.Elements.MediaTypes ) 
+                SyncMediaTypes.ReadAllFromDisk();
+
             Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - End");
         }
 
@@ -152,12 +178,25 @@ namespace jumps.umbraco.usync
         public void AttachToAll()
         {
             Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - Start");
-            SyncDataType.AttachEvents();
-            SyncDocType.AttachEvents();
-            SyncMediaTypes.AttachEvents();
-            SyncMacro.AttachEvents();
-            SyncTemplate.AttachEvents();
-            SyncStylesheet.AttachEvents();
+            
+            if ( uSyncSettings.Elements.DataTypes ) 
+                SyncDataType.AttachEvents();
+
+            if ( uSyncSettings.Elements.DocumentTypes )
+                SyncDocType.AttachEvents();
+
+            if ( uSyncSettings.Elements.MediaTypes ) 
+                SyncMediaTypes.AttachEvents();
+
+            if ( uSyncSettings.Elements.Macros ) 
+                SyncMacro.AttachEvents();
+
+            if ( uSyncSettings.Elements.Templates ) 
+                SyncTemplate.AttachEvents();
+
+            if ( uSyncSettings.Elements.Stylesheets ) 
+                SyncStylesheet.AttachEvents();
+
             Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - End");
         }
 
