@@ -29,8 +29,8 @@ in theory you could
 
 Status
 ======
-At the moment this is very experimental, and messy. 
+uSync is becoming more and more stable. 
+# on the Umbraco 4.11.x tree it's quite solid. 
+# On Umbraco6 there have been some changes but uSync appears to work well from 6.0.4+ 
 
-Document Types are complete they read and write from the disk, in a structure that means parent
-and child doctypes will all work, other bits are still in progress. 
 
