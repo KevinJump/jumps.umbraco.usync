@@ -30,7 +30,8 @@ in theory you could
 Status
 ======
 uSync is becoming more and more stable. 
-# on the Umbraco 4.11.x tree it's quite solid. 
-# On Umbraco6 there have been some changes but uSync appears to work well from 6.0.4+ 
+
+* on the Umbraco 4.11.x tree it's quite solid. 
+* On Umbraco6 there have been some changes but uSync appears to work well from 6.0.4+ 
 
 
