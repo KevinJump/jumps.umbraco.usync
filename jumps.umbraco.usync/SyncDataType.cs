@@ -1,4 +1,4 @@
-﻿// #define UMBRACO6
+﻿#define UMBRACO6
 
 using System;
 using System.Collections; 
@@ -130,6 +130,8 @@ namespace jumps.umbraco.usync
                 string _id = xmlData.Attributes["Id"].Value;
                 string _def = xmlData.Attributes["Definition"].Value;
 
+                bool isNew = false; 
+
                 DataTypeDefinition dtd;
 
                 if (CMSNode.IsNode(new Guid(_def)))
@@ -138,6 +140,7 @@ namespace jumps.umbraco.usync
                 }
                 else
                 {
+                    isNew = true; 
 
                     if (u == null)
                         u = global::umbraco.BusinessLogic.User.GetUser(0);
@@ -155,66 +158,111 @@ namespace jumps.umbraco.usync
                     dtd.Save();
                 }
 
-                //
-                // PREVALUES - HELL :: num 4532
-                // 
-                // Here we are attempting to add new prevalues to a DataType, and remove old ones.
-                // between umbraco installs the IDs will change. we are not trying to match them,
-                // we are just trying to match, based on value - problem being, if you change 
-                // a value's value then this code would think it's a new ID, delete the old one
-                // and create a new one - as we are syncing from a dev point of view we are
-                // going to do this for now...
-                //
 
-                System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
-                Hashtable oldvals = new Hashtable();
-                foreach (DictionaryEntry v in prevals)
+
+                if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
                 {
-                    if ((PreValue)v.Value != null)
-                    // if (!String.IsNullOrEmpty(((PreValue)v.Value).Value.ToString()))
-                    {
-                        oldvals.Add(((PreValue)v.Value).Id, ((PreValue)v.Value).Value.ToString());
-                    }
+                    // multi-node tree picker! do a match sync...
+                    return MatchImport(dtd, xmlData, u);
                 }
-
-                Hashtable newvals = new Hashtable();
-                foreach (XmlNode xmlPv in xmlData.SelectNodes("PreValues/PreValue"))
+                else
                 {
-                    XmlAttribute val = xmlPv.Attributes["Value"];
+                    //
+                    // PREVALUES - HELL :: num 4532
+                    // 
+                    // Here we are attempting to add new prevalues to a DataType, and remove old ones.
+                    // between umbraco installs the IDs will change. we are not trying to match them,
+                    // we are just trying to match, based on value - problem being, if you change 
+                    // a value's value then this code would think it's a new ID, delete the old one
+                    // and create a new one - as we are syncing from a dev point of view we are
+                    // going to do this for now...
+                    //
 
-                    if (val != null)
+                    System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
+                    Hashtable oldvals = new Hashtable();
+                    foreach (DictionaryEntry v in prevals)
                     {
-                        // add new values only - because if we mess with old ones. it all goes pete tong..
-                        if ((val.Value != null) && (!oldvals.ContainsValue(val.Value)))
+                        if ((PreValue)v.Value != null)
+                        // if (!String.IsNullOrEmpty(((PreValue)v.Value).Value.ToString()))
                         {
-                            Log.Add(LogTypes.Debug, 0, string.Format("Adding Prevalue [{0}]", val.Value));
-                            PreValue p = new PreValue(0, 0, val.Value);
-                            p.DataTypeId = dtd.Id;
-                            p.Save();
-                        }
-
-                        newvals.Add(xmlPv.Attributes["Id"], val.Value);
-                    }
-                }
-
-
-                // ok now delete any values that have gone missing between syncs..
-
-                if (!uSyncSettings.Preserve || !uSyncSettings.PreservedPreValueDataTypes.Contains(_id))
-                {
-                    foreach (DictionaryEntry oldval in oldvals)
-                    {
-                        if (!newvals.ContainsValue(oldval.Value))
-                        {
-                            PreValue o = new PreValue((int)oldval.Key);
-                            Log.Add(LogTypes.Debug, 0, string.Format("In {0} Deleting prevalue [{1}]", dtd.Text, oldval.Value));
-                            o.Delete();
+                            oldvals.Add(((PreValue)v.Value).Id, ((PreValue)v.Value).Value.ToString());
                         }
                     }
+
+                    Hashtable newvals = new Hashtable();
+                    foreach (XmlNode xmlPv in xmlData.SelectNodes("PreValues/PreValue"))
+                    {
+                        XmlAttribute val = xmlPv.Attributes["Value"];
+
+                        if (val != null)
+                        {
+                            // add new values only - because if we mess with old ones. it all goes pete tong..
+                            if ((val.Value != null) && (!oldvals.ContainsValue(val.Value)))
+                            {
+                                Log.Add(LogTypes.Debug, 0, string.Format("Adding Prevalue [{0}]", val.Value));
+                                PreValue p = new PreValue(0, 0, val.Value);
+                                p.DataTypeId = dtd.Id;
+                                p.Save();
+                            }
+
+                            newvals.Add(xmlPv.Attributes["Id"], val.Value);
+                        }
+                    }
+
+
+                    // ok now delete any values that have gone missing between syncs..
+
+                    if (!uSyncSettings.Preserve || !uSyncSettings.PreservedPreValueDataTypes.Contains(_id))
+                    {
+                        foreach (DictionaryEntry oldval in oldvals)
+                        {
+                            if (!newvals.ContainsValue(oldval.Value))
+                            {
+                                PreValue o = new PreValue((int)oldval.Key);
+                                Log.Add(LogTypes.Debug, 0, string.Format("In {0} Deleting prevalue [{1}]", dtd.Text, oldval.Value));
+                                o.Delete();
+                            }
+                        }
+                    }
+                    return dtd;
                 }
-                return dtd;
             }
             return null;
+        }
+
+        /// <summary>
+        ///  the more agressive pre-value manager - basically for Multi-Node Tree Pickers
+        ///  
+        /// does a like for like change - so goes through exsting values (in order) and sets
+        /// their values to those in the import file (in same order) 
+        /// 
+        /// if the DataType doesn't maintain order (ie in lists) you would loose values doing this
+        /// </summary>
+        /// <param name="xmlData"></param>
+        /// <param name="u"></param>
+        /// <returns></returns>
+        public static DataTypeDefinition MatchImport(DataTypeDefinition dtd, XmlNode xmlData, User u)
+        {
+            Log.Add(LogTypes.Debug, 0, string.Format("usync - Match Import: for {0}", dtd.Text));
+
+            List<PreValue> current = GetPreValues(dtd);
+            XmlNodeList target = xmlData.SelectNodes("PreValues/PreValue");
+
+            Log.Add(LogTypes.Debug, 0, string.Format("uSync - Match Import: Counts [{0} Existing] [{1} New]", current.Count, target.Count)); 
+
+            for(int n = 0; n < current.Count(); n++)
+            {
+                XmlAttribute val = target[n].Attributes["Value"];
+                if (current[n].Value != val.Value)
+                {
+                    Log.Add(LogTypes.Debug, 0, string.Format("uSync - Match Import: Overwrite {0} with {1}", current[n].Value, val.Value ) );
+                    current[n].Value = val.Value; 
+                    current[n].Save(); 
+                }
+            }
+
+            Log.Add(LogTypes.Debug, 0, "uSync - Match Import: Complete" ) ;  
+            return dtd;
         }
 
         /// <summary>

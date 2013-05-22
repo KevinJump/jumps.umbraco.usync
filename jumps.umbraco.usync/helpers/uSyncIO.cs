@@ -23,5 +23,10 @@ namespace jumps.umbraco.usync.helpers
             }
         }
 
+        public static string CacheFile
+        {
+            get { return "~/usync/usyncdata.xml"; } 
+        }
+
     }
 }
