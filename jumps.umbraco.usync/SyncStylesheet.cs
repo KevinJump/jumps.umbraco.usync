@@ -96,13 +96,12 @@ namespace jumps.umbraco.usync
         {
             StyleSheet.AfterSave += StyleSheet_AfterSave;
             StyleSheet.BeforeDelete += StyleSheet_BeforeDelete;
-
-            
+           
         }
+
 
         static void StyleSheet_BeforeDelete(StyleSheet sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Text);
 
             e.Cancel = false;
         }

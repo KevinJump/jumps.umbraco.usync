@@ -45,7 +45,7 @@ namespace jumps.umbraco.usync.helpers
         public static void SaveXmlDoc(string type, string name, XmlDocument doc)
         {
             string savePath = string.Format("{0}/{1}.config", GetTypeFolder(type), ScrubFile(name)) ;
-            SaveXmlDoc(savePath, doc) ; 
+            SaveXmlDoc(savePath, doc) ;
         }
               
 

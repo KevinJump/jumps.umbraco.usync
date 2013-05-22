@@ -129,6 +129,12 @@ namespace jumps.umbraco.usync
             get { return (uSyncPreservedPreValues)this["PreservedPreValues"]; }
         }
 
+        [ConfigurationProperty("MatchedPreValues")]
+        public uSyncPreservedPreValues MatchPreValues
+        {
+            get { return (uSyncPreservedPreValues)this["MatchedPreValues"]; }
+        }
+
         [ConfigurationProperty("Elements", IsRequired=false)]
         public uSyncElements Elements
         {
@@ -305,6 +311,11 @@ namespace jumps.umbraco.usync
         public static string[] PreservedPreValueDataTypes
         {
             get { return _settings.PreservedPreValues.GetAll(); }
+        }
+
+        public static string[] MatchedPreValueDataTypes
+        {
+            get { return _settings.MatchPreValues.GetAll(); }
         }
         
         public static uSyncElements Elements

@@ -8,7 +8,7 @@
 //  
 // the Interface is diffrent, 
 
-// #define UMBRACO6
+#define UMBRACO6
 
 using System;
 using System.Collections.Generic;
@@ -207,7 +207,6 @@ namespace jumps.umbraco.usync
         {
             Log.Add(LogTypes.Custom, 0, "uSync Starting");
             Log.Add(LogTypes.Debug, 0, "========== uSync Starting"); 
-            
 
             // Save Everything to disk.
             // only done first time or when write = true           
