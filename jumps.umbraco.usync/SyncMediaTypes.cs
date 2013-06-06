@@ -282,7 +282,7 @@ namespace jumps.umbraco.usync
             mt.IconUrl = xmlHelper.GetNodeValue(n.SelectSingleNode("Info/Icon"));
             mt.Thumbnail = xmlHelper.GetNodeValue(n.SelectSingleNode("Info/Thumbnail"));
             mt.Description = xmlHelper.GetNodeValue(n.SelectSingleNode("Info/Description"));
-#if umbraco6
+#if UMBRACO6
             // v6 you can have allow at root. 
             // Allow at root (check for node due to legacy)
             bool allowAtRoot = false;

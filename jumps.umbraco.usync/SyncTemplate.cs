@@ -11,7 +11,11 @@ using umbraco.cms.businesslogic.template;
 using umbraco.BusinessLogic; 
 
 using System.IO; 
-using Umbraco.Core.IO; 
+using Umbraco.Core.IO;
+
+using Umbraco.Core;
+using umbraco.businesslogic;
+
 
 //  Check list
 // ====================
@@ -98,7 +102,20 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                       Template.Import(node,user); 
+                       Template t = Template.Import(node,user);
+
+                        string master = global::umbraco.xmlHelper.GetNodeValue(node.SelectSingleNode("Master"));
+
+                        if (master.Trim() != "")
+                        {
+
+                            Template masterTemplate = Template.GetByAlias(master);
+                            if (masterTemplate != null)
+                            {
+                                t.MasterTemplate = masterTemplate.Id;
+                            }
+                            t.Save();
+                        }
                     }
                 }
 
