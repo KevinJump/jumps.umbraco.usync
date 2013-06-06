@@ -8,8 +8,6 @@
 //  
 // the Interface is diffrent, 
 
-#define UMBRACO6
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -141,6 +139,8 @@ namespace jumps.umbraco.usync
             if ( uSyncSettings.Elements.DataTypes ) 
                 SyncDataType.SaveAllToDisk();
 
+            // SyncDictionary.SaveAllToDisk(); 
+
             Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - End");
         }
 
@@ -169,6 +169,8 @@ namespace jumps.umbraco.usync
             if ( uSyncSettings.Elements.MediaTypes ) 
                 SyncMediaTypes.ReadAllFromDisk();
 
+            // SyncDictionary.ReadAllFromDisk(); 
+
             Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - End");
         }
 
@@ -196,6 +198,8 @@ namespace jumps.umbraco.usync
 
             if ( uSyncSettings.Elements.Stylesheets ) 
                 SyncStylesheet.AttachEvents();
+
+            // SyncDictionary.AttachEvents(); 
 
             Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - End");
         }

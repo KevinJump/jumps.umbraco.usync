@@ -25,7 +25,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;UMBRACO6</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -81,6 +81,7 @@
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="SyncDataType.cs" />
+    <Compile Include="SyncDictionary.cs" />
     <Compile Include="SyncDocType.cs" />
     <Compile Include="SyncMacro.cs" />
     <Compile Include="SyncMediaTypes.cs" />
@@ -99,13 +100,13 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>@ECHO to 4.11.8
-@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.8\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\4.11.8\config\" /y /i /q
+    <PostBuildEvent>REM @ECHO to 4.11.8
+REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.8\bin\" /y /i /q
+REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\4.11.8\config\" /y /i /q
 
-REM @ECHO to 6.0.4
-REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.0.4\bin\" /y /i /q
-REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.0.4\config\" /y /i /q
+@ECHO to 6.1.0
+@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.0\bin\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.0\config\" /y /i /q
 
 @ECHO to Release Folder
 @XCOPY "$(TargetPath)" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q

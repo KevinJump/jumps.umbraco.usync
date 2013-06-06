@@ -154,6 +154,7 @@ namespace jumps.umbraco.usync
                     if (node != null)
                     {
                         // use the umbraco package installer to import
+                        Log.Add(LogTypes.Debug, 0, string.Format("Installing {0}", file)); 
                         Installer.ImportDocumentType(node, User.GetUser(0), structure);
            
                     }
