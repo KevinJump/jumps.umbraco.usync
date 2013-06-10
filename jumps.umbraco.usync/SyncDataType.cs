@@ -42,12 +42,12 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    Log.Add(LogTypes.Error, 0, string.Format("Saving DataType Failed {0} {1}", item.Text, ex.ToString() ));
+                    helpers.uSyncLog.ErrorLog(ex, "Saving DataType Failed {0}", item.Text );
                 }
             }
             else
             {
-                Log.Add(LogTypes.Error, 0, "Null DataType Save attempt - aborted");
+                helpers.uSyncLog.DebugLog("Null DataType Save attempt - aborted");
             }
         }
 
@@ -66,7 +66,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, 0, string.Format("Error saving all DataTypes, {0}", ex.ToString()));
+                helpers.uSyncLog.DebugLog("Error saving all DataTypes, {0}", ex.ToString());
             }
         }
 
@@ -104,7 +104,7 @@ namespace jumps.umbraco.usync
 
                         else
                         {
-                            Log.Add(LogTypes.Debug, 0, string.Format("NULL NODE FOR {0}", file));
+                            helpers.uSyncLog.DebugLog("NULL NODE FOR {0}", file);
                         }
                     }
                     
@@ -197,7 +197,7 @@ namespace jumps.umbraco.usync
                             // add new values only - because if we mess with old ones. it all goes pete tong..
                             if ((val.Value != null) && (!oldvals.ContainsValue(val.Value)))
                             {
-                                Log.Add(LogTypes.Debug, 0, string.Format("Adding Prevalue [{0}]", val.Value));
+                                helpers.uSyncLog.DebugLog("Adding Prevalue [{0}]", val.Value);
                                 PreValue p = new PreValue(0, 0, val.Value);
                                 p.DataTypeId = dtd.Id;
                                 p.Save();
@@ -217,7 +217,7 @@ namespace jumps.umbraco.usync
                             if (!newvals.ContainsValue(oldval.Value))
                             {
                                 PreValue o = new PreValue((int)oldval.Key);
-                                Log.Add(LogTypes.Debug, 0, string.Format("In {0} Deleting prevalue [{1}]", dtd.Text, oldval.Value));
+                                helpers.uSyncLog.DebugLog("In {0} Deleting prevalue [{1}]", dtd.Text, oldval.Value);
                                 o.Delete();
                             }
                         }
@@ -241,25 +241,25 @@ namespace jumps.umbraco.usync
         /// <returns></returns>
         public static DataTypeDefinition MatchImport(DataTypeDefinition dtd, XmlNode xmlData, User u)
         {
-            Log.Add(LogTypes.Debug, 0, string.Format("usync - Match Import: for {0}", dtd.Text));
+            helpers.uSyncLog.DebugLog("usync - Match Import: for {0}", dtd.Text);
 
             List<PreValue> current = GetPreValues(dtd);
             XmlNodeList target = xmlData.SelectNodes("PreValues/PreValue");
 
-            Log.Add(LogTypes.Debug, 0, string.Format("uSync - Match Import: Counts [{0} Existing] [{1} New]", current.Count, target.Count)); 
+            helpers.uSyncLog.DebugLog("uSync - Match Import: Counts [{0} Existing] [{1} New]", current.Count, target.Count); 
 
             for(int n = 0; n < current.Count(); n++)
             {
                 XmlAttribute val = target[n].Attributes["Value"];
                 if (current[n].Value != val.Value)
                 {
-                    Log.Add(LogTypes.Debug, 0, string.Format("uSync - Match Import: Overwrite {0} with {1}", current[n].Value, val.Value ) );
+                    helpers.uSyncLog.DebugLog("uSync - Match Import: Overwrite {0} with {1}", current[n].Value, val.Value );
                     current[n].Value = val.Value; 
                     current[n].Save(); 
                 }
             }
 
-            Log.Add(LogTypes.Debug, 0, "uSync - Match Import: Complete" ) ;  
+            helpers.uSyncLog.DebugLog("uSync - Match Import: Complete");  
             return dtd;
         }
 

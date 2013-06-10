@@ -74,17 +74,18 @@ namespace jumps.umbraco.usync
 
         private void GetSettings() 
         {
-            Log.Add(LogTypes.Debug, 0, "uSync: Getting Settings"); 
-           
+            helpers.uSyncLog.DebugLog("Getting Settings"); 
+                       
             _read = uSyncSettings.Read;
-            Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Read = {0}", _read));
+            helpers.uSyncLog.DebugLog("Settings : Read = {0}", _read); 
+
             _write = uSyncSettings.Write;
-            Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Write = {0}", _write));
+            helpers.uSyncLog.DebugLog("Settings : Write = {0}", _write); 
+
             _attach = uSyncSettings.Attach;
-            Log.Add(LogTypes.Debug, 0, string.Format("uSync: Setting: Attach = {0}", _attach));
+            helpers.uSyncLog.DebugLog("Settings : Attach = {0}", _attach); 
 
             // version 6+ here
-
 
 #if UMBRACO6
             // if it's more than 6 or more than 6.0.x it should work
@@ -119,7 +120,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void SaveAllToDisk()
         {
-            Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - Start");
+            helpers.uSyncLog.DebugLog("Saving to disk - start");
 
             if ( uSyncSettings.Elements.DocumentTypes ) 
                 SyncDocType.SaveAllToDisk();
@@ -141,7 +142,7 @@ namespace jumps.umbraco.usync
 
             // SyncDictionary.SaveAllToDisk(); 
 
-            Log.Add(LogTypes.Debug, 0, "uSync: Saving to Disk - End");
+            helpers.uSyncLog.DebugLog("Saving to Disk - End"); 
         }
 
         /// <summary>
@@ -149,7 +150,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void ReadAllFromDisk()
         {
-            Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - Starting");
+            helpers.uSyncLog.DebugLog("Reading from Disk - starting"); 
 
             if ( uSyncSettings.Elements.Templates ) 
                 SyncTemplate.ReadAllFromDisk();
@@ -171,7 +172,7 @@ namespace jumps.umbraco.usync
 
             // SyncDictionary.ReadAllFromDisk(); 
 
-            Log.Add(LogTypes.Debug, 0, "uSync: Reading from Disk - End");
+            helpers.uSyncLog.DebugLog("Reading from Disk - End"); 
         }
 
         /// <summary>
@@ -179,7 +180,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void AttachToAll()
         {
-            Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - Start");
+            helpers.uSyncLog.DebugLog("Attaching to Events - Start"); 
             
             if ( uSyncSettings.Elements.DataTypes ) 
                 SyncDataType.AttachEvents();
@@ -201,7 +202,7 @@ namespace jumps.umbraco.usync
 
             // SyncDictionary.AttachEvents(); 
 
-            Log.Add(LogTypes.Debug, 0, "uSync: Attaching to Events - End");
+            helpers.uSyncLog.DebugLog("Attaching to Events - End");
         }
 
         /// <summary>
@@ -209,8 +210,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
-            Log.Add(LogTypes.Custom, 0, "uSync Starting");
-            Log.Add(LogTypes.Debug, 0, "========== uSync Starting"); 
+            helpers.uSyncLog.DebugLog("uSync Starting"); 
 
             // Save Everything to disk.
             // only done first time or when write = true           
@@ -230,7 +230,7 @@ namespace jumps.umbraco.usync
             //
             if (!_docTypeSaveWorks && _attach)
             {
-                Log.Add(LogTypes.Custom, 0, "uSync Saving DataTypes to Disk (Bug work)");
+                helpers.uSyncLog.DebugLog("(Legacy) saving datatypes to disk"); 
                 SyncDataType.SaveAllToDisk();
             }
 
@@ -248,15 +248,15 @@ namespace jumps.umbraco.usync
 
                     if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
                     {
-                        Log.Add(LogTypes.Debug, 0, "uSync: Renaming once file..."); 
+                        helpers.uSyncLog.DebugLog("Renaming once file"); 
                         File.Move(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once"),
                             Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
-                        Log.Add(LogTypes.Debug, 0, "uSync: Once renamed to stop");
+                        helpers.uSyncLog.DebugLog("Once renamed to stop"); 
                     }
                 }
                 else
                 {
-                    Log.Add(LogTypes.Debug, 0, "uSync: Read stopped by usync.stop");
+                    helpers.uSyncLog.DebugLog("Read stopped by usync.stop"); 
                 }
 
             }
@@ -268,7 +268,7 @@ namespace jumps.umbraco.usync
                 AttachToAll(); 
             }
 
-            Log.Add(LogTypes.Custom, 0, "uSync: Initizlized"); 
+            helpers.uSyncLog.DebugLog("Initizilized (how many z's!)"); 
         }
 
 #if UMBRACO6

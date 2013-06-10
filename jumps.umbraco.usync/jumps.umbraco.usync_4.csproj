@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="helpers\uSyncIO.cs" />
+    <Compile Include="helpers\uSyncLog.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="SyncDataType.cs" />
     <Compile Include="SyncDictionary.cs" />

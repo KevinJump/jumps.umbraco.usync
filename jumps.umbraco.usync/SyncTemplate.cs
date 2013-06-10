@@ -42,7 +42,7 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Saving Template {0} - {1}", item.Text, ex.ToString()));
+                    helpers.uSyncLog.ErrorLog(ex, "uSync: Error Saving Template {0} - {1}", item.Text, ex.ToString());
                 }
             }
         }
@@ -58,7 +58,7 @@ namespace jumps.umbraco.usync
             }
             catch( Exception ex )
             {
-                Log.Add(LogTypes.Error, 0, String.Format("uSync: Error saving all templates {0}", ex.ToString())); 
+                helpers.uSyncLog.ErrorLog(ex, "uSync: Error saving all templates {0}", ex.ToString()); 
             }
         }
 

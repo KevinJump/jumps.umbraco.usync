@@ -45,7 +45,7 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception e)
                 {
-                    Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Saving DocumentType {0} - {1}", item.Alias, e.ToString()));
+                    helpers.uSyncLog.DebugLog( "uSync: Error Saving DocumentType {0} - {1}", item.Alias, e.ToString() ) ; 
                 }
             }
         }
@@ -70,7 +70,7 @@ namespace jumps.umbraco.usync
             catch( Exception ex )
             {
                 // error saving to disk, can happen if Umbraco has orphaned doctypes & GetAll thows an error! 
-                Log.Add(LogTypes.Error, 0, string.Format("uSync: Error Writing doctypes to disk {0}", ex.ToString())); 
+                helpers.uSyncLog.DebugLog("uSync: Error Writing doctypes to disk {0}", ex.ToString());
             }
         }
         
@@ -154,7 +154,7 @@ namespace jumps.umbraco.usync
                     if (node != null)
                     {
                         // use the umbraco package installer to import
-                        Log.Add(LogTypes.Debug, 0, string.Format("Installing {0}", file)); 
+                        helpers.uSyncLog.DebugLog("Installing {0}", file); 
                         Installer.ImportDocumentType(node, User.GetUser(0), structure);
            
                     }
