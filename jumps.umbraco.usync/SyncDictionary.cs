@@ -28,11 +28,11 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            Log.Add(LogTypes.Debug, 0, "Saving Dictionary Types");
+            helpers.uSyncLog.DebugLog("Saving Dictionary Types");
 
             foreach (Dictionary.DictionaryItem item in Dictionary.getTopMostItems)
             {
-                Log.Add(LogTypes.Debug, 0, string.Format("Dictionary Item {0}", item.key));
+                helpers.uSyncLog.DebugLog("Dictionary Item {0}", item.key);
                 SaveToDisk(item);
             }
         }

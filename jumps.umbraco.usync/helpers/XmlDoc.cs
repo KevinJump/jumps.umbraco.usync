@@ -128,13 +128,13 @@ namespace jumps.umbraco.usync.helpers
                     File.Delete(currentFile);
                 }
             }
-            catch
+            catch(Exception ex)
             {
                // archive is a non critical thing - if it fails we are not stopping
                // umbraco, but we are going to log that it didn't work. 
-               Log.Add(LogTypes.Error, 0, "Failed to archive") ; 
-
-                // to do some dialog popup text like intergration 
+               // Log.Add(LogTypes.Error, 0, "Failed to archive") ; 
+               // to do some dialog popup text like intergration
+               uSyncLog.ErrorLog(ex, "Failed to Archive {1}, {0}", type, name ); 
             }
 
         }

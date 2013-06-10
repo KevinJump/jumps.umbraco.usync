@@ -35,7 +35,7 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    Log.Add(LogTypes.Error,0, string.Format("uSync: Error Saving Media Type {0}, {1}", item.Text, ex.ToString())); 
+                    helpers.uSyncLog.DebugLog("uSync: Error Saving Media Type {0}, {1}", item.Text, ex.ToString()); 
                 }
             }
         }
@@ -53,7 +53,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, 0, String.Format("uSync: Error saving all media types {0}", ex.ToString()));
+                helpers.uSyncLog.ErrorLog(ex, "Error saving all media types {0}", ex.ToString());
             }
         }
 
@@ -118,7 +118,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, 0, string.Format("Read MediaType Failed {0}", ex.ToString()));
+                helpers.uSyncLog.ErrorLog(ex, "Read MediaType Failed {0}", ex.ToString());
                 throw new SystemException(String.Format("Read MediaType failed {0}", ex.ToString()));
             }
         }
@@ -264,7 +264,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, 0, "uSync: Media Type is corrupt?");
+                helpers.uSyncLog.ErrorLog(ex, "Media type corrupt?"); 
             }
 
             if (mt == null)
@@ -406,7 +406,7 @@ namespace jumps.umbraco.usync
                     }
                     catch (Exception ee)
                     {
-                        global::umbraco.BusinessLogic.Log.Add(global::umbraco.BusinessLogic.LogTypes.Error, null, mt.Id, "Packager: Error assigning property to tab: " + ee.ToString());
+                        helpers.uSyncLog.ErrorLog(ee, "Packager: Error assigning property to tab: {0}", ee.ToString());
                     }
                     pt.Save(); 
                 }

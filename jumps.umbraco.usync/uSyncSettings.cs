@@ -270,7 +270,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, 0, string.Format("Error loading settings file {0}", ex.ToString()));
+                helpers.uSyncLog.ErrorLog(ex, "Error loading settings file {0}", ex.ToString());
             }
         }
 

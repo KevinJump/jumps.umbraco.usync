@@ -37,7 +37,7 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Reading Stylesheet {0} - {1}", item.Text, ex.ToString()));
+                    helpers.uSyncLog.ErrorLog(ex, "uSync: Error Reading Stylesheet {0} - {1}", item.Text, ex.ToString());
                     throw new SystemException(string.Format("error saving stylesheet {0}", item.Text), ex); 
                 }
             }
@@ -54,7 +54,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                Log.Add(LogTypes.Error, 0, String.Format("uSync: Error Saving all Stylesheets {0}", ex.ToString()));
+                helpers.uSyncLog.ErrorLog(ex, "uSync: Error Saving all Stylesheets {0}", ex.ToString());
             }
         }
 
