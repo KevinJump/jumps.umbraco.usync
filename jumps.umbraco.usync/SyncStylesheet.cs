@@ -72,7 +72,7 @@ namespace jumps.umbraco.usync
         {
             if (Directory.Exists(path))
             {
-                User user = new User(0); 
+                User user = new User(0);
 
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
@@ -83,6 +83,7 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
+                        helpers.uSyncLog.DebugLog("Stylesheet Install: {0}", file); 
                         StyleSheet s = StyleSheet.Import(node, user );
                         s.Save();
                     }
