@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 #if UMBRACO6
 using Umbraco.Core.Logging ;
 #else
-using umbraco.BusinessLogic ;
+using umbraco.BusinessLogic;
 #endif
 
 namespace jumps.umbraco.usync.helpers
@@ -23,9 +23,10 @@ namespace jumps.umbraco.usync.helpers
             
 #if UMBRACO6
             Type t = typeof(jumps.umbraco.usync.uSync);
-            LogHelper.Debug(t, string.Format(message, args));
+            LogHelper.Info(t, string.Format(message, args));
 #else
             Log.Add(LogTypes.Debug, 0, string.Format(message, args));
+           
 #endif
         }
 
