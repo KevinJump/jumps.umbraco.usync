@@ -13,16 +13,21 @@ using umbraco.BusinessLogic;
 using System.IO ;
 using Umbraco.Core.IO ; 
 
-//  Check list
-// ====================
-//  SaveOne         X
-//  SaveAll         X
-//  OnSave          X
-//  OnDelete        X
-//  ReadFromDisk    X
-
 namespace jumps.umbraco.usync
 {
+    /// <summary>
+    /// Sycronizes stylesheets to the uSync folder. 
+    /// 
+    /// stylesheets are mainly arealy on the disk, the database
+    /// contains an ID for each one - it's only ever used in
+    /// rich text data type (i think).
+    /// 
+    /// SyncStylesheet class uses the packaging API to read and
+    /// write the styles sheets to disk. 
+    /// 
+    /// probibly the simplest sync - no structure, and the
+    /// packaging api.
+    /// </summary>
     public class SyncStylesheet
     {
         public static void SaveToDisk(StyleSheet item)
@@ -103,7 +108,7 @@ namespace jumps.umbraco.usync
 
         static void StyleSheet_BeforeDelete(StyleSheet sender, DeleteEventArgs e)
         {
-
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Text);
             e.Cancel = false;
         }
         

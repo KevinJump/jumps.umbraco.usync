@@ -274,6 +274,8 @@ namespace jumps.umbraco.usync
         /// <returns>the xmlelement representation of the type</returns>
         public static XmlElement DataTypeToXml(DataTypeDefinition dataType, XmlDocument xd)
         {
+            helpers.uSyncLog.DebugLog("DataType To XML"); 
+
             XmlElement dt = xd.CreateElement("DataType");
             dt.Attributes.Append(xmlHelper.addAttribute(xd, "Name", dataType.Text));
             dt.Attributes.Append(xmlHelper.addAttribute(xd, "Id", dataType.DataType.Id.ToString()));
@@ -298,6 +300,7 @@ namespace jumps.umbraco.usync
 
         private static List<PreValue> GetPreValues(DataTypeDefinition dataType)
         {
+            helpers.uSyncLog.DebugLog("Getting Pre-Values"); 
             return PreValues.GetPreValues(dataType.Id).Values.OfType<PreValue>().OrderBy(p => p.SortOrder).ThenBy(p => p.Id).ToList();
         }
 
@@ -305,14 +308,26 @@ namespace jumps.umbraco.usync
         {
             // this only fires in 4.11.5 + 
             DataTypeDefinition.Saving += new DataTypeDefinition.SaveEventHandler(DataTypeDefinition_Saving);
+            DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
 
             // but this is 
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
         }
 
+        static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
+        {
+            helpers.uSyncLog.DebugLog("DataType Saving");
+            SaveToDisk((DataTypeDefinition)sender);
+            helpers.uSyncLog.DebugLog("DataType Saved");
+        }
+
         public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
         {
+/*            helpers.uSyncLog.DebugLog("DataType Saving");
             SaveToDisk((DataTypeDefinition)sender);
+            helpers.uSyncLog.DebugLog("DataType Saved");
+ */
+
         }
 
 #if UMBRACO6

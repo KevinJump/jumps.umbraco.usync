@@ -17,16 +17,18 @@ using Umbraco.Core;
 using umbraco.businesslogic;
 
 
-//  Check list
-// ====================
-//  SaveOne         X
-//  SaveAll         X
-//  OnSave          X
-//  OnDelete        X
-//  ReadFromDisk    X
-
 namespace jumps.umbraco.usync
 {
+    /// <summary>
+    ///  syncornizes the templates with the usync folder
+    ///  
+    /// templates / partial views are almost compleatly
+    /// stored on disk, but the umbraco database stores
+    /// and ID, alias and parent, to maintain structure
+    /// 
+    /// SyncTemplate uses the packaging API to import and
+    /// export the templates. 
+    /// </summary>
     public class SyncTemplate
     {
         public static void SaveToDisk(Template item)

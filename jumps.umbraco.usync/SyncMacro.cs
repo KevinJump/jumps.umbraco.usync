@@ -15,6 +15,16 @@ using umbraco.BusinessLogic;
 
 namespace jumps.umbraco.usync
 {
+    /// <summary>
+    /// Sycronizes all the macros to/from the usync folder
+    /// 
+    /// the macros definitions are stored compleatly in the 
+    /// database although they often point to files on the 
+    /// disk (scrips, user controls). 
+    /// 
+    /// SyncMacro uses the package API to read write the xml
+    /// files for macros. no structure in macros.
+    /// </summary>
     public class SyncMacro
     {
         public static void SaveToDisk(Macro item)
