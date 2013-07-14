@@ -32,6 +32,6 @@ Status
 uSync is becoming more and more stable. 
 
 * On the Umbraco 4.11.x tree, it's quite solid. 
-* On Umbraco 6, there have been some changes but uSync appears to work well from 6.0.4+ 
+* On Umbraco 6, there have been some changes but uSync appears to work well from 6.0.6/6.1.+
 
 
