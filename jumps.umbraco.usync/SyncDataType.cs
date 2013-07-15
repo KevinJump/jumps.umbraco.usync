@@ -316,9 +316,12 @@ namespace jumps.umbraco.usync
 
         static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
         {
-            helpers.uSyncLog.DebugLog("DataType Saving");
-            SaveToDisk((DataTypeDefinition)sender);
-            helpers.uSyncLog.DebugLog("DataType Saved");
+            if (typeof(DataTypeDefinition) == sender.GetType())
+            {
+                helpers.uSyncLog.DebugLog("DataType Saving");
+                SaveToDisk((DataTypeDefinition)sender);
+                helpers.uSyncLog.DebugLog("DataType Saved");
+            }
         }
 
         public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
