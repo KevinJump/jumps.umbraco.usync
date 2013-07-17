@@ -308,27 +308,31 @@ namespace jumps.umbraco.usync
         {
             // this only fires in 4.11.5 + 
             DataTypeDefinition.Saving += new DataTypeDefinition.SaveEventHandler(DataTypeDefinition_Saving);
-            DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
+            // DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
 
             // but this is 
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
         }
 
+        // after save doesn't fire on DataTypes (it still uses saving)
+        /*
         static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
         {
+            helpers.uSyncLog.DebugLog("DataType After Save (not checked)"); 
             if (typeof(DataTypeDefinition) == sender.GetType())
             {
-                helpers.uSyncLog.DebugLog("DataType Saving");
+                helpers.uSyncLog.DebugLog("DataType Saving (OnSave)");
                 SaveToDisk((DataTypeDefinition)sender);
-                helpers.uSyncLog.DebugLog("DataType Saved");
+                helpers.uSyncLog.DebugLog("DataType Saved (OnSave-Complete)");
             }
         }
+        */ 
 
         public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
         {
-            helpers.uSyncLog.DebugLog("DataType Saving");
+            helpers.uSyncLog.DebugLog("DataType Saving (Saving)");
             SaveToDisk((DataTypeDefinition)sender);
-            helpers.uSyncLog.DebugLog("DataType Saved");
+            helpers.uSyncLog.DebugLog("DataType Saved (Saving-complete)");
         }
 
 #if UMBRACO6
