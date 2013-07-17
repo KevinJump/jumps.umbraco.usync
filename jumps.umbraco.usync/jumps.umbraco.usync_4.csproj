@@ -39,17 +39,17 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="businesslogic, Version=1.0.4759.26015, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="businesslogic, Version=1.0.4863.23140, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.0.4\bin\businesslogic.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.2\bin\businesslogic.dll</HintPath>
     </Reference>
-    <Reference Include="cms, Version=1.0.4759.26016, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="cms, Version=1.0.4863.23140, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.0.4\bin\cms.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.2\bin\cms.dll</HintPath>
     </Reference>
-    <Reference Include="interfaces, Version=1.0.4759.26015, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="interfaces, Version=1.0.4863.23138, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.0.4\bin\interfaces.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.2\bin\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -60,21 +60,21 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="umbraco, Version=1.0.4759.26017, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="umbraco, Version=1.0.4863.23141, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.0.4\bin\umbraco.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.2\bin\umbraco.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Core, Version=1.0.4759.26015, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Umbraco.Core, Version=1.0.4863.23138, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.0.4\bin\Umbraco.Core.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.2\bin\Umbraco.Core.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.DataLayer, Version=1.0.4759.26015, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="umbraco.DataLayer, Version=1.0.4863.23139, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.0.4\bin\umbraco.DataLayer.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.2\bin\umbraco.DataLayer.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Web.UI, Version=1.0.4759.26019, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Umbraco.Web.UI, Version=1.0.4863.23148, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.0.4\bin\Umbraco.Web.UI.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.2\bin\Umbraco.Web.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -101,17 +101,18 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>REM @ECHO to 4.11.8
-REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.8\bin\" /y /i /q
-REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\4.11.8\config\" /y /i /q
+    <PostBuildEvent>REM @ECHO to 4.11.10
+REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.10\bin\" /y /i /q
+REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\4.11.10\config\" /y /i /q
 
-@ECHO to 6.1.1
-@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.1\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.1\config\" /y /i /q
+V6:
+@ECHO to 6.0.7
+@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.0.7\bin\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.0.7\config\" /y /i /q
 
-@ECHO to 6.0.6
-@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.0.6\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.0.6\config\" /y /i /q
+@ECHO to 6.1.2
+@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.2\bin\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.2\config\" /y /i /q
 
 @ECHO to Release Folder
 @XCOPY "$(TargetPath)" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q
