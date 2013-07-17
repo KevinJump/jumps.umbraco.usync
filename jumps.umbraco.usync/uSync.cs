@@ -1,12 +1,11 @@
 ﻿//
-// uSync 1.0 For Umbraco 4.11.x
+// uSync 1.3.4
+
+// For Umbraco 4.11.x/6.0.6+
 //
-// due to a number of changes in the API (noteably the MediaTypes) 
-// this version of uSync is for v4.11.x of Umbraco Only
+// uses precompile conditions to build a v4 and v6 version
+// of usync. 
 //
-// uSync 1.0 for Umbraco 6.0.3+
-//  
-// the Interface is diffrent, 
 
 using System;
 using System.Collections.Generic;
