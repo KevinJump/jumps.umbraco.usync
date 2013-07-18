@@ -18,9 +18,14 @@ namespace jumps.umbraco.usync.helpers
     /// xml is consistantly created, and put in some
     /// form of logical place. 
     /// </summary>
+
+    public delegate void XmlDocPreSaveEventHandler(XmlDocSaveEventArgs e);
+
     public class XmlDoc
     {
         private static bool _versions = false;  
+
+        public static event XmlDocPreSaveEventHandler preSave;
 
         static XmlDoc()
         {
@@ -69,7 +74,7 @@ namespace jumps.umbraco.usync.helpers
                     File.Delete(savePath);
                 }
             }
-
+            onPreSave(new XmlDocSaveEventArgs(savePath));
             doc.Save(savePath) ; 
         }
 
@@ -172,6 +177,13 @@ namespace jumps.umbraco.usync.helpers
         {
             return type.Substring(type.LastIndexOf('.') + 1);
         }
-        
+
+        public static void onPreSave(XmlDocSaveEventArgs e)
+        {
+            if (preSave != null)
+            {
+                preSave(e);
+            }
+        }
     }
 }

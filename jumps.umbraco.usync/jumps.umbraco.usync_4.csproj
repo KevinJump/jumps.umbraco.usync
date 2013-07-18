@@ -81,6 +81,7 @@
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\uSyncLog.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
+    <Compile Include="helpers\XmlDocSaveEventArgs.cs" />
     <Compile Include="SyncDataType.cs" />
     <Compile Include="SyncDictionary.cs" />
     <Compile Include="SyncDocType.cs" />
