@@ -18,12 +18,23 @@ namespace jumps.umbraco.usync.helpers
     /// </summary>
     public class uSyncLog
     {
+        public static void InfoLog(string message, params object[] args)
+        {
+#if UMBRACO6
+            // debug logging, needs to be turned on in Log
+            LogHelper.Info(typeof(uSync), string.Format(message, args));
+#else
+            Log.Add(LogTypes.System, 0, string.Format(message, args));
+#endif
+        }
+
+
         public static void DebugLog(string message, params object[] args)
         {
             
 #if UMBRACO6
-            Type t = typeof(jumps.umbraco.usync.uSync);
-            LogHelper.Info(t, string.Format(message, args));
+            // debug logging, needs to be turned on in Log
+            LogHelper.Debug(typeof(uSync), string.Format(message, args));
 #else
             Log.Add(LogTypes.Debug, 0, string.Format(message, args));
            
@@ -33,8 +44,7 @@ namespace jumps.umbraco.usync.helpers
         public static void ErrorLog(Exception ex, string message, params object[] args )
         {
 #if UMBRACO6
-            Type t = typeof(jumps.umbraco.usync.uSync);
-            LogHelper.Error(t, string.Format(message, args), ex);
+            LogHelper.Error(typeof(uSync), string.Format(message, args), ex);
 #else
             Log.Add(LogTypes.Error, 0, string.Format(message, args));
 #endif

@@ -139,7 +139,11 @@ namespace jumps.umbraco.usync
             if ( uSyncSettings.Elements.DataTypes ) 
                 SyncDataType.SaveAllToDisk();
 
-            // SyncDictionary.SaveAllToDisk(); 
+            if (uSyncSettings.Elements.Dictionary)
+            {
+                SyncLanguage.SaveAllToDisk();
+                SyncDictionary.SaveAllToDisk();
+            }
 
             helpers.uSyncLog.DebugLog("Saving to Disk - End"); 
         }
@@ -169,7 +173,11 @@ namespace jumps.umbraco.usync
             if ( uSyncSettings.Elements.MediaTypes ) 
                 SyncMediaTypes.ReadAllFromDisk();
 
-            // SyncDictionary.ReadAllFromDisk(); 
+            if (uSyncSettings.Elements.Dictionary)
+            {
+                SyncLanguage.ReadAllFromDisk(); 
+                SyncDictionary.ReadAllFromDisk();
+            }
 
             helpers.uSyncLog.DebugLog("Reading from Disk - End"); 
         }
@@ -199,7 +207,11 @@ namespace jumps.umbraco.usync
             if ( uSyncSettings.Elements.Stylesheets ) 
                 SyncStylesheet.AttachEvents();
 
-            // SyncDictionary.AttachEvents(); 
+            if (uSyncSettings.Elements.Dictionary)
+            {
+                SyncLanguage.AttachEvents(); 
+                SyncDictionary.AttachEvents();
+            }
 
             helpers.uSyncLog.DebugLog("Attaching to Events - End");
         }
@@ -209,7 +221,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
-            helpers.uSyncLog.DebugLog("uSync Starting"); 
+            helpers.uSyncLog.InfoLog("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file"); 
 
             // Save Everything to disk.
             // only done first time or when write = true           
@@ -255,7 +267,7 @@ namespace jumps.umbraco.usync
                 }
                 else
                 {
-                    helpers.uSyncLog.DebugLog("Read stopped by usync.stop"); 
+                    helpers.uSyncLog.InfoLog("Read stopped by usync.stop"); 
                 }
 
             }
@@ -267,7 +279,7 @@ namespace jumps.umbraco.usync
                 AttachToAll(); 
             }
 
-            helpers.uSyncLog.DebugLog("Initizilized (how many z's!)"); 
+            helpers.uSyncLog.InfoLog("uSync Initilized"); 
         }
 
 #if UMBRACO6

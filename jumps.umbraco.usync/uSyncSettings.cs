@@ -231,6 +231,13 @@ namespace jumps.umbraco.usync
         {
             get { return (Boolean)this["macros"]; }
         }
+
+        [ConfigurationProperty("dictionary", DefaultValue = "false", IsRequired = false)]
+        public Boolean Dictionary
+        {
+            get { return (Boolean)this["dictionary"]; }
+        }
+
     }
 /*
         public static List<string> PreservedPreValues

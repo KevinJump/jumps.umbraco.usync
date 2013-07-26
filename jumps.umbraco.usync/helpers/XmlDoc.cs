@@ -65,11 +65,11 @@ namespace jumps.umbraco.usync.helpers
                         ArchiveFile(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path), false);  
                     }
             
-
                     File.Delete(savePath);
                 }
             }
 
+            uSyncLog.InfoLog("Saving [{0}]", savePath); 
             doc.Save(savePath) ; 
         }
 
@@ -126,6 +126,8 @@ namespace jumps.umbraco.usync.helpers
                     // 
                     File.Copy(currentFile, archiveFile);
                     File.Delete(currentFile);
+
+                    uSyncLog.DebugLog("Archived [{0}] to [{1}]", currentFile, archiveFile); 
                 }
             }
             catch(Exception ex)

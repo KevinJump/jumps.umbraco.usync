@@ -84,6 +84,7 @@
     <Compile Include="SyncDataType.cs" />
     <Compile Include="SyncDictionary.cs" />
     <Compile Include="SyncDocType.cs" />
+    <Compile Include="SyncLanguage.cs" />
     <Compile Include="SyncMacro.cs" />
     <Compile Include="SyncMediaTypes.cs" />
     <Compile Include="SyncStylesheet.cs" />
