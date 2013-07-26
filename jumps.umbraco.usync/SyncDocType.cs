@@ -194,7 +194,8 @@ namespace jumps.umbraco.usync
 #if UMBRACO6
         static void ContentTypeService_SavedContentType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<IContentType> e)
         {
-            foreach(var docType in e.SavedEntities)
+            helpers.uSyncLog.DebugLog("SaveContent Type Fired for {0} types", e.SavedEntities.Count());
+            foreach (var docType in e.SavedEntities)
             {
                 SaveToDisk(new DocumentType(docType.Id));
             }
@@ -202,12 +203,12 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_DeletingContentType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IContentType> e)
         {
+            helpers.uSyncLog.DebugLog("Deleting Type Fired for {0} types", e.DeletedEntities.Count());
             // delete things (there can sometimes be more than one??)
             foreach (var docType in e.DeletedEntities)
             {
                 helpers.XmlDoc.ArchiveFile("DocumentType", GetDocPath(new DocumentType(docType.Id)), "def") ; 
             }
-            
         }
 #else 
         /// <summary>

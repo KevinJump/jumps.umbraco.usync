@@ -19,6 +19,12 @@ using umbraco.cms.businesslogic.template;
 using Umbraco.Core.IO;
 using umbraco.BusinessLogic ; 
 
+#if UMBRACO6
+using Umbraco.Core;
+using Umbraco.Core.Services;
+//using Umbraco.Core.Models;
+#endif 
+
 namespace jumps.umbraco.usync
 {
     public class SyncMediaTypes
@@ -125,10 +131,36 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents()
         {
+#if UMBRACO6
+            ContentTypeService.SavedMediaType += ContentTypeService_SavedMediaType;
+            ContentTypeService.DeletingMediaType += ContentTypeService_DeletingMediaType;
+
+#else
             MediaType.AfterSave += MediaType_AfterSave;
             MediaType.BeforeDelete += MediaType_BeforeDelete;
+#endif
         }
 
+        static void ContentTypeService_DeletingMediaType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<Umbraco.Core.Models.IMediaType> e)
+        {
+            helpers.uSyncLog.DebugLog("DeletingMediaType for {0} items", e.DeletedEntities.Count());
+            foreach (var mediaType in e.DeletedEntities)
+            {
+                helpers.XmlDoc.ArchiveFile("MediaType", GetMediaPath(new MediaType(mediaType.Id)), "def");
+            }
+        }
+
+        static void ContentTypeService_SavedMediaType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<Umbraco.Core.Models.IMediaType> e)
+        {
+            helpers.uSyncLog.DebugLog("SaveContent Type Fired for {0} types", e.SavedEntities.Count());
+            foreach (var mediaType in e.SavedEntities)
+            {
+                SaveToDisk(new MediaType(mediaType.Id));
+            }
+        }
+
+#if UMBRACO6
+#else 
         static void MediaType_BeforeDelete(MediaType sender, DeleteEventArgs e)
         {
             helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), GetMediaPath(sender), "def");
@@ -140,6 +172,7 @@ namespace jumps.umbraco.usync
         {
             SaveToDisk(sender); 
         }
+#endif 
     }
 
     public class MediaTypeHelper
