@@ -176,8 +176,19 @@ namespace jumps.umbraco.usync
         public static void AttachEvents()
         {
             DocumentType.AfterSave += DocumentType_AfterSave;
+#if UMBRACO6
+            Umbraco.Core.Services.ContentTypeService.DeletingContentType += ContentTypeService_DeletingContentType;
+#else
             DocumentType.BeforeDelete += DocumentType_BeforeDelete;
+#endif
         }
+#if UMBRACO6
+        static void ContentTypeService_DeletingContentType(Umbraco.Core.Services.IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<Umbraco.Core.Models.IContentType> e)
+        {
+            helpers.XmlDoc.ArchiveFile("DocumentType", GetDocPath(new DocumentType(e.DeletedEntities.First().Id)), "def");
+            e.Cancel = false; 
+        }
+#endif
 
         /// <summary>
         ///  called when a document type is about to be deleted. 
