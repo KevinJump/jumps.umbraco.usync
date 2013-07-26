@@ -106,10 +106,6 @@
 REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\4.11.10\bin\" /y /i /q
 REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\4.11.10\config\" /y /i /q
 
-REM @ECHO to 6.0.7
-REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.0.7\bin\" /y /i /q
-REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.0.7\config\" /y /i /q
-
 @ECHO to 6.1.2
 @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.2\bin\" /y /i /q
 @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.2\config\" /y /i /q
