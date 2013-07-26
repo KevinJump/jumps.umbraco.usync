@@ -19,13 +19,14 @@ namespace jumps.umbraco.usync.helpers
     /// form of logical place. 
     /// </summary>
 
-    public delegate void XmlDocPreSaveEventHandler(XmlDocSaveEventArgs e);
+    public delegate void XmlDocPreModifiedEventHandler(XmlDocFileEventArgs e);
 
     public class XmlDoc
     {
         private static bool _versions = false;  
 
-        public static event XmlDocPreSaveEventHandler preSave;
+        public static event XmlDocPreModifiedEventHandler preSave;
+        public static event XmlDocPreModifiedEventHandler preDelete;
 
         static XmlDoc()
         {
@@ -74,7 +75,7 @@ namespace jumps.umbraco.usync.helpers
                     File.Delete(savePath);
                 }
             }
-            onPreSave(new XmlDocSaveEventArgs(savePath));
+            OnPreSave(new XmlDocFileEventArgs(savePath));
             doc.Save(savePath) ; 
         }
 
@@ -130,6 +131,7 @@ namespace jumps.umbraco.usync.helpers
 
                     // 
                     File.Copy(currentFile, archiveFile);
+                    OnPreDelete(new XmlDocFileEventArgs(currentFile));
                     File.Delete(currentFile);
                 }
             }
@@ -178,11 +180,19 @@ namespace jumps.umbraco.usync.helpers
             return type.Substring(type.LastIndexOf('.') + 1);
         }
 
-        public static void onPreSave(XmlDocSaveEventArgs e)
+        public static void OnPreSave(XmlDocFileEventArgs e)
         {
             if (preSave != null)
             {
                 preSave(e);
+            }
+        }
+
+        public static void OnPreDelete(XmlDocFileEventArgs e)
+        {
+            if (preDelete != null)
+            {
+                preDelete(e);
             }
         }
     }
