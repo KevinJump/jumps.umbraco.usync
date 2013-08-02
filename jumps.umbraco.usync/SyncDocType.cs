@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.IO;
 using System.Xml;
-using System.IO; 
+using System.Xml.Linq; 
 
 using umbraco.cms.businesslogic;
 using umbraco.cms.businesslogic.web;
@@ -17,7 +18,8 @@ using umbraco;
 #if UMBRACO6
 using Umbraco.Core ; 
 using Umbraco.Core.Services;
-using Umbraco.Core.Models; 
+using Umbraco.Core.Models;
+using Umbraco.Core.Logging; 
 #endif
 
 namespace jumps.umbraco.usync
@@ -31,6 +33,8 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncDocType
     {
+        static Dictionary<string, string> updated; 
+
         /// <summary>
         /// save a document type to the disk, the document type will be 
         /// saved as an xml file, in a folder structure that mimics 
@@ -125,9 +129,21 @@ namespace jumps.umbraco.usync
                 helpers.uSyncIO.RootFolder,
                 "DocumentType"));
 
-            // recurse in
-            ReadFromDisk(path, false);
-            ReadFromDisk(path, true); // second pass, adds the childnode stuff...
+            // rest the alias names
+            updated = new Dictionary<string, string>();
+
+            // import stuff
+            ReadFromDisk(path);
+
+            //
+            // import the structure...
+            // because we have a List of updated nodes and files, this should be quicker
+            // than traversing the tree again. Also we just do the update of the bit we
+            // need to update
+            // 
+            ImportStructure() ; 
+
+
         }
 
         /// <summary>
@@ -142,39 +158,65 @@ namespace jumps.umbraco.usync
         /// than how the package manager does it with one massive XML file. 
         /// </summary>
         /// <param name="path"></param>
-        private static void ReadFromDisk(string path, bool structure) 
+        private static void ReadFromDisk(string path) 
         {
-
             if (Directory.Exists(path))
             {
                 // get all the xml files in this folder 
                 // we are sort of assuming they are doctype ones.
                 foreach (string file in Directory.GetFiles(path, "*.config"))
-                {
-                    // load the xml
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
-
-                    // get the first node
-                    XmlNode node = xmlDoc.SelectSingleNode("//DocumentType");
-
-                    if (node != null)
+                {                    
+                    XElement node = XElement.Load(file) ;                                                    
+                    if (node != null ) 
                     {
-                        // use the umbraco package installer to import
-                        helpers.uSyncLog.DebugLog("Installing {0}", file); 
-                        Installer.ImportDocumentType(node, User.GetUser(0), structure);
-           
+                        LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Name); 
+                        ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
+                        updated.Add(node.Element("Info").Element("Alias").Value, file); 
                     }
                 }
+            
                 // now see if there are any folders we should pop into
                 foreach (string folder in Directory.GetDirectories(path))
                 {
-                    ReadFromDisk(folder, structure);
-                }
-                
+                    ReadFromDisk(folder);
+                }                
             }
+        }
 
+        private static void ImportStructure()
+        {
+            foreach (KeyValuePair<string, string> update in updated)
+            {
+                XElement node = XElement.Load(update.Value);
+                if (node != null)
+                {
+                    // structure update here...
+                    IContentType docType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(update.Key);
 
+                    if (docType != null)
+                    {
+                        XElement structure = node.Element("Structure");
+
+                        List<ContentTypeSort> allowed = new List<ContentTypeSort>(); 
+                        int sortOrder =  0 ;
+                        
+                        foreach (var doc in structure.Elements("DocumentType"))
+                        {
+                            string alias = doc.Value;
+                            IContentType aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
+
+                            if (aliasDoc != null)
+                            {
+                                allowed.Add(new ContentTypeSort(new Lazy<int>( ()=> aliasDoc.Id ), sortOrder, aliasDoc.Name));
+                                sortOrder++ ; 
+                            }
+                        }
+
+                        docType.AllowedContentTypes = allowed;
+                        ApplicationContext.Current.Services.ContentTypeService.Save(docType); 
+                    }
+                }
+            }
         }
 
         /// <summary>
