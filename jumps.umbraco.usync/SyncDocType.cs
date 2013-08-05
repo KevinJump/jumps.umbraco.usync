@@ -51,6 +51,7 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    // add tabs..
                     helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", xmlDoc);
                 }
                 catch (Exception e)
@@ -136,12 +137,12 @@ namespace jumps.umbraco.usync
             ReadFromDisk(path);
 
             //
-            // import the structure...
+            // Fit and Fix : 
             // because we have a List of updated nodes and files, this should be quicker
             // than traversing the tree again. Also we just do the update of the bit we
             // need to update
             // 
-            ImportStructure() ; 
+            SecondPassFitAndFix(); 
 
 
         }
@@ -169,7 +170,7 @@ namespace jumps.umbraco.usync
                     XElement node = XElement.Load(file) ;                                                    
                     if (node != null ) 
                     {
-                        LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Name); 
+                        LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value); 
                         ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
                         updated.Add(node.Element("Info").Element("Alias").Value, file); 
                     }
@@ -183,38 +184,66 @@ namespace jumps.umbraco.usync
             }
         }
 
-        private static void ImportStructure()
+        private static void SecondPassFitAndFix()
         {
             foreach (KeyValuePair<string, string> update in updated)
             {
                 XElement node = XElement.Load(update.Value);
                 if (node != null)
                 {
-                    // structure update here...
+                    // load the doctype
                     IContentType docType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(update.Key);
 
                     if (docType != null)
                     {
-                        XElement structure = node.Element("Structure");
-
-                        List<ContentTypeSort> allowed = new List<ContentTypeSort>(); 
-                        int sortOrder =  0 ;
+                        // import structure
+                        ImportStructure(docType, node); 
                         
-                        foreach (var doc in structure.Elements("DocumentType"))
-                        {
-                            string alias = doc.Value;
-                            IContentType aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
-
-                            if (aliasDoc != null)
-                            {
-                                allowed.Add(new ContentTypeSort(new Lazy<int>( ()=> aliasDoc.Id ), sortOrder, aliasDoc.Name));
-                                sortOrder++ ; 
-                            }
-                        }
-
-                        docType.AllowedContentTypes = allowed;
-                        ApplicationContext.Current.Services.ContentTypeService.Save(docType); 
+                        // fix tab order 
+                        TabSortOrder(docType, node); 
+                        
+                        // save
+                        ApplicationContext.Current.Services.ContentTypeService.Save(docType);
                     }
+                }
+            }
+        }
+
+        private static void ImportStructure(IContentType docType, XElement node)
+        {
+            XElement structure = node.Element("Structure");
+
+            List<ContentTypeSort> allowed = new List<ContentTypeSort>();
+            int sortOrder = 0;
+
+            foreach (var doc in structure.Elements("DocumentType"))
+            {
+                string alias = doc.Value;
+                IContentType aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
+
+                if (aliasDoc != null)
+                {
+                    allowed.Add(new ContentTypeSort(new Lazy<int>(() => aliasDoc.Id), sortOrder, aliasDoc.Name));
+                    sortOrder++;
+                }
+            }
+
+            docType.AllowedContentTypes = allowed;
+        }
+
+        private static void TabSortOrder(IContentType docType, XElement node)
+        {
+            // not yet, probibly going to have to re-write quite a bit of the import/export to get this out
+            XElement tabs = node.Element("tabs");
+
+            foreach (var tab in tabs.Elements("tab"))
+            {
+                var caption = tab.Element("Caption").Value; 
+
+                if (tab.Element("SortOrder") != null)
+                {
+                    var sortOrder = tab.Element("SortOrder").Value;
+                    docType.PropertyGroups[caption].SortOrder = int.Parse(sortOrder);                     
                 }
             }
         }
