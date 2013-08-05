@@ -200,7 +200,7 @@ namespace jumps.umbraco.usync
                         ImportStructure(docType, node); 
                         
                         // fix tab order 
-                        TabSortOrder(docType, node); 
+                        // TabSortOrder(docType, node); 
                         
                         // save
                         ApplicationContext.Current.Services.ContentTypeService.Save(docType);
