@@ -214,11 +214,6 @@ namespace jumps.umbraco.usync
 
         private static void ImportStructure(IContentType docType, XElement node)
         {
-            if (!uSyncSettings.docTypeSettings.DeletePropertyValues)            
-            {
-                return;
-            }
-
             XElement structure = node.Element("Structure");
 
             List<ContentTypeSort> allowed = new List<ContentTypeSort>();
@@ -258,6 +253,12 @@ namespace jumps.umbraco.usync
 
         private static void RemoveMissingProperties(IContentType docType, XElement node)
         {
+            if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
+            {
+                helpers.uSyncLog.DebugLog("DeletePropertyValue = false - exiting"); 
+                return;
+            }
+
             List<string> propertiesToRemove = new List<string>(); 
 
             foreach (var property in docType.PropertyTypes)
