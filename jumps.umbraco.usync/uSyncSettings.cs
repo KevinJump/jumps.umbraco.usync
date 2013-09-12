@@ -141,6 +141,11 @@ namespace jumps.umbraco.usync
             get { return (uSyncElements)this["Elements"]; }
         }
 
+        [ConfigurationProperty("DocumentTypes", IsRequired = false)]
+        public uSyncDocTypeSettings DocTypeSettings
+        {
+            get { return (uSyncDocTypeSettings)this["DocumentTypes"]; }
+        }
     }
 
     public class PreservedPreValue : ConfigurationElement 
@@ -239,6 +244,15 @@ namespace jumps.umbraco.usync
         }
 
     }
+
+    public class uSyncDocTypeSettings : ConfigurationElement
+    {
+        [ConfigurationProperty("DeletePropertyValues", DefaultValue = "false", IsRequired = true)]
+        public Boolean DeletePropertyValues 
+        {
+            get { return (Boolean)this["DeletePropertyValues"]; }
+        }
+    }
 /*
         public static List<string> PreservedPreValues
         {
@@ -329,9 +343,11 @@ namespace jumps.umbraco.usync
         {
             get { return _settings.Elements; }
         }
-         
 
-
+        public static uSyncDocTypeSettings docTypeSettings
+        {
+            get { return _settings.DocTypeSettings; }
+        }
     }
   
 }

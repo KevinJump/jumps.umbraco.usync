@@ -201,6 +201,9 @@ namespace jumps.umbraco.usync
                         
                         // fix tab order 
                         // TabSortOrder(docType, node); 
+
+                        // delete things that are not in our source xml?
+                        RemoveMissingProperties(docType, node); 
                         
                         // save
                         ApplicationContext.Current.Services.ContentTypeService.Save(docType);
@@ -211,6 +214,11 @@ namespace jumps.umbraco.usync
 
         private static void ImportStructure(IContentType docType, XElement node)
         {
+            if (!uSyncSettings.docTypeSettings.DeletePropertyValues)            
+            {
+                return;
+            }
+
             XElement structure = node.Element("Structure");
 
             List<ContentTypeSort> allowed = new List<ContentTypeSort>();
@@ -245,6 +253,33 @@ namespace jumps.umbraco.usync
                     var sortOrder = tab.Element("SortOrder").Value;
                     docType.PropertyGroups[caption].SortOrder = int.Parse(sortOrder);                     
                 }
+            }
+        }
+
+        private static void RemoveMissingProperties(IContentType docType, XElement node)
+        {
+            List<string> propertiesToRemove = new List<string>(); 
+
+            foreach (var property in docType.PropertyTypes)
+            {
+                // is this property in our xml ?
+                XElement propertyNode = node.Element("GenericProperties")
+                                            .Elements("GenericProperty")
+                                            .Where(x => x.Element("Alias").Value == property.Alias)
+                                            .SingleOrDefault();
+
+                if (propertyNode == null)
+                {
+                    // delete it from the doctype ? 
+                    propertiesToRemove.Add(property.Alias); 
+                    helpers.uSyncLog.DebugLog("Removing property {0} from {1}", property.Alias, docType.Name);
+                    
+                }                
+            }
+
+            foreach (string alias in propertiesToRemove)
+            {
+                docType.RemovePropertyType(alias);
             }
         }
 
