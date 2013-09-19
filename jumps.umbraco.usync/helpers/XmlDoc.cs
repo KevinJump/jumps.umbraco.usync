@@ -25,8 +25,17 @@ namespace jumps.umbraco.usync.helpers
     {
         private static bool _versions = false;  
 
+        [Obsolete("use Saving event")]
         public static event XmlDocPreModifiedEventHandler preSave;
+
+        [Obsolete("Use Deleting event")]
         public static event XmlDocPreModifiedEventHandler preDelete;
+
+        public static event XmlDocPreModifiedEventHandler Saving; 
+        public static event XmlDocPreModifiedEventHandler Saved; 
+        
+        public static event XmlDocPreModifiedEventHandler Deleting; 
+        public static event XmlDocPreModifiedEventHandler Deleted; 
 
         static XmlDoc()
         {
@@ -58,6 +67,11 @@ namespace jumps.umbraco.usync.helpers
         public static void SaveXmlDoc(string path, XmlDocument doc)
         {
             string savePath = string.Format("{0}/{1}", IOHelper.MapPath(uSyncIO.RootFolder), path);
+            
+            //
+            // moved because we can attempt to delete it so we need to fire before we start
+            //
+            OnPreSave(new XmlDocFileEventArgs(savePath));
 
             if ( !Directory.Exists(Path.GetDirectoryName(savePath)))
             {
@@ -77,9 +91,9 @@ namespace jumps.umbraco.usync.helpers
 
             uSyncLog.InfoLog("Saving [{0}]", savePath); 
             
-            OnPreSave(new XmlDocFileEventArgs(savePath));
+            doc.Save(savePath) ;
 
-            doc.Save(savePath) ; 
+            OnSaved(new XmlDocFileEventArgs(savePath)); 
         }
 
         /// <summary>
@@ -136,6 +150,7 @@ namespace jumps.umbraco.usync.helpers
                     File.Copy(currentFile, archiveFile);
                     OnPreDelete(new XmlDocFileEventArgs(currentFile));
                     File.Delete(currentFile);
+                    OnDeleted(new XmlDocFileEventArgs(currentFile));
 
                     uSyncLog.DebugLog("Archived [{0}] to [{1}]", currentFile, archiveFile); 
                 }
@@ -187,9 +202,23 @@ namespace jumps.umbraco.usync.helpers
 
         public static void OnPreSave(XmlDocFileEventArgs e)
         {
+            /* going to phase this out - naming is saving/saved) */
             if (preSave != null)
             {
                 preSave(e);
+            }
+
+            if (Saving != null)
+            {
+                Saving(e);
+            }
+        }
+
+        public static void OnSaved(XmlDocFileEventArgs e)
+        {
+            if (Saved != null)
+            {
+                Saved(e);
             }
         }
 
@@ -198,6 +227,19 @@ namespace jumps.umbraco.usync.helpers
             if (preDelete != null)
             {
                 preDelete(e);
+            }
+
+            if (Deleting != null)
+            {
+                Deleting(e);
+            }
+        }
+
+        public static void OnDeleted(XmlDocFileEventArgs e)
+        {
+            if (Deleted != null)
+            {
+                Deleted(e);
             }
         }
     }
