@@ -151,12 +151,16 @@ namespace jumps.umbraco.usync
                         throw new NullReferenceException("Could not resolve a data type with id " + _id);
 
 
-
+                    
                     dtd.DataType = dataType;
                     dtd.Save();
                 }
 
 
+                if (!isNew)
+                {
+                    dtd.Text = _name;
+                }
 
                 if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
                 {
@@ -165,6 +169,7 @@ namespace jumps.umbraco.usync
                 }
                 else
                 {
+                    
                     //
                     // PREVALUES - HELL :: num 4532
                     // 
