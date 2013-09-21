@@ -259,7 +259,8 @@ namespace jumps.umbraco.usync
                 return;
             }
 
-            List<string> propertiesToRemove = new List<string>(); 
+            List<string> propertiesToRemove = new List<string>();
+            Dictionary<string,string> propertiesToMove = new Dictionary<string,string>(); 
 
             foreach (var property in docType.PropertyTypes)
             {
@@ -272,15 +273,77 @@ namespace jumps.umbraco.usync
                 if (propertyNode == null)
                 {
                     // delete it from the doctype ? 
-                    propertiesToRemove.Add(property.Alias); 
+                    propertiesToRemove.Add(property.Alias);
                     helpers.uSyncLog.DebugLog("Removing property {0} from {1}", property.Alias, docType.Name);
+
+                }
+                else
+                {
+                    // if it is we should re-write the properties - because i default import doesn't do that
+
+                    /* 
+                     *  how we work out what datatype we are...
+                     */
+                    var dataTypeId = new Guid(propertyNode.Element("Type").Value);
+                    var dataTypeDefinitionId = new Guid(propertyNode.Element("Definition").Value);
+
+                    IDataTypeService _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
+
+                    var dataTypeDefintion = _dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
+
+                    if (dataTypeDefintion == null || dataTypeDefintion.ControlId != dataTypeId)
+                    {
+                        var dataTypeDefintions = _dataTypeService.GetDataTypeDefinitionByControlId(dataTypeId);
+                        if (dataTypeDefintions != null && dataTypeDefintions.Any())
+                        {
+                            dataTypeDefintion = dataTypeDefintions.First();
+                        }
+                    }
+
+                    if (dataTypeDefintion != null)
+                    {
+                        property.DataTypeDefinitionId = dataTypeDefintion.Id;
+                        // as you can't set property.DataTypeId or the internal DB type i'm a bit
+                        // worried this might break if the type changes inside                   
+                    }                                    
+
+                    // all the other properties.
+                    property.Name = propertyNode.Element("Name").Value;
+                    property.Description = propertyNode.Element("Description").Value;
+                    property.Mandatory = propertyNode.Element("Mandatory").Value.ToLowerInvariant().Equals("true");
+                    property.ValidationRegExp = propertyNode.Element("Validation").Value;
                     
-                }                
+                    var helpText = propertyNode.Element("HelpText");
+                    if (helpText != null)
+                    {
+                        property.HelpText = helpText.Value;
+                    }
+
+                    var tab = propertyNode.Element("Tab").Value;
+                    if (!string.IsNullOrEmpty(tab))
+                    {
+                        // node moving ? - that will be fun ?
+                        
+                        var pg = docType.PropertyGroups.First(x => x.Name == tab);
+
+                        if (!pg.PropertyTypes.Any(x => x.Alias == property.Alias))
+                        {
+                            // if it's not in the group - we can move it into it*/
+                            propertiesToMove.Add(property.Alias, tab); 
+                        }
+                    }
+
+                }
             }
 
             foreach (string alias in propertiesToRemove)
             {
                 docType.RemovePropertyType(alias);
+            }
+
+            foreach (KeyValuePair<string, string> movePair in propertiesToMove)
+            {
+                docType.MovePropertyType(movePair.Key, movePair.Value);
             }
         }
 
