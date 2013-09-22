@@ -8,19 +8,11 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq; 
 
-using umbraco.cms.businesslogic;
-using umbraco.cms.businesslogic.web;
-using umbraco.cms.businesslogic.packager;
-using umbraco.BusinessLogic;
+using Umbraco.Core ;
 using Umbraco.Core.IO;
-using umbraco;
-
-#if UMBRACO6
-using Umbraco.Core ; 
 using Umbraco.Core.Services;
 using Umbraco.Core.Models;
 using Umbraco.Core.Logging; 
-#endif
 
 namespace jumps.umbraco.usync
 {
@@ -30,10 +22,24 @@ namespace jumps.umbraco.usync
     /// 
     /// attached to the events, it should just work, and keep everything
     /// in sync.  
+    /// 
+    /// v1.6.0 - refactored to work with 6.1.x+ only -
+    /// 
+    /// using IContentType and XElement all the time now 
+    /// 
     /// </summary>
     public class SyncDocType
     {
-        static Dictionary<string, string> updated; 
+        static Dictionary<string, string> updated;
+
+        private static PackagingService _packService ; 
+        private static IContentTypeService _contentTypeService ; 
+
+        static SyncDocType()
+        {
+            _packService = ApplicationContext.Current.Services.PackagingService;
+            _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
+        }
 
         /// <summary>
         /// save a document type to the disk, the document type will be 
@@ -42,21 +48,19 @@ namespace jumps.umbraco.usync
         ///  
         /// this makes it easier to read them back in
         /// </summary>
-        /// <param name="item">DocumentType to save</param>
-        public static void SaveToDisk(DocumentType item)
+        /// <param name="item">ContentType to save</param>
+        public static void SaveToDisk(IContentType item)
         {
             if (item != null)
             {
                 try
                 {
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    // add tabs..
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", xmlDoc);
+                    XElement element = _packService.Export(item);
+                    helpers.XmlDoc.SaveElement("DocumentType", GetDocPath(item), element);                              
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    helpers.uSyncLog.DebugLog( "uSync: Error Saving DocumentType {0} - {1}", item.Alias, e.ToString() ) ; 
+                    LogHelper.Error<SyncDocType>("Error Saving DocType", ex);
                 }
             }
         }
@@ -70,7 +74,7 @@ namespace jumps.umbraco.usync
         {
             try
             {
-                foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
+                foreach (IContentType item in _contentTypeService.GetAllContentTypes())
                 {
                     if (item != null)
                     {
@@ -92,32 +96,27 @@ namespace jumps.umbraco.usync
         /// for each one, this then gives us a structure we can create
         /// on the disk, that mimics that of the umbraco internal one
         /// </summary>
-        /// <param name="item">DocType path to find</param>
+        /// <param name="item">ContentType path to find</param>
         /// <returns>folderstucture (relative to uSync folder)</returns>
-        private static string GetDocPath(DocumentType item)
+        private static string GetDocPath(IContentType item)
         {
             string path = "";
 
             if (item != null)
             {
-                // does this documentType have a parent 
-                if (item.MasterContentType != 0)
+                if (item.ParentId != 0)
                 {
-                    // recurse in to the parent to build the path
-                    path = GetDocPath(new DocumentType(item.MasterContentType));
+                    path = GetDocPath(_contentTypeService.GetContentType(item.ParentId));
                 }
 
-                // buld the final path (as path is "" to start with we always get
-                // a preceeding '/' on the path, which is nice
-                path = string.Format(@"{0}\{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
+                path = string.Format("{0}\\{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
             }
-         
-            return path; 
+            return path;
         }
 
         
         /// <summary>
-        /// Gets all teh documentTypes from the disk, and puts them into
+        /// Gets all the ContentTypes from the disk, and puts them into
         /// umbraco 
         /// </summary>
         public static void ReadAllFromDisk()
@@ -171,7 +170,7 @@ namespace jumps.umbraco.usync
                     if (node != null ) 
                     {
                         LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value); 
-                        ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
+                        _packService.ImportContentTypes(node, false);
                         updated.Add(node.Element("Info").Element("Alias").Value, file); 
                     }
                 }
@@ -192,7 +191,7 @@ namespace jumps.umbraco.usync
                 if (node != null)
                 {
                     // load the doctype
-                    IContentType docType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(update.Key);
+                    IContentType docType = _contentTypeService.GetContentType(update.Key);
 
                     if (docType != null)
                     {
@@ -206,7 +205,7 @@ namespace jumps.umbraco.usync
                         RemoveMissingProperties(docType, node); 
                         
                         // save
-                        ApplicationContext.Current.Services.ContentTypeService.Save(docType);
+                        _contentTypeService.Save(docType);
                     }
                 }
             }
@@ -352,22 +351,16 @@ namespace jumps.umbraco.usync
         /// </summary>
         public static void AttachEvents()
         {
-#if UMBRACO6
             ContentTypeService.DeletingContentType += ContentTypeService_DeletingContentType;
             ContentTypeService.SavedContentType += ContentTypeService_SavedContentType;
-#else
-            DocumentType.AfterSave += DocumentType_AfterSave;
-            DocumentType.BeforeDelete += DocumentType_BeforeDelete;
-#endif
         }
 
-#if UMBRACO6
         static void ContentTypeService_SavedContentType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<IContentType> e)
         {
             helpers.uSyncLog.DebugLog("SaveContent Type Fired for {0} types", e.SavedEntities.Count());
-            foreach (var docType in e.SavedEntities)
+            foreach (IContentType docType in e.SavedEntities)
             {
-                SaveToDisk(new DocumentType(docType.Id));
+                SaveToDisk(docType);
             }
         }
 
@@ -375,35 +368,10 @@ namespace jumps.umbraco.usync
         {
             helpers.uSyncLog.DebugLog("Deleting Type Fired for {0} types", e.DeletedEntities.Count());
             // delete things (there can sometimes be more than one??)
-            foreach (var docType in e.DeletedEntities)
+            foreach (IContentType docType in e.DeletedEntities)
             {
-                helpers.XmlDoc.ArchiveFile("DocumentType", GetDocPath(new DocumentType(docType.Id)), "def") ; 
+                helpers.XmlDoc.ArchiveFile("DocumentType", GetDocPath(docType), "def") ; 
             }
         }
-#else 
-        /// <summary>
-        ///  called when a document type is about to be deleted. 
-        ///  
-        /// we archive the file (rename it from .xml to .archive) 
-        /// this makes it not be read in on next application start.
-        /// </summary>
-        static void DocumentType_BeforeDelete(DocumentType sender, DeleteEventArgs e)
-        {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), GetDocPath(sender), "def");
-            e.Cancel = false; 
-            
-        }
-
-        /// <summary>
-        ///  called when a documenttype is saved 
-        ///  
-        /// we save to disk here, this means we capture any changes, or 
-        /// creations of new DocumentTypes. 
-        /// </summary>
-        static void DocumentType_AfterSave(DocumentType sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
-        {
-            SaveToDisk((DocumentType)sender);             
-        }
-#endif 
     }
 }

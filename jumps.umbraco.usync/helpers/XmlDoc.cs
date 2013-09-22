@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.IO ; 
 using System.Xml ;
 
+using System.Xml.Linq;
+
 using umbraco.BusinessLogic ; 
 using Umbraco.Core.IO ;
 using System.Runtime.InteropServices; 
@@ -42,6 +44,51 @@ namespace jumps.umbraco.usync.helpers
             _versions = uSyncSettings.Versions;
         }
 
+
+        #region XElement Files
+        public static void SaveElement(string type, string path, string name, XElement element)
+        {
+            SaveElement(GetFilePath(type, path, name), element);
+        }
+
+        public static void SaveElement(string type, string name, XElement element)
+        {
+            SaveElement(GetFilePath(type, name), element);
+        }
+
+        public static void SaveElement(string path, XElement element)
+        {
+            string targetFile = GetFullFilePath(path);
+            string folder = Path.GetDirectoryName(targetFile);
+
+            OnPreSave(new XmlDocFileEventArgs(targetFile));
+
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            else if (File.Exists(targetFile))
+            {
+                if (_versions)
+                {
+                    ArchiveFile(
+                        Path.GetDirectoryName(path),
+                        Path.GetFileNameWithoutExtension(path),
+                        false);
+                }
+
+                File.Delete(targetFile);
+            }
+
+            element.Save(targetFile);
+
+            OnSaved(new XmlDocFileEventArgs(targetFile));
+        }
+
+
+        #endregion
+
+        #region legacy Doc Saves
         public static XmlDocument CreateDoc()
         {
             XmlDocument doc = new XmlDocument();
@@ -95,6 +142,9 @@ namespace jumps.umbraco.usync.helpers
 
             OnSaved(new XmlDocFileEventArgs(savePath)); 
         }
+#endregion  
+
+        #region File Archiving
 
         /// <summary>
         /// Archive a file (and delete the orgininal) called when a file is deleted
@@ -166,7 +216,8 @@ namespace jumps.umbraco.usync.helpers
 
         }
 
-       
+        #endregion 
+
         /// <summary>
         /// we need to clean the name up to make it a valid file name..
         /// </summary>
@@ -199,6 +250,28 @@ namespace jumps.umbraco.usync.helpers
         {
             return type.Substring(type.LastIndexOf('.') + 1);
         }
+
+        #region FilePath Helpers
+
+        public static string GetFilePath(string type, string path, string name)
+        {
+            return string.Format("{0}/{1}/{2}.config", GetTypeFolder(type), path, ScrubFile(name));
+        }
+
+        public static string GetFilePath(string type, string name)
+        {
+            return string.Format("{0}/{1}.config", GetTypeFolder(type), ScrubFile(name));
+        }
+
+        public static string GetFullFilePath(string path)
+        {
+            return string.Format("{0}/{1}", IOHelper.MapPath(uSyncIO.RootFolder), path);
+        }
+
+        #endregion
+
+
+        #region Event Delegates
 
         public static void OnPreSave(XmlDocFileEventArgs e)
         {
@@ -242,5 +315,7 @@ namespace jumps.umbraco.usync.helpers
                 Deleted(e);
             }
         }
+
+        #endregion 
     }
 }
