@@ -1,7 +1,7 @@
 ﻿//
-// uSync 1.3.4
+// uSync 1.7.0+
 
-// For Umbraco 4.11.x/6.0.6+
+// For Umbraco 6.1.x
 //
 // uses precompile conditions to build a v4 and v6 version
 // of usync. 
@@ -16,12 +16,9 @@ using System.Threading.Tasks;
 using System.IO; // so we can write to disk..
 using System.Xml; // so we can serialize stuff
 
-using umbraco.businesslogic;
-using Umbraco.Core.IO;
 using Umbraco.Core;
-
-using umbraco.BusinessLogic;
-using Umbraco.Web;
+using Umbraco.Core.IO;
+using Umbraco.Core.Logging; 
 
 namespace jumps.umbraco.usync
 {
@@ -31,7 +28,7 @@ namespace jumps.umbraco.usync
     /// 
     /// first thing, lets register ourselfs with the umbraco install
     /// </summary>
-    public class uSync : IApplicationEventHandler // works with 4.11.4/5 
+    public class uSync : IApplicationEventHandler 
     {
         // mutex stuff, so we only do this once.
         private static object _syncObj = new object(); 
@@ -71,16 +68,16 @@ namespace jumps.umbraco.usync
 
         private void GetSettings() 
         {
-            helpers.uSyncLog.DebugLog("Getting Settings"); 
+            LogHelper.Debug<uSync>("Getting Settings"); 
                        
             _read = uSyncSettings.Read;
-            helpers.uSyncLog.DebugLog("Settings : Read = {0}", _read); 
+            LogHelper.Debug<uSync>("Settings : Read = {0}", ()=> _read); 
 
             _write = uSyncSettings.Write;
-            helpers.uSyncLog.DebugLog("Settings : Write = {0}", _write); 
+            LogHelper.Debug<uSync>("Settings : Write = {0}", ()=> _write); 
 
             _attach = uSyncSettings.Attach;
-            helpers.uSyncLog.DebugLog("Settings : Attach = {0}", _attach); 
+            LogHelper.Debug<uSync>("Settings : Attach = {0}", ()=> _attach); 
 
             // version 6+ here
         }
@@ -90,7 +87,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void SaveAllToDisk()
         {
-            helpers.uSyncLog.DebugLog("Saving to disk - start");
+            LogHelper.Debug<uSync>("Saving to disk - start");
 
             if ( uSyncSettings.Elements.DocumentTypes ) 
                 SyncDocType.SaveAllToDisk();
@@ -116,7 +113,7 @@ namespace jumps.umbraco.usync
                 SyncDictionary.SaveAllToDisk();
             }
 
-            helpers.uSyncLog.DebugLog("Saving to Disk - End"); 
+            LogHelper.Debug<uSync>("Saving to Disk - End"); 
         }
 
         /// <summary>
@@ -124,7 +121,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void ReadAllFromDisk()
         {
-            helpers.uSyncLog.DebugLog("Reading from Disk - starting"); 
+            LogHelper.Debug<uSync>("Reading from Disk - starting"); 
 
             if ( uSyncSettings.Elements.Templates ) 
                 SyncTemplate.ReadAllFromDisk();
@@ -150,7 +147,7 @@ namespace jumps.umbraco.usync
                 SyncDictionary.ReadAllFromDisk();
             }
 
-            helpers.uSyncLog.DebugLog("Reading from Disk - End"); 
+            LogHelper.Debug<uSync>("Reading from Disk - End"); 
         }
 
         /// <summary>
@@ -158,7 +155,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void AttachToAll()
         {
-            helpers.uSyncLog.DebugLog("Attaching to Events - Start"); 
+            LogHelper.Debug<uSync>("Attaching to Events - Start"); 
             
             if ( uSyncSettings.Elements.DataTypes ) 
                 SyncDataType.AttachEvents();
@@ -184,7 +181,7 @@ namespace jumps.umbraco.usync
                 SyncDictionary.AttachEvents();
             }
 
-            helpers.uSyncLog.DebugLog("Attaching to Events - End");
+            LogHelper.Debug<uSync>("Attaching to Events - End");
         }
 
         /// <summary>
@@ -192,11 +189,11 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
-            helpers.uSyncLog.InfoLog("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
+            LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
 
             if (!ApplicationContext.Current.IsConfigured)
             {
-                helpers.uSyncLog.InfoLog("umbraco not configured, usync aborting");
+                LogHelper.Info<uSync>("umbraco not configured, usync aborting");
                 return;
             }
 
@@ -221,15 +218,15 @@ namespace jumps.umbraco.usync
 
                     if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
                     {
-                        helpers.uSyncLog.DebugLog("Renaming once file"); 
+                        LogHelper.Debug<uSync>("Renaming once file"); 
                         File.Move(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once"),
                             Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
-                        helpers.uSyncLog.DebugLog("Once renamed to stop"); 
+                        LogHelper.Debug<uSync>("Once renamed to stop"); 
                     }
                 }
                 else
                 {
-                    helpers.uSyncLog.InfoLog("Read stopped by usync.stop"); 
+                    LogHelper.Info<uSync>("Read stopped by usync.stop"); 
                 }
 
             }
@@ -241,10 +238,9 @@ namespace jumps.umbraco.usync
                 AttachToAll(); 
             }
 
-            helpers.uSyncLog.InfoLog("uSync Initilized"); 
+            LogHelper.Info<uSync>("uSync Initilized"); 
         }
 
-#if UMBRACO6
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
             DoOnStart();
@@ -259,23 +255,5 @@ namespace jumps.umbraco.usync
         {
             // don't think i do it here.
         }
-
-#else
-
-        public void OnApplicationStarted(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
-            DoOnStart();
-        }
-
-        public void OnApplicationStarting(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
-            // don't think i do it here.
-        }
-
-        public void OnApplicationInitialized(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
-            // don't think i do it here.
-        }
-#endif
     }
 }

@@ -11,6 +11,8 @@ using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
 
+using Umbraco.Core.Logging;
+
 namespace jumps.umbraco.usync.SyncProviders
 {
     /// <summary>
@@ -57,7 +59,11 @@ namespace jumps.umbraco.usync.SyncProviders
         /// <param name="node"></param>
         public static void SyncImport(this XElement node)
         {
-           _packService.ImportContentTypes(node, false);
+           LogHelper.Debug<SyncDocType>("Starting DocType Import [{0}]", ()=> node.Element("Info").Element("Alias").Value);             
+           foreach (IContentType item in _packService.ImportContentTypes(node, false))
+           {
+               LogHelper.Debug<SyncDocType>("Imported [{0}] with {1} properties", () => item.Alias, () => item.PropertyTypes.Count());
+           }
         }
 
         /// <summary>
@@ -67,6 +73,8 @@ namespace jumps.umbraco.usync.SyncProviders
         /// <param name="node"></param>
         public static void SyncImportStructure(this IContentType item, XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Importing Structure for {0}", () => item.Alias);
+
             XElement structure = node.Element("Structure");
 
             List<ContentTypeSort> allowed = new List<ContentTypeSort>();
@@ -93,9 +101,11 @@ namespace jumps.umbraco.usync.SyncProviders
 
         public static void SyncRemoveMissingProperties(this IContentType item, XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Property Resolver for {0}", () => item.Alias); 
+
             if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
             {
-                helpers.uSyncLog.DebugLog("DeletePropertyValue = false - exiting");
+                LogHelper.Debug<SyncDocType>("DeletePropertyValue = false - exiting");
                 return;
             }
 
@@ -114,7 +124,7 @@ namespace jumps.umbraco.usync.SyncProviders
                 {
                     // delete it from the doctype ? 
                     propertiesToRemove.Add(property.Alias);
-                    helpers.uSyncLog.DebugLog("Removing property {0} from {1}", property.Alias, item.Name);
+                    LogHelper.Debug<SyncDocType>("Removing property {0} from {1}", ()=> property.Alias, ()=> item.Name);
 
                 }
                 else

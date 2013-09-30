@@ -247,7 +247,7 @@ namespace jumps.umbraco.usync
 
     public class uSyncDocTypeSettings : ConfigurationElement
     {
-        [ConfigurationProperty("DeletePropertyValues", DefaultValue = "false", IsRequired = true)]
+        [ConfigurationProperty("DeletePropertyValues", DefaultValue = "true", IsRequired = true)]
         public Boolean DeletePropertyValues 
         {
             get { return (Boolean)this["DeletePropertyValues"]; }

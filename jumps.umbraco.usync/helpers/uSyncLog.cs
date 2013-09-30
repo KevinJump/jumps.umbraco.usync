@@ -18,6 +18,7 @@ namespace jumps.umbraco.usync.helpers
     /// </summary>
     public class uSyncLog
     {
+        [Obsolete("use LogHelper.Info<T> from the core", false)]
         public static void InfoLog(string message, params object[] args)
         {
 #if UMBRACO6
@@ -29,6 +30,7 @@ namespace jumps.umbraco.usync.helpers
         }
 
 
+        [Obsolete("use LogHelper.Debug<T> from the core", false)]
         public static void DebugLog(string message, params object[] args)
         {
             
@@ -41,6 +43,7 @@ namespace jumps.umbraco.usync.helpers
 #endif
         }
 
+        [Obsolete("use LogHelper.Error<T> from the core", false)]
         public static void ErrorLog(Exception ex, string message, params object[] args )
         {
 #if UMBRACO6

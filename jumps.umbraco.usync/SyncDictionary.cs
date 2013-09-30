@@ -8,6 +8,7 @@ using umbraco.cms.businesslogic;
 using System.Xml;
 using System.IO;
 using Umbraco.Core.IO; 
+using Umbraco.Core.Logging ; 
 using umbraco.BusinessLogic;
 
 namespace jumps.umbraco.usync
@@ -26,11 +27,11 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            helpers.uSyncLog.DebugLog("Saving Dictionary Types");
+            LogHelper.Debug<uSync>("Saving Dictionary Types");
 
             foreach (Dictionary.DictionaryItem item in Dictionary.getTopMostItems)
             {
-                helpers.uSyncLog.DebugLog("Dictionary Item {0}", item.key);
+                LogHelper.Debug<uSync>("Dictionary Item {0}", ()=> item.key);
                 SaveToDisk(item);
 
                 
@@ -60,7 +61,7 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        helpers.uSyncLog.DebugLog("Node Import: {0} {1}",   node.Attributes["Key"].Value, node.InnerXml);
+                        LogHelper.Debug<uSync>("Node Import: {0} {1}", ()=> node.Attributes["Key"].Value, ()=> node.InnerXml);
 
                         try
                         {
@@ -72,7 +73,7 @@ namespace jumps.umbraco.usync
                         }
                         catch (Exception ex)
                         {
-                            helpers.uSyncLog.ErrorLog(ex, "DictionaryItem.Import Failed {0}", path);
+                            LogHelper.Error<uSync>("DictionaryItem.Import Failed {0}", ex);
                         }
                     }
                 }
@@ -109,14 +110,14 @@ namespace jumps.umbraco.usync
                 {
                     // this is a child of a parent we have already deleted.
                     _dChildren.Remove(sender.id);
-                    helpers.uSyncLog.DebugLog("No Deleteing Dictionary item {0} because we deleted it's parent", sender.key); 
+                    LogHelper.Debug<uSync>("No Deleteing Dictionary item {0} because we deleted it's parent", ()=> sender.key); 
                 }
                 else
                 {
                     //actually delete 
 
 
-                    helpers.uSyncLog.DebugLog("Deleting Dictionary Item {0}", sender.key);
+                    LogHelper.Debug<uSync>("Deleting Dictionary Item {0}", ()=> sender.key);
 
                     // when you delete a tree, the top gets called before the children. 
                     //             
@@ -150,10 +151,10 @@ namespace jumps.umbraco.usync
 
             if (!item.IsTopMostItem())
             {
-                helpers.uSyncLog.DebugLog("is Top Most [{0}]", item.IsTopMostItem());
+                LogHelper.Debug<uSync>("is Top Most [{0}]", ()=> item.IsTopMostItem());
                 if (item.Parent != null)
                 {
-                    helpers.uSyncLog.DebugLog("parent [{0}]", item.Parent.key); 
+                    LogHelper.Debug<uSync>("parent [{0}]", () => item.Parent.key); 
                     return GetTop(item.Parent);
                 }
             }
