@@ -42,8 +42,6 @@ namespace jumps.umbraco.usync
         private bool _write;
         private bool _attach;
 
-        private bool _docTypeSaveWorks = false; 
-
         /// <summary>
         /// do the stuff we do when we start, using locks, and flags so
         /// we only do the stuff once..
@@ -85,33 +83,6 @@ namespace jumps.umbraco.usync
             helpers.uSyncLog.DebugLog("Settings : Attach = {0}", _attach); 
 
             // version 6+ here
-
-#if UMBRACO6
-            // if it's more than 6 or more than 6.0.x it should work
-            if ((global::umbraco.GlobalSettings.VersionMajor > 6) ||
-                (global::umbraco.GlobalSettings.VersionMinor > 0) )
-            {
-                // we are runining at least 7.0 or 6.0 (i.e 6.1.0)
-                _docTypeSaveWorks = true ; 
-            }
-            else if (global::umbraco.GlobalSettings.VersionPatch > 0)
-            {
-                // we are better than 6.0.0 (i.e 6.0.1+)
-                _docTypeSaveWorks = true;
-            }
-#else
-
-            // let's assume it's always v4 (because this version crashes v6+)
-            if (global::umbraco.GlobalSettings.VersionMinor > 11)
-            {
-                _docTypeSaveWorks = true;
-            }
-            else if ((global::umbraco.GlobalSettings.VersionMinor == 11)
-                 && (global::umbraco.GlobalSettings.VersionPatch > 4))
-            {
-                _docTypeSaveWorks = true;
-            }
-#endif
         }
 
         /// <summary>
@@ -229,22 +200,7 @@ namespace jumps.umbraco.usync
             {
                 SaveAllToDisk();
             }
-
-            // bugs in the DataType EventHandling, mean it isn't fired 
-            // onSave - so we just write it out to disk everyload.
-            // this will make it hard 
-            // to actually delete anything via the sync
-            // we only do this < 4.11.5 and < 6.0.1 
-            //
-            // this mimics attach.. so if you turn _attach off, this doesn't
-            // happen
-            //
-            if (!_docTypeSaveWorks && _attach)
-            {
-                helpers.uSyncLog.DebugLog("(Legacy) saving datatypes to disk"); 
-                SyncDataType.SaveAllToDisk();
-            }
-
+                        
             //
             // we take the disk and sync it to the DB, this is how 
             // you can then distribute using uSync.
