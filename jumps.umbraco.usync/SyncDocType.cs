@@ -94,7 +94,7 @@ namespace jumps.umbraco.usync
             catch( Exception ex )
             {
                 // error saving to disk, can happen if Umbraco has orphaned doctypes & GetAll thows an error! 
-                helpers.uSyncLog.DebugLog("uSync: Error Writing doctypes to disk {0}", ex.ToString());
+                LogHelper.Error<SyncDocType>("uSync: Error Writing doctypes to disk", ex);
             }
         }
 
@@ -209,7 +209,7 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_SavedContentType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<IContentType> e)
         {
-            helpers.uSyncLog.DebugLog("SaveContent Type Fired for {0} types", e.SavedEntities.Count());
+            LogHelper.Debug<SyncDocType>("SaveContent Type Fired for {0} types", ()=> e.SavedEntities.Count());
             foreach (IContentType docType in e.SavedEntities)
             {
                 SaveToDisk(docType);
@@ -218,7 +218,7 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_DeletingContentType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IContentType> e)
         {
-            helpers.uSyncLog.DebugLog("Deleting Type Fired for {0} types", e.DeletedEntities.Count());
+            LogHelper.Debug<SyncDocType>("Deleting Type Fired for {0} types", ()=> e.DeletedEntities.Count());
             // delete things (there can sometimes be more than one??)
             foreach (IContentType docType in e.DeletedEntities)
             {

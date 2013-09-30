@@ -11,7 +11,8 @@ using umbraco.cms.businesslogic;
 using umbraco.cms.businesslogic.macro ;
 using umbraco.cms.businesslogic.packager ; 
 using Umbraco.Core.IO ;
-using umbraco.BusinessLogic; 
+using umbraco.BusinessLogic;
+using Umbraco.Core.Logging; 
 
 namespace jumps.umbraco.usync
 {
@@ -39,7 +40,7 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    helpers.uSyncLog.ErrorLog(ex, "uSync: Error Saving Macro {0} - {1}", item.Name, ex.ToString());
+                    LogHelper.Error<SyncMacro>("uSync: Error Saving Macro", ex);
                 }
             }
         }
@@ -55,7 +56,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                helpers.uSyncLog.ErrorLog(ex, "uSync: Error Saving All Macros {0}", ex.ToString());
+                LogHelper.Error<SyncMacro>("uSync: Error Saving All Macros", ex);
             }
         }
 

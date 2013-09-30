@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Configuration;
 
 using Umbraco.Core.IO;
-using umbraco.BusinessLogic; 
+using Umbraco.Core.Logging; 
 
 namespace jumps.umbraco.usync
 {
@@ -291,7 +291,8 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                helpers.uSyncLog.ErrorLog(ex, "Error loading settings file {0}", ex.ToString());
+                LogHelper.Info<uSyncSettings>("Settings Path [{0}]", ()=> _settingfile);
+                LogHelper.Error<uSyncSettings>("Error loading settings file", ex);
             }
         }
 
