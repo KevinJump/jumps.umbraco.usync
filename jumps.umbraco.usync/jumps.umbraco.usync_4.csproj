@@ -77,7 +77,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="helpers\KeyManager.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\uSyncLog.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
@@ -89,7 +88,6 @@
     <Compile Include="SyncMacro.cs" />
     <Compile Include="SyncMediaTypes.cs" />
     <Compile Include="SyncProviders\ContentTypeSyncProvider.cs" />
-    <Compile Include="SyncProviders\MediaTypeSyncProvider.cs" />
     <Compile Include="SyncStylesheet.cs" />
     <Compile Include="SyncTemplate.cs" />
     <Compile Include="uSync.cs" />
