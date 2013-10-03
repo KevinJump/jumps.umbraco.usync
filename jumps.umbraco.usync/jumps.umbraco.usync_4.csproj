@@ -88,6 +88,7 @@
     <Compile Include="SyncMacro.cs" />
     <Compile Include="SyncMediaTypes.cs" />
     <Compile Include="SyncProviders\ContentTypeSyncProvider.cs" />
+    <Compile Include="SyncProviders\TemplateSyncProvider.cs" />
     <Compile Include="SyncStylesheet.cs" />
     <Compile Include="SyncTemplate.cs" />
     <Compile Include="uSync.cs" />

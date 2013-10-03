@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 using System.IO ; 
 using System.Xml ;
-
 using System.Xml.Linq;
 
-using umbraco.BusinessLogic ; 
 using Umbraco.Core.IO ;
 using System.Runtime.InteropServices; 
 
@@ -255,17 +253,17 @@ namespace jumps.umbraco.usync.helpers
 
         public static string GetFilePath(string type, string path, string name)
         {
-            return string.Format("{0}/{1}/{2}.config", GetTypeFolder(type), path, ScrubFile(name));
+            return string.Format("{0}\\{1}\\{2}.config", GetTypeFolder(type), path, ScrubFile(name));
         }
 
         public static string GetFilePath(string type, string name)
         {
-            return string.Format("{0}/{1}.config", GetTypeFolder(type), ScrubFile(name));
+            return string.Format("{0}\\{1}.config", GetTypeFolder(type), ScrubFile(name));
         }
 
         public static string GetFullFilePath(string path)
         {
-            return string.Format("{0}/{1}", IOHelper.MapPath(uSyncIO.RootFolder), path);
+            return string.Format("{0}\\{1}", IOHelper.MapPath(uSyncIO.RootFolder), path);
         }
 
         #endregion

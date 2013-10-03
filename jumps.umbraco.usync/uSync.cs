@@ -22,7 +22,7 @@ using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync
 {
-
+    public delegate void uSyncBulkEventHander(uSyncEventArgs e);
     /// <summary>
     /// usync. the umbraco database to disk and back again helper.
     /// 
@@ -39,6 +39,10 @@ namespace jumps.umbraco.usync
         private bool _write;
         private bool _attach;
 
+        // our own events - fired when we start and stop
+        public static event uSyncBulkEventHander Starting ; 
+        public static event uSyncBulkEventHander Initilized ; 
+        
         /// <summary>
         /// do the stuff we do when we start, using locks, and flags so
         /// we only do the stuff once..
@@ -191,6 +195,8 @@ namespace jumps.umbraco.usync
         {
             LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
 
+            OnStarting(new uSyncEventArgs(_read, _write, _attach)); 
+
             if (!ApplicationContext.Current.IsConfigured)
             {
                 LogHelper.Info<uSync>("umbraco not configured, usync aborting");
@@ -238,7 +244,9 @@ namespace jumps.umbraco.usync
                 AttachToAll(); 
             }
 
-            LogHelper.Info<uSync>("uSync Initilized"); 
+            LogHelper.Info<uSync>("uSync Initilized");
+
+            OnComplete(new uSyncEventArgs(_read, _write, _attach));
         }
 
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
@@ -254,6 +262,55 @@ namespace jumps.umbraco.usync
         public void OnApplicationInitialized(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
             // don't think i do it here.
+        }
+
+        // our events
+        public static void OnStarting(uSyncEventArgs e)
+        {
+            if (Starting != null)
+            {
+                Starting(e);
+            }
+        }
+
+        public static void OnComplete(uSyncEventArgs e)
+        {
+            if (Initilized != null)
+            {
+                Initilized(e);
+            }
+        }
+    }
+
+    /// <summary>
+    /// event firing - arguments when we fire. 
+    /// </summary>
+    public class uSyncEventArgs : EventArgs
+    {
+        private bool _import;
+        private bool _export;
+        private bool _attach;
+
+        public uSyncEventArgs(bool import, bool export, bool attach)
+        {
+            _import = import;
+            _export = export;
+            _attach = attach;
+        }
+
+        public bool Import
+        {
+            get { return _import; }
+        }
+
+        public bool Export
+        {
+            get { return _export; }
+        }
+
+        public bool Attach
+        {
+            get { return _attach; }
         }
     }
 }

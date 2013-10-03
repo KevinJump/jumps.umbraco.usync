@@ -34,6 +34,8 @@ namespace jumps.umbraco.usync.SyncProviders
         {
             XElement element = _packService.Export(item);
 
+            element.Element("Info").Add(new XElement("key", item.Key)); 
+
             // fix, current api - doesn't do structure proper 
             var structure = element.Element("Structure");
             foreach (var allowedType in item.AllowedContentTypes)
@@ -163,11 +165,13 @@ namespace jumps.umbraco.usync.SyncProviders
                     property.Mandatory = propertyNode.Element("Mandatory").Value.ToLowerInvariant().Equals("true");
                     property.ValidationRegExp = propertyNode.Element("Validation").Value;
 
+                    /*
                     var helpText = propertyNode.Element("HelpText");
                     if (helpText != null)
                     {
                         property.HelpText = helpText.Value;
                     }
+                    */
 
                     var tab = propertyNode.Element("Tab").Value;
                     if (!string.IsNullOrEmpty(tab))
