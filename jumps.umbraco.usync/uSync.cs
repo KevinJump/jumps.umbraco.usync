@@ -1,5 +1,5 @@
 ﻿//
-// uSync 1.7.0+
+// uSync 1.7.0beta
 
 // For Umbraco 6.1.x
 //
