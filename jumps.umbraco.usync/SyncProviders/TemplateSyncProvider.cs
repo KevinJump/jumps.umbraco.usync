@@ -13,6 +13,14 @@ using Umbraco.Core.Models;
 
 using Umbraco.Core.Logging ; 
 
+/*
+ *  3/10/13: ONHOLD - status as of v6.2.0:
+ *  
+ *  the template and ITemplate object don't 
+ *  expose enough properties for us to import/export them
+ * 
+ */ 
+
 namespace jumps.umbraco.usync.SyncProviders
 {
     public static class TemplateSyncProvider
@@ -44,7 +52,7 @@ namespace jumps.umbraco.usync.SyncProviders
         public static string GetSyncPath(this ITemplate item)
         {
             // TODO: Template parent ID is internal.. so we can't do this with templates... 
-            return path;
+            return "";
         }
 
     }
