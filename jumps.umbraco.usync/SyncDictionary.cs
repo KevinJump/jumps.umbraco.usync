@@ -11,6 +11,7 @@ using Umbraco.Core.IO;
 using Umbraco.Core.Logging ; 
 using umbraco.BusinessLogic;
 
+
 namespace jumps.umbraco.usync
 {
     public class SyncDictionary
@@ -33,8 +34,6 @@ namespace jumps.umbraco.usync
             {
                 LogHelper.Debug<uSync>("Dictionary Item {0}", ()=> item.key);
                 SaveToDisk(item);
-
-                
             }
         }
 
@@ -78,7 +77,7 @@ namespace jumps.umbraco.usync
                     }
                 }
             }
-            
+           
         }
 
         public static void AttachEvents()
@@ -89,7 +88,6 @@ namespace jumps.umbraco.usync
 
         static object _deleteLock = new object();
         static System.Collections.ArrayList _dChildren = new System.Collections.ArrayList(); 
-
 
         static void DictionaryItem_Deleting(Dictionary.DictionaryItem sender, EventArgs e)
         {
@@ -138,6 +136,7 @@ namespace jumps.umbraco.usync
             
             
             
+
         }
 
 
@@ -148,7 +147,6 @@ namespace jumps.umbraco.usync
 
         private static Dictionary.DictionaryItem GetTop(Dictionary.DictionaryItem item)
         {
-
             if (!item.IsTopMostItem())
             {
                 LogHelper.Debug<uSync>("is Top Most [{0}]", ()=> item.IsTopMostItem());
@@ -160,6 +158,7 @@ namespace jumps.umbraco.usync
             }
 
             return item; 
+
         }
     }
 }

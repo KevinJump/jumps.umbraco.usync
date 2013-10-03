@@ -145,6 +145,7 @@ namespace jumps.umbraco.usync
             if ( uSyncSettings.Elements.MediaTypes ) 
                 SyncMediaTypes.ReadAllFromDisk();
 
+
             if (uSyncSettings.Elements.Dictionary)
             {
                 SyncLanguage.ReadAllFromDisk(); 
@@ -245,7 +246,6 @@ namespace jumps.umbraco.usync
             }
 
             LogHelper.Info<uSync>("uSync Initilized");
-
             OnComplete(new uSyncEventArgs(_read, _write, _attach));
         }
 
