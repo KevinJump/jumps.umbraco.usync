@@ -41,7 +41,7 @@ namespace jumps.umbraco.usync
 
         // our own events - fired when we start and stop
         public static event uSyncBulkEventHander Starting ; 
-        public static event uSyncBulkEventHander Initilized ; 
+        public static event uSyncBulkEventHander Initialized ; 
         
         /// <summary>
         /// do the stuff we do when we start, using locks, and flags so
@@ -275,9 +275,9 @@ namespace jumps.umbraco.usync
 
         public static void OnComplete(uSyncEventArgs e)
         {
-            if (Initilized != null)
+            if (Initialized != null)
             {
-                Initilized(e);
+                Initialized(e);
             }
         }
     }

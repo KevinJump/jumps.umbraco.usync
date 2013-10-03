@@ -23,6 +23,7 @@ namespace jumps.umbraco.usync.helpers
 
     public class XmlDoc
     {
+
         private static bool _versions = false;  
 
         [Obsolete("use Saving event")]
@@ -52,6 +53,7 @@ namespace jumps.umbraco.usync.helpers
         public static void SaveElement(string type, string name, XElement element)
         {
             SaveElement(GetFilePath(type, name), element);
+
         }
 
         public static void SaveElement(string path, XElement element)

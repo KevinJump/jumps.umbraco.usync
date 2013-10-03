@@ -50,6 +50,18 @@ namespace jumps.umbraco.usync.SyncProviders
                 allowedItem.DisposeIfDisposable();
             }
 
+            var tabs = element.Element("Tabs");
+            foreach (var tab in item.PropertyGroups)
+            {
+                XElement tabNode = tabs.Elements().First(x => x.Element("Id").Value == tab.Id.ToString() ) ;
+
+                if ( tabNode != null ) 
+                {
+                    tabNode.Add(new XElement("SortOrder", tab.SortOrder));
+                }
+            }
+                
+
             return element;
 
         }
@@ -99,6 +111,33 @@ namespace jumps.umbraco.usync.SyncProviders
             }
 
             item.AllowedContentTypes = allowed;
+        }
+
+        /// <summary>
+        ///  puts the sortorder of the tabs in - something the default import doesn't do.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="node"></param>
+        public static void SyncTabSortOrder(this IContentType item, XElement node)
+        {
+            XElement tabs = node.Element("Tabs");
+
+            foreach (var tab in tabs.Elements("Tab"))
+            {
+                var tabId = int.Parse(tab.Element("Id").Value);
+                var sortOrder = tab.Element("SortOrder");
+
+                if (sortOrder != null)
+                {
+                    var itemTab = item.PropertyGroups.First(x => x.Id == tabId);
+                    if (itemTab != null)
+                    {
+                        itemTab.SortOrder = int.Parse(sortOrder.Value);
+                    }
+                }
+
+            }
+
         }
 
         public static void SyncRemoveMissingProperties(this IContentType item, XElement node)
