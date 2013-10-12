@@ -18,7 +18,9 @@ using System.Xml; // so we can serialize stuff
 
 using Umbraco.Core;
 using Umbraco.Core.IO;
-using Umbraco.Core.Logging; 
+using Umbraco.Core.Logging;
+
+using System.Diagnostics; 
 
 namespace jumps.umbraco.usync
 {
@@ -92,6 +94,7 @@ namespace jumps.umbraco.usync
         public void SaveAllToDisk()
         {
             LogHelper.Debug<uSync>("Saving to disk - start");
+            Stopwatch _swSave = Stopwatch.StartNew(); 
 
             if ( uSyncSettings.Elements.DocumentTypes ) 
                 SyncDocType.SaveAllToDisk();
@@ -116,7 +119,8 @@ namespace jumps.umbraco.usync
                 SyncLanguage.SaveAllToDisk();
                 SyncDictionary.SaveAllToDisk();
             }
-
+            _swSave.Stop();
+            LogHelper.Info<uSync>("All Elements Saved [{0} miliseconds]", () => _swSave.Elapsed.TotalMilliseconds);
             LogHelper.Debug<uSync>("Saving to Disk - End"); 
         }
 
@@ -125,25 +129,38 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void ReadAllFromDisk()
         {
-            LogHelper.Debug<uSync>("Reading from Disk - starting"); 
+            LogHelper.Debug<uSync>("Reading from Disk - starting");
+            Stopwatch _swRead = Stopwatch.StartNew(); 
 
             if ( uSyncSettings.Elements.Templates ) 
                 SyncTemplate.ReadAllFromDisk();
 
+            LogHelper.Info<uSync>("Templates [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
+
             if ( uSyncSettings.Elements.Stylesheets ) 
                 SyncStylesheet.ReadAllFromDisk();
+
+            LogHelper.Info<uSync>("Stylesheets [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
 
             if ( uSyncSettings.Elements.DataTypes ) 
                 SyncDataType.ReadAllFromDisk();
 
+            LogHelper.Info<uSync>("DataTypes [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
+
             if ( uSyncSettings.Elements.DocumentTypes ) 
                 SyncDocType.ReadAllFromDisk();
+
+            LogHelper.Info<uSync>("DocumentTypes [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
 
             if ( uSyncSettings.Elements.Macros ) 
                 SyncMacro.ReadAllFromDisk();
 
+            LogHelper.Info<uSync>("Macros [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
+
             if ( uSyncSettings.Elements.MediaTypes ) 
                 SyncMediaTypes.ReadAllFromDisk();
+
+            LogHelper.Info<uSync>("MeidaTypes [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
 
 
             if (uSyncSettings.Elements.Dictionary)
@@ -151,6 +168,11 @@ namespace jumps.umbraco.usync
                 SyncLanguage.ReadAllFromDisk(); 
                 SyncDictionary.ReadAllFromDisk();
             }
+
+            LogHelper.Info<uSync>("Dictionary [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
+
+            _swRead.Stop();
+            LogHelper.Info<uSync>("All read from Disk [{0} miliseconds]", ()=> _swRead.Elapsed.TotalMilliseconds);
 
             LogHelper.Debug<uSync>("Reading from Disk - End"); 
         }
@@ -194,6 +216,8 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
+            Stopwatch sw = Stopwatch.StartNew(); 
+
             LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
 
             OnStarting(new uSyncEventArgs(_read, _write, _attach)); 
@@ -245,7 +269,8 @@ namespace jumps.umbraco.usync
                 AttachToAll(); 
             }
 
-            LogHelper.Info<uSync>("uSync Initilized");
+            sw.Stop(); 
+            LogHelper.Info<uSync>("uSync Initilized [{0} milliseconds]", ()=> sw.Elapsed.TotalMilliseconds);
             OnComplete(new uSyncEventArgs(_read, _write, _attach));
         }
 

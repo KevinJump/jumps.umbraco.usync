@@ -36,7 +36,11 @@ namespace jumps.umbraco.usync.SyncProviders
         {
             XElement element = _packService.Export(item);
 
-            element.Element("Info").Add(new XElement("key", item.Key)); 
+            // some extras (help us sync)
+            element.Element("Info").Add(new XElement("key", item.Key));
+            element.Element("Info").Add(new XElement("Id", item.Id));
+            element.Element("Info").Add(new XElement("Updated", item.UpdateDate));
+            
 
             // fix, current api - doesn't do structure proper 
             var structure = element.Element("Structure");
@@ -75,22 +79,29 @@ namespace jumps.umbraco.usync.SyncProviders
         /// <param name="node"></param>
         public static void SyncImport(this XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Starting DocType Import [{0}]", () => node.Element("Info").Element("Alias").Value);
+            
             // we need to check here, to see if this item is subject to the rename 
-            Guid key = Guid.Parse(node.Element("Info").Element("key").Value);
-
-            string newName = SyncActionLog.GetRename(key);
-
-            if (newName != null)
+            XElement idElement = node.Element("Info").Element("Id");
+            if (idElement != null)
             {
-                // it's a rename 
+                int id = int.Parse(idElement.Value);
+
+                string newName = SyncActionLog.GetRename(id);
+                if (newName != null)
+                {
+                    // it's a rename 
+                }
             }
 
-            LogHelper.Debug<SyncDocType>("Starting DocType Import [{0}]", () => node.Element("Info").Element("Alias").Value);
             foreach (IContentType item in _packService.ImportContentTypes(node, false))
             {
-                ImportInfo.Add(
-                    Guid.Parse(node.Element("Info").Element("key").Value),
-                    item.Key);
+                if (idElement != null)
+                {
+                    ImportInfo.Add(
+                        int.Parse(idElement.Value),
+                        item.Id);
+                }
 
                 LogHelper.Debug<SyncDocType>("Imported [{0}] with {1} properties", () => item.Alias, () => item.PropertyTypes.Count());
             }
@@ -117,7 +128,7 @@ namespace jumps.umbraco.usync.SyncProviders
 
                 if (!string.IsNullOrEmpty(alias))
                 {
-                    IContentType aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
+                    IContentType aliasDoc = _contentTypeService.GetContentType(alias);
 
                     if (aliasDoc != null)
                     {

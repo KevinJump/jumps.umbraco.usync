@@ -109,10 +109,10 @@ namespace jumps.umbraco.usync
             string path = Path.GetDirectoryName(item.GetSyncPath());
             XmlDoc.RenameFile("DocumentType", path, item.Alias, oldName);
 
-            Guid masterGuid = ImportInfo.GetMasterGuid(item.Key); 
+            int masterId = ImportInfo.GetMaster(item.Id); 
 
             SyncActionLog.AddRename(
-                ImportInfo.GetMasterGuid(item.Key), item.Alias, oldName);
+                ImportInfo.GetMaster(item.Id), item.Alias, oldName);
         }
 
         public static void Move(IContentType item, int oldParentId)
@@ -179,25 +179,15 @@ namespace jumps.umbraco.usync
         /// </summary>
         private static void ProcessDeletes()
         {
-            LogHelper.Info<SyncDocType>("Process Deletes"); 
-
-            List<Guid> deletes = SyncActionLog.GetDeletes();
-
-            if (deletes.Count() > 0)
+            foreach(int delete in SyncActionLog.GetDeletes())
             {
-                LogHelper.Info<SyncDocType>("Processing {0} delete actions", () => deletes.Count());
-
-                foreach (IContentType doctype in _contentTypeService.GetAllContentTypes())
+                IContentType item = _contentTypeService.GetContentType(delete);
+                if ( item != null )
                 {
-                    LogHelper.Info<SyncDocType>("Delete? [{2}], Local {0}, Master {1}",
-                        () => doctype.Key, () => ImportInfo.GetMasterGuid(doctype.Key), ()=> doctype.Name);
+                    LogHelper.Info<SyncDocType>("Deleting {0}", ()=> item.Name); 
+                    helpers.XmlDoc.ArchiveFile("DocumentType", item.GetSyncPath(), "def");
+                    _contentTypeService.Delete(item);
 
-                    if (deletes.Contains( ImportInfo.GetMasterGuid(doctype.Key)))
-                    {
-                        LogHelper.Info<SyncDocType>("Deleting {0}", ()=> doctype.Name); 
-                        helpers.XmlDoc.ArchiveFile("DocumentType", doctype.GetSyncPath(), "def");
-                        _contentTypeService.Delete(doctype);
-                    }
                 }
             }
         }
@@ -318,7 +308,7 @@ namespace jumps.umbraco.usync
             foreach (IContentType docType in e.DeletedEntities)
             {
                 helpers.XmlDoc.ArchiveFile("DocumentType", docType.GetSyncPath(), "def") ;
-                SyncActionLog.AddDelete(ImportInfo.GetMasterGuid(docType.Key));
+                SyncActionLog.AddDelete(ImportInfo.GetMaster(docType.Id));
             }
         }
         #endregion 

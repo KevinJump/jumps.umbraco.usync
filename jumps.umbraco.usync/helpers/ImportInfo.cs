@@ -14,7 +14,7 @@ namespace jumps.umbraco.usync.helpers
 {
     public class ImportInfo
     {
-        static Dictionary<Guid, Guid> _pairs = new Dictionary<Guid, Guid>();
+        static Dictionary<int, int> _pairs = new Dictionary<int, int>();
         static string _pairFile;
 
         static ImportInfo()
@@ -24,7 +24,7 @@ namespace jumps.umbraco.usync.helpers
             Load(); 
         }
 
-        public static void Add(Guid master, Guid local)
+        public static void Add(int master, int local)
         {
             if (_pairs.ContainsKey(master))
             {
@@ -35,7 +35,7 @@ namespace jumps.umbraco.usync.helpers
             Save(); 
         }
 
-        public static void Remove(Guid id)
+        public static void Remove(int id)
         {
             if (_pairs.ContainsKey(id))
             {
@@ -45,7 +45,7 @@ namespace jumps.umbraco.usync.helpers
 
             if (_pairs.ContainsValue(id))
             {
-                Guid key = _pairs.FirstOrDefault(x => x.Value == id).Key;
+                int key = _pairs.FirstOrDefault(x => x.Value == id).Key;
                 _pairs.Remove(key);
             }
             Save(); 
@@ -53,9 +53,7 @@ namespace jumps.umbraco.usync.helpers
 
         public static void Load()
         {
-            LogHelper.Info<ImportInfo>("Load>"); 
-
-            _pairs = new Dictionary<Guid, Guid>();
+            _pairs = new Dictionary<int, int>();
 
             if (File.Exists(_pairFile))
             {
@@ -64,18 +62,14 @@ namespace jumps.umbraco.usync.helpers
                 foreach (XElement pair in source.Descendants("pair"))
                 {
                     _pairs.Add(
-                        Guid.Parse(pair.Attribute("master").Value),
-                        Guid.Parse(pair.Attribute("local").Value));
+                        int.Parse(pair.Attribute("master").Value),
+                        int.Parse(pair.Attribute("local").Value));
                 }
             }
-            LogHelper.Info<ImportInfo>("<Load"); 
-
         }
 
         public static void Save()
         {
-            LogHelper.Info<ImportInfo>("Save>"); 
-
             XmlDocument doc = new XmlDocument();
             XmlDeclaration dec = doc.CreateXmlDeclaration("1.0", "UTF-8", "no");
             doc.AppendChild(dec);
@@ -83,7 +77,7 @@ namespace jumps.umbraco.usync.helpers
             XmlElement data = doc.CreateElement("usync.data");
             XmlElement content = doc.CreateElement("content");
 
-            foreach (KeyValuePair<Guid, Guid> pair in _pairs)
+            foreach (KeyValuePair<int, int> pair in _pairs)
             {
                 XmlElement p = doc.CreateElement("pair");
                 p.SetAttribute("master", pair.Key.ToString());
@@ -99,11 +93,9 @@ namespace jumps.umbraco.usync.helpers
                 File.Delete(_pairFile);
 
             doc.Save(_pairFile);
-            LogHelper.Info<ImportInfo>("<Save"); 
-
         }
 
-        public static Guid GetLocalGuid(Guid master)
+        public static int GetLocal(int master)
         {
             if (_pairs.ContainsKey(master))
                 return _pairs[master];
@@ -111,7 +103,7 @@ namespace jumps.umbraco.usync.helpers
             return master;
         }
 
-        public static Guid GetMasterGuid(Guid local)
+        public static int GetMaster(int local)
         {
             if (_pairs.ContainsValue(local))
                 return _pairs.FirstOrDefault(x => x.Value == local).Key;

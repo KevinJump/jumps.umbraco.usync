@@ -11,7 +11,10 @@ using umbraco.cms.businesslogic.web;
 using umbraco.BusinessLogic; 
 
 using System.IO ;
-using Umbraco.Core.IO ; 
+using Umbraco.Core.IO ;
+using Umbraco.Core.Logging;
+
+using umbraco;
 
 namespace jumps.umbraco.usync
 {
@@ -88,8 +91,7 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        helpers.uSyncLog.DebugLog("Stylesheet Install: {0}", file); 
-                        StyleSheet s = StyleSheet.Import(node, user );
+                        StyleSheet s = StyleSheet.Import(node, user); // <--- this is the slowest place in uSync 
                         s.Save();
                     }
                 }
@@ -117,5 +119,6 @@ namespace jumps.umbraco.usync
         {
             SaveToDisk(sender); 
         }
+
     }
 }

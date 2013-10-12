@@ -32,8 +32,8 @@ namespace jumps.umbraco.usync.helpers
     /// </summary>
     public class SyncActionLog
     {
-        static Dictionary<Guid, Tuple<string, string>> _renames ;
-        static List<Guid> _deletes ;
+        static Dictionary<int, Tuple<string, string>> _renames ;
+        static List<int> _deletes ;
 
         static string _actionLog ;
 
@@ -47,9 +47,8 @@ namespace jumps.umbraco.usync.helpers
 
         static void Load()
         {
-            LogHelper.Info<SyncActionLog>("Load > ");
-            _renames = new Dictionary<Guid, Tuple<string, string>>();
-            _deletes = new List<Guid>();
+            _renames = new Dictionary<int, Tuple<string, string>>();
+            _deletes = new List<int>();
 
             if (File.Exists(_actionLog))
             {
@@ -58,7 +57,7 @@ namespace jumps.umbraco.usync.helpers
                 foreach (XElement rename in source.Descendants("rename"))
                 {
                     _renames.Add(
-                        Guid.Parse(rename.Attribute("guid").Value),
+                        int.Parse(rename.Attribute("id").Value),
                         new Tuple<string, string>(
                             rename.Attribute("old").Value,
                             rename.Attribute("new").Value)
@@ -68,17 +67,13 @@ namespace jumps.umbraco.usync.helpers
                 foreach (XElement delete in source.Descendants("delete"))
                 {
                     _deletes.Add(
-                        Guid.Parse(delete.Attribute("guid").Value));
+                        int.Parse(delete.Attribute("id").Value));
                 }
             }
-            LogHelper.Info<SyncActionLog>("<Load"); 
-
         }
 
         static void Save()
         {
-            LogHelper.Info<SyncActionLog>("Save >"); 
-
             XmlDocument doc = new XmlDocument();
             XmlDeclaration dec = doc.CreateXmlDeclaration("1.0", "UTF-8", "no");
             doc.AppendChild(dec);
@@ -86,10 +81,10 @@ namespace jumps.umbraco.usync.helpers
             XmlElement data = doc.CreateElement("usync");
             XmlElement renames = doc.CreateElement("renames");
 
-            foreach (KeyValuePair<Guid, Tuple<string, string>> item in _renames)
+            foreach (KeyValuePair<int, Tuple<string, string>> item in _renames)
             {
                 XmlElement element = doc.CreateElement("rename");
-                element.SetAttribute("guid", item.Key.ToString());
+                element.SetAttribute("id", item.Key.ToString());
                 element.SetAttribute("old", item.Value.Item1);
                 element.SetAttribute("new", item.Value.Item2);
                 renames.AppendChild(element);
@@ -99,10 +94,10 @@ namespace jumps.umbraco.usync.helpers
 
             XmlElement deletes = doc.CreateElement("deletes");
 
-            foreach (Guid guid in _deletes)
+            foreach (int id in _deletes)
             {
                 XmlElement element = doc.CreateElement("delete");
-                element.SetAttribute("guid", guid.ToString());
+                element.SetAttribute("id", id.ToString());
                 deletes.AppendChild(element);
             }
 
@@ -113,46 +108,45 @@ namespace jumps.umbraco.usync.helpers
                 File.Delete(_actionLog);
 
             doc.Save(_actionLog);
-            LogHelper.Info<SyncActionLog>("<Save"); 
 
         }
 
 
-        internal static void AddRename(Guid guid, string newName, string oldName)
+        internal static void AddRename(int id, string newName, string oldName)
         {
-            if (_renames.ContainsKey(guid))
-                _renames.Remove(guid);
+            if (_renames.ContainsKey(id))
+                _renames.Remove(id);
 
-            _renames.Add(guid,
+            _renames.Add(id,
                 new Tuple<string, string>(oldName, newName));
 
             Save(); 
         }
 
-        internal static void AddDelete(Guid guid)
+        internal static void AddDelete(int id)
         {
-            if (!_deletes.Contains(guid))
-                _deletes.Add(guid);
+            if (!_deletes.Contains(id))
+                _deletes.Add(id);
 
             // optimization if it's a delete but in rename - delete it
             // from rename
-            if (_renames.ContainsKey(guid))
-                _renames.Remove(guid); 
+            if (_renames.ContainsKey(id))
+                _renames.Remove(id); 
 
             Save(); 
         }
 
 
-        internal static string GetRename(Guid guid)
+        internal static string GetRename(int id)
         {
-            if (_renames.ContainsKey(guid))
-                return _renames[guid].Item2;
+            if (_renames.ContainsKey(id))
+                return _renames[id].Item2;
 
             else
                 return null;
         }
 
-        internal static List<Guid> GetDeletes()
+        internal static List<int> GetDeletes()
         {
             return _deletes;
         }
