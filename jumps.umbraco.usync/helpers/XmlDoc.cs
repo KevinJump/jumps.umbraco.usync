@@ -9,6 +9,7 @@ using System.Xml ;
 using System.Xml.Linq;
 
 using Umbraco.Core.IO ;
+using Umbraco.Core.Logging;
 using System.Runtime.InteropServices; 
 
 namespace jumps.umbraco.usync.helpers
@@ -80,6 +81,7 @@ namespace jumps.umbraco.usync.helpers
                 File.Delete(targetFile);
             }
 
+            // some source stuff.
             element.Save(targetFile);
 
             OnSaved(new XmlDocFileEventArgs(targetFile));
@@ -217,6 +219,19 @@ namespace jumps.umbraco.usync.helpers
         }
 
         #endregion 
+
+        #region File Moving aboutness
+
+        public static void RenameFile(string type, string path, string alias, string oldAlias)
+        {
+            string newPath = GetFullFilePath(string.Format("{0}\\{1}\\{2}", type, path, ScrubFile(alias)));
+            string oldPath = GetFullFilePath(string.Format("{0}\\{1}\\{2}", type, path, ScrubFile(oldAlias)));
+ 
+            if (Directory.Exists(oldPath))
+                Directory.Move(oldPath, newPath);
+        }
+
+        #endregion
 
         /// <summary>
         /// we need to clean the name up to make it a valid file name..

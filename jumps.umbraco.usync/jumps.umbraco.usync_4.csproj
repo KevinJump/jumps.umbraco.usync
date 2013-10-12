@@ -77,6 +77,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="helpers\ImportInfo.cs" />
+    <Compile Include="helpers\SourceInfo.cs" />
+    <Compile Include="helpers\SyncActionLog.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\uSyncLog.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
@@ -107,6 +110,10 @@
     <PostBuildEvent>@ECHO to 6.1.5
 @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.5\bin\" /y /i /q
 @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.5\config\" /y /i /q
+
+@ECHO to 6.1.6
+@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.6\bin\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.6\config\" /y /i /q
 
 @ECHO to Release Folder
 @XCOPY "$(TargetPath)" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q

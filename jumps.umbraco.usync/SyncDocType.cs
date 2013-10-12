@@ -15,6 +15,7 @@ using Umbraco.Core.Models;
 using Umbraco.Core.Logging;
 
 using jumps.umbraco.usync.SyncProviders;
+using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
@@ -46,6 +47,8 @@ namespace jumps.umbraco.usync
             _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
         }
 
+        #region DocType Exporting
+
         /// <summary>
         /// save a document type to the disk, the document type will be 
         /// saved as an xml file, in a folder structure that mimics 
@@ -65,7 +68,8 @@ namespace jumps.umbraco.usync
                     // add some stuff (namley the GUID) this makes tracking good
                     // element.Element("Info").Add(new XElement("key", helpers.KeyManager.GetMasterKey(item.Key)));
                                         
-                    helpers.XmlDoc.SaveElement("DocumentType", item.GetSyncPath(), "def", element);                              
+                    XmlDoc.SaveElement("DocumentType", item.GetSyncPath(), "def", element);
+                    SourceInfo.Add(item.Key, item.Name, item.ParentId);
                 }
                 catch (Exception ex)
                 {
@@ -90,6 +94,7 @@ namespace jumps.umbraco.usync
                         SaveToDisk(item);
                     }
                 }
+                SourceInfo.Save(); 
             }
             catch( Exception ex )
             {
@@ -98,7 +103,38 @@ namespace jumps.umbraco.usync
             }
         }
 
-        
+
+        public static void Rename(IContentType item, string oldName)
+        {
+            string path = Path.GetDirectoryName(item.GetSyncPath());
+            XmlDoc.RenameFile("DocumentType", path, item.Alias, oldName);
+
+            Guid masterGuid = ImportInfo.GetMasterGuid(item.Key); 
+
+            SyncActionLog.AddRename(
+                ImportInfo.GetMasterGuid(item.Key), item.Alias, oldName);
+        }
+
+        public static void Move(IContentType item, int oldParentId)
+        {
+            // at hte moment you can't move doctypes in umbraco.
+            // so we're not going to do anything about that...
+            
+            /*
+            IContentType oldParent = _contentTypeService.GetContentType(oldParentId);
+
+            if (oldParent != null)
+            {
+                XmlDoc.MoveFile(
+                    oldParent.GetSyncPath(),
+                    item.GetSyncPath());
+            }
+          */
+        }
+
+        #endregion
+
+        #region DocType Importing
         /// <summary>
         /// Gets all the ContentTypes from the disk, and puts them into
         /// umbraco 
@@ -116,6 +152,8 @@ namespace jumps.umbraco.usync
             // rest the alias names
             updated = new Dictionary<string, string>();
 
+            ProcessDeletes();
+
             // import stuff
             ReadFromDisk(path);
 
@@ -125,9 +163,43 @@ namespace jumps.umbraco.usync
             // than traversing the tree again. Also we just do the update of the bit we
             // need to update
             // 
-            SecondPassFitAndFix(); 
+            SecondPassFitAndFix();
 
+            SourceInfo.Save();
 
+        }
+
+        /// <summary>
+        ///  looks at the sync action log, and deletes stuff. 
+        ///  the umbraco services don't yet exist to get DocTypes by GUID
+        ///  so it's a bit slow at the moment - we do a get all and step
+        ///  through until we get our guid.
+        ///  
+        ///  other way - don't track by GUID track by ID (seems wrong)? 
+        /// </summary>
+        private static void ProcessDeletes()
+        {
+            LogHelper.Info<SyncDocType>("Process Deletes"); 
+
+            List<Guid> deletes = SyncActionLog.GetDeletes();
+
+            if (deletes.Count() > 0)
+            {
+                LogHelper.Info<SyncDocType>("Processing {0} delete actions", () => deletes.Count());
+
+                foreach (IContentType doctype in _contentTypeService.GetAllContentTypes())
+                {
+                    LogHelper.Info<SyncDocType>("Delete? [{2}], Local {0}, Master {1}",
+                        () => doctype.Key, () => ImportInfo.GetMasterGuid(doctype.Key), ()=> doctype.Name);
+
+                    if (deletes.Contains( ImportInfo.GetMasterGuid(doctype.Key)))
+                    {
+                        LogHelper.Info<SyncDocType>("Deleting {0}", ()=> doctype.Name); 
+                        helpers.XmlDoc.ArchiveFile("DocumentType", doctype.GetSyncPath(), "def");
+                        _contentTypeService.Delete(doctype);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -199,7 +271,10 @@ namespace jumps.umbraco.usync
                 }
             }
         }
-     
+
+        #endregion
+
+        #region DocType Events
         /// <summary>
         /// attach events, adds the event handlers for this class 
         /// </summary>
@@ -212,10 +287,28 @@ namespace jumps.umbraco.usync
         static void ContentTypeService_SavedContentType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<IContentType> e)
         {
             LogHelper.Debug<SyncDocType>("SaveContent Type Fired for {0} types", ()=> e.SavedEntities.Count());
-            foreach (IContentType docType in e.SavedEntities)
+            foreach (IContentType item in e.SavedEntities)
             {
-                SaveToDisk(docType);
+                string sourceName = SourceInfo.GetName(item.Key);
+
+                if ((sourceName != null) && (item.Name != sourceName))
+                {
+                    // rename ..
+                    LogHelper.Info<SyncDocType>("Rename {0}", () => item.Name);
+                    Rename(item, sourceName);
+                }
+
+                int? parentId = SourceInfo.GetParent(item.Key);
+                if ((parentId != null) && (item.ParentId != parentId.Value))
+                {
+                    // move...
+                    LogHelper.Info<SyncDocType>("Move {0}", ()=> item.Name);
+                    Move(item, parentId.Value); 
+                }
+
+                SaveToDisk(item);
             }
+            SourceInfo.Save();
         }
 
         static void ContentTypeService_DeletingContentType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IContentType> e)
@@ -224,8 +317,10 @@ namespace jumps.umbraco.usync
             // delete things (there can sometimes be more than one??)
             foreach (IContentType docType in e.DeletedEntities)
             {
-                helpers.XmlDoc.ArchiveFile("DocumentType", docType.GetSyncPath(), "def") ; 
+                helpers.XmlDoc.ArchiveFile("DocumentType", docType.GetSyncPath(), "def") ;
+                SyncActionLog.AddDelete(ImportInfo.GetMasterGuid(docType.Key));
             }
         }
+        #endregion 
     }
 }

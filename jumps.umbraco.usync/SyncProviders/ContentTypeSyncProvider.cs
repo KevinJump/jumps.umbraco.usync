@@ -13,6 +13,8 @@ using Umbraco.Core.Services;
 
 using Umbraco.Core.Logging;
 
+using jumps.umbraco.usync.helpers;
+
 namespace jumps.umbraco.usync.SyncProviders
 {
     /// <summary>
@@ -73,12 +75,27 @@ namespace jumps.umbraco.usync.SyncProviders
         /// <param name="node"></param>
         public static void SyncImport(this XElement node)
         {
-           LogHelper.Debug<SyncDocType>("Starting DocType Import [{0}]", ()=> node.Element("Info").Element("Alias").Value);             
-           foreach (IContentType item in _packService.ImportContentTypes(node, false))
-           {
-               LogHelper.Debug<SyncDocType>("Imported [{0}] with {1} properties", () => item.Alias, () => item.PropertyTypes.Count());
-           }
+            // we need to check here, to see if this item is subject to the rename 
+            Guid key = Guid.Parse(node.Element("Info").Element("key").Value);
+
+            string newName = SyncActionLog.GetRename(key);
+
+            if (newName != null)
+            {
+                // it's a rename 
+            }
+
+            LogHelper.Debug<SyncDocType>("Starting DocType Import [{0}]", () => node.Element("Info").Element("Alias").Value);
+            foreach (IContentType item in _packService.ImportContentTypes(node, false))
+            {
+                ImportInfo.Add(
+                    Guid.Parse(node.Element("Info").Element("key").Value),
+                    item.Key);
+
+                LogHelper.Debug<SyncDocType>("Imported [{0}] with {1} properties", () => item.Alias, () => item.PropertyTypes.Count());
+            }
         }
+        
 
         /// <summary>
         ///  import the structure of the document type.
@@ -129,10 +146,13 @@ namespace jumps.umbraco.usync.SyncProviders
 
                 if (sortOrder != null)
                 {
-                    var itemTab = item.PropertyGroups.First(x => x.Id == tabId);
-                    if (itemTab != null)
+                    if (item.PropertyGroups.Any(x => x.Id == tabId))
                     {
-                        itemTab.SortOrder = int.Parse(sortOrder.Value);
+                        var itemTab = item.PropertyGroups.First(x => x.Id == tabId);
+                        if (itemTab != null)
+                        {
+                            itemTab.SortOrder = int.Parse(sortOrder.Value);
+                        }
                     }
                 }
 
