@@ -77,7 +77,7 @@ namespace jumps.umbraco.usync.SyncProviders
         ///  (we do more in fix and fix)
         /// </summary>
         /// <param name="node"></param>
-        public static void SyncImport(this XElement node)
+        public static IEnumerable<IContentType> SyncImport(this XElement node)
         {
             LogHelper.Debug<SyncDocType>("Starting DocType Import [{0}]", () => node.Element("Info").Element("Alias").Value);
             
@@ -90,11 +90,13 @@ namespace jumps.umbraco.usync.SyncProviders
                 string newName = SyncActionLog.GetRename(id);
                 if (newName != null)
                 {
-                    // it's a rename 
+                    // it's a rename - some action needs to be done here...
                 }
             }
 
-            foreach (IContentType item in _packService.ImportContentTypes(node, false))
+            IEnumerable<IContentType> imported = _packService.ImportContentTypes(node, false);
+
+            foreach (IContentType item in imported)
             {
                 if (idElement != null)
                 {
@@ -105,6 +107,8 @@ namespace jumps.umbraco.usync.SyncProviders
 
                 LogHelper.Debug<SyncDocType>("Imported [{0}] with {1} properties", () => item.Alias, () => item.PropertyTypes.Count());
             }
+
+            return imported; 
         }
         
 

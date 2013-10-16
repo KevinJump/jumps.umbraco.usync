@@ -232,6 +232,41 @@ namespace jumps.umbraco.usync
             }
         }
 
+        /// <summary>
+        ///  imports a doctype from disk - it's a single process.
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <returns></returns>
+        public static IEnumerable<IContentType> ImportFromFile(string filepath)
+        {
+            if (!System.IO.File.Exists(filepath))
+                return null;
+
+            XElement node = XElement.Load(filepath);
+            if (node != null)
+            {
+                IEnumerable<IContentType> items = node.SyncImport();
+
+                foreach (IContentType item in items)
+                {
+                    // second pass stuff..
+                    if (item != null)
+                    {
+                        item.SyncImportStructure(node);
+                        item.SyncRemoveMissingProperties(node);
+                        item.SyncTabSortOrder(node);
+                        _contentTypeService.Save(item);
+                    }
+                }
+
+                return items;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         private static void SecondPassFitAndFix()
         {
             foreach (KeyValuePair<string, string> update in updated)

@@ -305,6 +305,9 @@ namespace jumps.umbraco.usync
                 Initialized(e);
             }
         }
+
+
+        // some API Points (for other apps to fire)
     }
 
     /// <summary>
