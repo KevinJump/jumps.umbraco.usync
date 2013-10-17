@@ -163,6 +163,7 @@ namespace jumps.umbraco.usync.SyncProviders
                 {
                     if (item.PropertyGroups.Any(x => x.Id == tabId))
                     {
+
                         var itemTab = item.PropertyGroups.First(x => x.Id == tabId);
                         if (itemTab != null)
                         {
