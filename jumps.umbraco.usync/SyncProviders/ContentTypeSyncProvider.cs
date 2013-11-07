@@ -161,13 +161,15 @@ namespace jumps.umbraco.usync.SyncProviders
 
                 if (sortOrder != null)
                 {
-                    if (item.PropertyGroups.Any(x => x.Id == tabId))
+                    if (!String.IsNullOrEmpty(sortOrder.Value))
                     {
-
-                        var itemTab = item.PropertyGroups.First(x => x.Id == tabId);
-                        if (itemTab != null)
+                        if (item.PropertyGroups.Any(x => x.Id == tabId))
                         {
-                            itemTab.SortOrder = int.Parse(sortOrder.Value);
+                            var itemTab = item.PropertyGroups.FirstOrDefault(x => x.Id == tabId);
+                            if (itemTab != null)
+                            {
+                                itemTab.SortOrder = int.Parse(sortOrder.Value);
+                            }
                         }
                     }
                 }
