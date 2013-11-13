@@ -213,20 +213,35 @@ namespace jumps.umbraco.usync.SyncProviders
                     /* 
                      *  how we work out what datatype we are...
                      */
-                    var dataTypeId = new Guid(propertyNode.Element("Type").Value);
+                    /* v7 code - type is no longer always a guid */
+                    var legacyEditorId = Guid.Empty;
+                    Guid.TryParse(propertyNode.Element("Type").Value, out legacyEditorId); 
+                    var propertyEditorAlias = propertyNode.Element("Type").Value.Trim();
                     var dataTypeDefinitionId = new Guid(propertyNode.Element("Definition").Value);
 
                     IDataTypeService _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
 
                     var dataTypeDefintion = _dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
 
-                    if (dataTypeDefintion == null || dataTypeDefintion.ControlId != dataTypeId)
+                    if (dataTypeDefintion == null)
                     {
-                        var dataTypeDefintions = _dataTypeService.GetDataTypeDefinitionByControlId(dataTypeId);
+#if UMBRACO7
+                        var dataTypeDefintion = legacyEditorId != Guid.Empty
+                            ? _dataTypeService.GetDataTypeDefinitionByControlId(legacyEditorId)
+                            : _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(propertyEditorAlias);
+#else 
+                        var dataTypeDefintions = _dataTypeService.GetDataTypeDefinitionByControlId(legacyEditorId);
+#endif 
                         if (dataTypeDefintions != null && dataTypeDefintions.Any())
                         {
                             dataTypeDefintion = dataTypeDefintions.First();
                         }
+
+                        if (legacyEditorId != Guid.Empty && dataTypeDefintion.ControlId != legacyEditorId)
+                        {
+
+                        }
+
                     }
 
                     if (dataTypeDefintion != null)
