@@ -20,9 +20,12 @@ namespace jumps.umbraco.usync
         {
             if (item != null)
             {
+                Umbraco.Core.Strings.DefaultShortStringHelper _sh = new Umbraco.Core.Strings.DefaultShortStringHelper();
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                helpers.XmlDoc.SaveXmlDoc("Dictionary", item.key, xmlDoc);
+                helpers.XmlDoc.SaveXmlDoc("Dictionary",
+                    _sh.Recode(item.key, Umbraco.Core.Strings.CleanStringType.Ascii),
+                    xmlDoc);
             }
         }
 

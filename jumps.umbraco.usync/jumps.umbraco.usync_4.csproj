@@ -39,17 +39,17 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="businesslogic, Version=1.0.4954.19343, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.4\bin\businesslogic.dll</HintPath>
+    <Reference Include="businesslogic">
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\businesslogic.dll</HintPath>
     </Reference>
-    <Reference Include="cms, Version=1.0.4954.19343, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.4\bin\cms.dll</HintPath>
+    <Reference Include="cms">
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\cms.dll</HintPath>
     </Reference>
-    <Reference Include="interfaces, Version=1.0.4954.19342, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.4\bin\interfaces.dll</HintPath>
+    <Reference Include="controls">
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\controls.dll</HintPath>
+    </Reference>
+    <Reference Include="interfaces">
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -62,20 +62,17 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="umbraco, Version=1.0.4954.19345, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.4\bin\umbraco.dll</HintPath>
+    <Reference Include="umbraco">
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\umbraco.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Core, Version=1.0.4954.19342, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.4\bin\Umbraco.Core.dll</HintPath>
+    <Reference Include="Umbraco.Core">
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\Umbraco.Core.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.DataLayer, Version=1.0.4954.19343, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.4\bin\umbraco.DataLayer.dll</HintPath>
+    <Reference Include="umbraco.DataLayer">
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\umbraco.DataLayer.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Web.UI">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.4\bin\Umbraco.Web.UI.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\Umbraco.Web.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
