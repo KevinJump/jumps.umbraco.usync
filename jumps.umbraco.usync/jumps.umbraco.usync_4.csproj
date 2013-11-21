@@ -25,7 +25,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;UMBRACO6</DefineConstants>
+    <DefineConstants>TRACE;UMBRACO7</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -39,17 +39,20 @@
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="businesslogic">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\businesslogic.dll</HintPath>
+    <Reference Include="businesslogic, Version=1.0.5021.24868, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\7.0.0\bin\businesslogic.dll</HintPath>
     </Reference>
     <Reference Include="cms">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\cms.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\7.0.0\bin\cms.dll</HintPath>
     </Reference>
-    <Reference Include="controls">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\controls.dll</HintPath>
+    <Reference Include="controls, Version=1.0.5021.24869, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\7.0.0\bin\controls.dll</HintPath>
     </Reference>
-    <Reference Include="interfaces">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\interfaces.dll</HintPath>
+    <Reference Include="interfaces, Version=1.0.5021.24867, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\7.0.0\bin\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -62,17 +65,21 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="umbraco">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\umbraco.dll</HintPath>
+    <Reference Include="umbraco, Version=1.0.5021.24870, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\7.0.0\bin\umbraco.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Core">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\Umbraco.Core.dll</HintPath>
+    <Reference Include="Umbraco.Core, Version=1.0.5021.24867, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\7.0.0\bin\Umbraco.Core.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.DataLayer">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\umbraco.DataLayer.dll</HintPath>
+    <Reference Include="umbraco.DataLayer, Version=1.0.5021.24868, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\7.0.0\bin\umbraco.DataLayer.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Web.UI">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\Umbraco.Web.UI.dll</HintPath>
+    <Reference Include="Umbraco.Web.UI, Version=1.0.5021.24872, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\7.0.0\bin\Umbraco.Web.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -84,6 +91,7 @@
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="helpers\XmlDocFileEventArgs.cs" />
     <Compile Include="SyncDataType.cs" />
+    <Compile Include="SyncDataTypesV7.cs" />
     <Compile Include="SyncDictionary.cs" />
     <Compile Include="SyncDocType.cs" />
     <Compile Include="SyncLanguage.cs" />
@@ -107,13 +115,13 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>@ECHO to 6.1.5
-@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.5\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.5\config\" /y /i /q
+    <PostBuildEvent>REM @ECHO to 6.1.6
+REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.6\bin\" /y /i /q
+REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.6\config\" /y /i /q
 
-@ECHO to 6.1.6
-@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.6\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.6\config\" /y /i /q
+@ECHO to 7.0.0
+@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\7.0.0\bin\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\7.0.0\config\" /y /i /q
 
 @ECHO to Release Folder
 @XCOPY "$(TargetPath)" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q

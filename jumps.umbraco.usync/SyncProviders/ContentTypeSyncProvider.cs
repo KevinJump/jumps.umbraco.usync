@@ -215,33 +215,41 @@ namespace jumps.umbraco.usync.SyncProviders
                      */
                     /* v7 code - type is no longer always a guid */
                     var legacyEditorId = Guid.Empty;
-                    Guid.TryParse(propertyNode.Element("Type").Value, out legacyEditorId); 
+                    Guid.TryParse(propertyNode.Element("Type").Value, out legacyEditorId);
+#if UMBRACO7
                     var propertyEditorAlias = propertyNode.Element("Type").Value.Trim();
+#endif
                     var dataTypeDefinitionId = new Guid(propertyNode.Element("Definition").Value);
 
                     IDataTypeService _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
 
                     var dataTypeDefintion = _dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
 
-                    if (dataTypeDefintion == null)
+                    if (dataTypeDefintion == null || dataTypeDefintion.ControlId != legacyEditorId)
                     {
 #if UMBRACO7
-                        var dataTypeDefintion = legacyEditorId != Guid.Empty
+                        var dataTypeDefintions = legacyEditorId != Guid.Empty
                             ? _dataTypeService.GetDataTypeDefinitionByControlId(legacyEditorId)
                             : _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(propertyEditorAlias);
-#else 
+#else
                         var dataTypeDefintions = _dataTypeService.GetDataTypeDefinitionByControlId(legacyEditorId);
-#endif 
+#endif
+
                         if (dataTypeDefintions != null && dataTypeDefintions.Any())
                         {
                             dataTypeDefintion = dataTypeDefintions.First();
                         }
-
-                        if (legacyEditorId != Guid.Empty && dataTypeDefintion.ControlId != legacyEditorId)
+#if UMBRACO7
+                        
+                        else if (dataTypeDefintion.PropertyEditorAlias != propertyEditorAlias)
                         {
-
+                            var dataTypeDefinitions = _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(propertyEditorAlias);
+                            if (dataTypeDefinitions != null && dataTypeDefinitions.Any())
+                            {
+                                dataTypeDefintion = dataTypeDefinitions.First();
+                            }
                         }
-
+#endif
                     }
 
                     if (dataTypeDefintion != null)

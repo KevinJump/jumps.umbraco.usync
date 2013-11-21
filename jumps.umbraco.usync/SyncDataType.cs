@@ -15,6 +15,9 @@ using System.IO;
 using Umbraco.Core.IO;
 using umbraco;
 
+using Umbraco.Core;
+using Umbraco.Core.Services;
+
 //  Check list
 // ====================
 //  SaveOne         X
@@ -55,7 +58,6 @@ namespace jumps.umbraco.usync
         {
             try
             {
-              
                 foreach (DataTypeDefinition item in DataTypeDefinition.GetAll())
                 {
                     if (item != null)
@@ -340,7 +342,7 @@ namespace jumps.umbraco.usync
             helpers.uSyncLog.DebugLog("DataType Saved (Saving-complete)");
         }
 
-#if UMBRACO6
+#if UMBRACO6 || UMBRACO7
         //
         // umbraco 6.0.4 changed the defintion of this event! 
         //
@@ -355,7 +357,7 @@ namespace jumps.umbraco.usync
                 helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), ((DataTypeDefinition)sender).Text);
             }
 
-#if UMBRACO6
+#if UMBRACO6 || UMBRACO7
             // no cancel... 
 #else
             e.Cancel = false; 

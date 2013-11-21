@@ -111,8 +111,14 @@ namespace jumps.umbraco.usync
             if ( uSyncSettings.Elements.Stylesheets ) 
                 SyncStylesheet.SaveAllToDisk();
 
-            if ( uSyncSettings.Elements.DataTypes ) 
+            if (uSyncSettings.Elements.DataTypes)
+            {
+#if UMBRACO7
+                SyncDataTypesV7.SaveAllToDisk(); 
+#else 
                 SyncDataType.SaveAllToDisk();
+#endif
+            }
 
             if (uSyncSettings.Elements.Dictionary)
             {
@@ -142,8 +148,14 @@ namespace jumps.umbraco.usync
 
             LogHelper.Info<uSync>("Stylesheets [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
 
-            if ( uSyncSettings.Elements.DataTypes ) 
+            if (uSyncSettings.Elements.DataTypes)
+            {
+#if UMBRACO7
+                SyncDataTypesV7.ReadAllFromDisk(); 
+#else
                 SyncDataType.ReadAllFromDisk();
+#endif
+            }
 
             LogHelper.Info<uSync>("DataTypes [{0}]", () => _swRead.Elapsed.TotalMilliseconds);
 
@@ -182,10 +194,16 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void AttachToAll()
         {
-            LogHelper.Debug<uSync>("Attaching to Events - Start"); 
-            
-            if ( uSyncSettings.Elements.DataTypes ) 
+            LogHelper.Debug<uSync>("Attaching to Events - Start");
+
+            if (uSyncSettings.Elements.DataTypes)
+            {
+#if UMBRACO7
+                SyncDataTypesV7.AttachEvents();
+#else 
                 SyncDataType.AttachEvents();
+#endif
+            }
 
             if ( uSyncSettings.Elements.DocumentTypes )
                 SyncDocType.AttachEvents();

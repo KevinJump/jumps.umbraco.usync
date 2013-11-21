@@ -19,11 +19,8 @@ using umbraco.cms.businesslogic.template;
 using Umbraco.Core.IO;
 using umbraco.BusinessLogic ; 
 
-#if UMBRACO6
 using Umbraco.Core;
 using Umbraco.Core.Services;
-//using Umbraco.Core.Models;
-#endif 
 
 namespace jumps.umbraco.usync
 {
