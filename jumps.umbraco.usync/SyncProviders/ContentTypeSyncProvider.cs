@@ -225,7 +225,13 @@ namespace jumps.umbraco.usync.SyncProviders
 
                     var dataTypeDefintion = _dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
 
-                    if (dataTypeDefintion == null || dataTypeDefintion.ControlId != legacyEditorId)
+                    if (dataTypeDefintion != null && 
+                        dataTypeDefintion.Key == dataTypeDefinitionId &&
+                        dataTypeDefintion.PropertyEditorAlias == propertyEditorAlias)
+                    {
+                        // All good..
+                    }
+                    else if (dataTypeDefintion == null || dataTypeDefintion.ControlId != legacyEditorId)
                     {
 #if UMBRACO7
                         var dataTypeDefintions = legacyEditorId != Guid.Empty
