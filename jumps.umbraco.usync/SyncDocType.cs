@@ -279,6 +279,9 @@ namespace jumps.umbraco.usync
 
                     if (docType != null)
                     {
+                        // is this a List View (i.e a container) 
+                        docType.SyncContainerInfo(node); 
+
                         // import structure
                         docType.SyncImportStructure(node); 
 
@@ -288,8 +291,7 @@ namespace jumps.umbraco.usync
                         // add to our import map, 
                         // helpers.KeyManager.AddToKeyMap(docType.Key, Guid.Parse(node.Element("Info").Element("Key").Value));
                         docType.SyncTabSortOrder(node); 
-
-
+                        
                         // save
                         _contentTypeService.Save(docType);
                     }

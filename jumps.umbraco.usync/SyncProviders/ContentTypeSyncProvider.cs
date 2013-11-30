@@ -40,8 +40,9 @@ namespace jumps.umbraco.usync.SyncProviders
             element.Element("Info").Add(new XElement("key", item.Key));
             element.Element("Info").Add(new XElement("Id", item.Id));
             element.Element("Info").Add(new XElement("Updated", item.UpdateDate));
-            
 
+            element.Element("Info").Add(new XElement("Container", item.IsContainer.ToString())); 
+            
             // fix, current api - doesn't do structure proper 
             var structure = element.Element("Structure");
             foreach (var allowedType in item.AllowedContentTypes)
@@ -304,6 +305,23 @@ namespace jumps.umbraco.usync.SyncProviders
             foreach (KeyValuePair<string, string> movePair in propertiesToMove)
             {
                 item.MovePropertyType(movePair.Key, movePair.Value);
+            }
+        }
+
+        public static void SyncContainerInfo(this IContentType item, XElement node)
+        {
+            XElement Info = node.Element("Info");
+
+            if (Info != null)
+            {
+                XElement container = Info.Element("Container");
+                if (container != null)
+                {
+                    bool isContainer = false;
+                    bool.TryParse(container.Value, out isContainer);
+                    item.IsContainer = isContainer; 
+                }
+
             }
         }
 
