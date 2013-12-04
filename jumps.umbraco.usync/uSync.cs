@@ -216,6 +216,16 @@ namespace jumps.umbraco.usync
             helpers.uSyncLog.DebugLog("Attaching to Events - End");
         }
 
+        public void WatchFolder()
+        {
+            if (uSyncSettings.WatchFolder)
+            {
+                helpers.uSyncLog.InfoLog("Watching uSync Folder for Changes"); 
+                SyncFileWatcher.Init(IOHelper.MapPath(helpers.uSyncIO.RootFolder));
+                SyncFileWatcher.Start();
+            }
+        }
+
         /// <summary>
         ///  run through the first sync (called at startup)
         /// </summary>
@@ -278,6 +288,8 @@ namespace jumps.umbraco.usync
                 // that way we capture things as they are done.
                 AttachToAll(); 
             }
+
+            WatchFolder(); 
 
             helpers.uSyncLog.InfoLog("uSync Initilized"); 
         }

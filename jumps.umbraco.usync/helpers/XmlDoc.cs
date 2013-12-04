@@ -73,6 +73,7 @@ namespace jumps.umbraco.usync.helpers
             //
             OnPreSave(new XmlDocFileEventArgs(savePath));
 
+
             if ( !Directory.Exists(Path.GetDirectoryName(savePath)))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(savePath));
@@ -202,6 +203,8 @@ namespace jumps.umbraco.usync.helpers
 
         public static void OnPreSave(XmlDocFileEventArgs e)
         {
+            SyncFileWatcher.Pause();
+
             /* going to phase this out - naming is saving/saved) */
             if (preSave != null)
             {
@@ -220,10 +223,13 @@ namespace jumps.umbraco.usync.helpers
             {
                 Saved(e);
             }
+            SyncFileWatcher.Start();
+
         }
 
         public static void OnPreDelete(XmlDocFileEventArgs e)
         {
+            SyncFileWatcher.Pause();
             if (preDelete != null)
             {
                 preDelete(e);
@@ -241,6 +247,8 @@ namespace jumps.umbraco.usync.helpers
             {
                 Deleted(e);
             }
+            SyncFileWatcher.Start();
+
         }
     }
 }

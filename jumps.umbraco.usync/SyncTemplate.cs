@@ -104,7 +104,7 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        helpers.uSyncLog.InfoLog("Importing template {0} {1}", path, node.InnerXml); 
+                        helpers.uSyncLog.DebugLog("Importing template {0} {1}", path, node.InnerXml); 
 
 
                        Template t = Template.Import(node,user);

@@ -146,6 +146,20 @@ namespace jumps.umbraco.usync
         {
             get { return (uSyncDocTypeSettings)this["DocumentTypes"]; }
         }
+
+        [ConfigurationProperty("watchFolder", DefaultValue = "false", IsRequired = false)]
+        public Boolean WatchFolder
+        {
+            get
+            {
+                return (Boolean)this["watchFolder"];
+            }
+            set
+            {
+                this["watchFolder"] = value;
+            }
+        }
+
     }
 
     public class PreservedPreValue : ConfigurationElement 
@@ -327,6 +341,11 @@ namespace jumps.umbraco.usync
         public static bool Preserve
         {
             get { return _settings.Preserve; }
+        }
+
+        public static bool WatchFolder
+        {
+            get { return _settings.WatchFolder; }
         }
 
         public static string[] PreservedPreValueDataTypes
