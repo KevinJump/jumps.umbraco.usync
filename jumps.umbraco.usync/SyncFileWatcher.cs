@@ -100,12 +100,13 @@ namespace jumps.umbraco.usync
             {
                 System.Threading.Interlocked.Increment(ref _lockCount);
                 LogHelper.Debug<SyncFileWatcher>("Watcher Lock {0}", () => _lockCount);
-            }
 
-            if (watcher.EnableRaisingEvents)
-            {
-                LogHelper.Debug<SyncFileWatcher>("Pause");
-                watcher.EnableRaisingEvents = false;
+
+                if (watcher.EnableRaisingEvents)
+                {
+                    LogHelper.Debug<SyncFileWatcher>("Pause");
+                    watcher.EnableRaisingEvents = false;
+                }
             }
         }
 
