@@ -16,12 +16,14 @@ using System.Threading.Tasks;
 using System.IO; // so we can write to disk..
 using System.Xml; // so we can serialize stuff
 
-using umbraco.businesslogic;
 using Umbraco.Core.IO;
 using Umbraco.Core;
+using Umbraco.Core.Logging;
 
+using umbraco.businesslogic;
 using umbraco.BusinessLogic;
 using Umbraco.Web;
+
 
 namespace jumps.umbraco.usync
 {
@@ -73,45 +75,20 @@ namespace jumps.umbraco.usync
 
         private void GetSettings() 
         {
-            helpers.uSyncLog.DebugLog("Getting Settings"); 
+            LogHelper.Debug<uSync>("Get Settings");
                        
             _read = uSyncSettings.Read;
-            helpers.uSyncLog.DebugLog("Settings : Read = {0}", _read); 
+            LogHelper.Debug<uSync>("Settings : Read = {0}", () => _read); 
 
             _write = uSyncSettings.Write;
-            helpers.uSyncLog.DebugLog("Settings : Write = {0}", _write); 
+            LogHelper.Debug<uSync>("Settings : Write = {0}", ()=> _write); 
 
             _attach = uSyncSettings.Attach;
-            helpers.uSyncLog.DebugLog("Settings : Attach = {0}", _attach); 
+            LogHelper.Debug<uSync>("Settings : Attach = {0}", () => _attach);
 
-            // version 6+ here
-
-#if UMBRACO6
-            // if it's more than 6 or more than 6.0.x it should work
-            if ((global::umbraco.GlobalSettings.VersionMajor > 6) ||
-                (global::umbraco.GlobalSettings.VersionMinor > 0) )
-            {
-                // we are runining at least 7.0 or 6.0 (i.e 6.1.0)
-                _docTypeSaveWorks = true ; 
-            }
-            else if (global::umbraco.GlobalSettings.VersionPatch > 0)
-            {
-                // we are better than 6.0.0 (i.e 6.0.1+)
-                _docTypeSaveWorks = true;
-            }
-#else
-
-            // let's assume it's always v4 (because this version crashes v6+)
-            if (global::umbraco.GlobalSettings.VersionMinor > 11)
-            {
-                _docTypeSaveWorks = true;
-            }
-            else if ((global::umbraco.GlobalSettings.VersionMinor == 11)
-                 && (global::umbraco.GlobalSettings.VersionPatch > 4))
-            {
-                _docTypeSaveWorks = true;
-            }
-#endif
+            // Remove version check
+            // we don't work on pre v6.0.1 anymore anyway 
+            _docTypeSaveWorks = true ; 
         }
 
         /// <summary>
@@ -119,7 +96,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void SaveAllToDisk()
         {
-            helpers.uSyncLog.DebugLog("Saving to disk - start");
+            LogHelper.Debug<uSync>("Saving to disk - start");
 
             if ( uSyncSettings.Elements.DocumentTypes ) 
                 SyncDocType.SaveAllToDisk();
@@ -145,7 +122,7 @@ namespace jumps.umbraco.usync
                 SyncDictionary.SaveAllToDisk();
             }
 
-            helpers.uSyncLog.DebugLog("Saving to Disk - End"); 
+            LogHelper.Debug<uSync>("Saving to Disk - End"); 
         }
 
         /// <summary>
@@ -153,7 +130,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void ReadAllFromDisk()
         {
-            helpers.uSyncLog.DebugLog("Reading from Disk - starting"); 
+            LogHelper.Debug<uSync>("Reading from Disk - starting"); 
 
             if ( uSyncSettings.Elements.Templates ) 
                 SyncTemplate.ReadAllFromDisk();
@@ -179,7 +156,7 @@ namespace jumps.umbraco.usync
                 SyncDictionary.ReadAllFromDisk();
             }
 
-            helpers.uSyncLog.DebugLog("Reading from Disk - End"); 
+            LogHelper.Debug<uSync>("Reading from Disk - End"); 
         }
 
         /// <summary>
@@ -187,7 +164,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void AttachToAll()
         {
-            helpers.uSyncLog.DebugLog("Attaching to Events - Start"); 
+            LogHelper.Debug<uSync>("Attaching to Events - Start"); 
             
             if ( uSyncSettings.Elements.DataTypes ) 
                 SyncDataType.AttachEvents();
@@ -213,14 +190,14 @@ namespace jumps.umbraco.usync
                 SyncDictionary.AttachEvents();
             }
 
-            helpers.uSyncLog.DebugLog("Attaching to Events - End");
+            LogHelper.Debug<uSync>("Attaching to Events - End");
         }
 
         public void WatchFolder()
         {
             if (uSyncSettings.WatchFolder)
             {
-                helpers.uSyncLog.InfoLog("Watching uSync Folder for Changes"); 
+                LogHelper.Info<uSync>("Watching uSync Folder for Changes"); 
                 SyncFileWatcher.Init(IOHelper.MapPath(helpers.uSyncIO.RootFolder));
                 SyncFileWatcher.Start();
             }
@@ -231,28 +208,13 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
-            helpers.uSyncLog.InfoLog("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file"); 
+            LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file"); 
 
             // Save Everything to disk.
             // only done first time or when write = true           
             if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write )
             {
                 SaveAllToDisk();
-            }
-
-            // bugs in the DataType EventHandling, mean it isn't fired 
-            // onSave - so we just write it out to disk everyload.
-            // this will make it hard 
-            // to actually delete anything via the sync
-            // we only do this < 4.11.5 and < 6.0.1 
-            //
-            // this mimics attach.. so if you turn _attach off, this doesn't
-            // happen
-            //
-            if (!_docTypeSaveWorks && _attach)
-            {
-                helpers.uSyncLog.DebugLog("(Legacy) saving datatypes to disk"); 
-                SyncDataType.SaveAllToDisk();
             }
 
             //
@@ -269,15 +231,16 @@ namespace jumps.umbraco.usync
 
                     if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
                     {
-                        helpers.uSyncLog.DebugLog("Renaming once file"); 
+                        LogHelper.Debug<uSync>("Renaming once file"); 
+                        
                         File.Move(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once"),
                             Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
-                        helpers.uSyncLog.DebugLog("Once renamed to stop"); 
+                        LogHelper.Debug<uSync>("Once renamed to stop"); 
                     }
                 }
                 else
                 {
-                    helpers.uSyncLog.InfoLog("Read stopped by usync.stop"); 
+                    LogHelper.Info<uSync>("Read stopped by usync.stop"); 
                 }
 
             }
@@ -289,12 +252,11 @@ namespace jumps.umbraco.usync
                 AttachToAll(); 
             }
 
-            WatchFolder(); 
+            WatchFolder();
 
-            helpers.uSyncLog.InfoLog("uSync Initilized"); 
+            LogHelper.Info<uSync>("uSync Initilized"); 
         }
 
-#if UMBRACO6
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
             DoOnStart();
@@ -310,22 +272,5 @@ namespace jumps.umbraco.usync
             // don't think i do it here.
         }
 
-#else
-
-        public void OnApplicationStarted(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
-            DoOnStart();
-        }
-
-        public void OnApplicationStarting(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
-            // don't think i do it here.
-        }
-
-        public void OnApplicationInitialized(UmbracoApplication httpApplication, Umbraco.Core.ApplicationContext applicationContext)
-        {
-            // don't think i do it here.
-        }
-#endif
     }
 }

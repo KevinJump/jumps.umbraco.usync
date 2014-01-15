@@ -8,7 +8,10 @@ using System.IO ;
 using System.Xml ;
 
 using umbraco.BusinessLogic ; 
+
 using Umbraco.Core.IO ;
+using Umbraco.Core.Logging;
+
 using System.Runtime.InteropServices; 
 
 namespace jumps.umbraco.usync.helpers
@@ -90,7 +93,7 @@ namespace jumps.umbraco.usync.helpers
                 }
             }
 
-            uSyncLog.InfoLog("Saving [{0}]", savePath); 
+            LogHelper.Info<XmlDoc>("Saving [{0}]", ()=> savePath); 
             
             doc.Save(savePath) ;
 
@@ -153,7 +156,7 @@ namespace jumps.umbraco.usync.helpers
                     File.Delete(currentFile);
                     OnDeleted(new XmlDocFileEventArgs(currentFile));
 
-                    uSyncLog.InfoLog("Archived [{0}] to [{1}]", currentFile, archiveFile); 
+                    LogHelper.Info<XmlDoc>("Archived [{0}] to [{1}]", ()=> currentFile, ()=> archiveFile); 
                 }
             }
             catch(Exception ex)
@@ -162,7 +165,7 @@ namespace jumps.umbraco.usync.helpers
                // umbraco, but we are going to log that it didn't work. 
                // Log.Add(LogTypes.Error, 0, "Failed to archive") ; 
                // to do some dialog popup text like intergration
-               uSyncLog.ErrorLog(ex, "Failed to Archive {1}, {0}", type, name ); 
+               LogHelper.Info<XmlDoc>("Failed to Archive {1}, {0}", ()=> type, ()=> name ); 
             }
 
         }
@@ -181,7 +184,7 @@ namespace jumps.umbraco.usync.helpers
                 File.Delete(currentFile);
                 OnDeleted(new XmlDocFileEventArgs(currentFile));
 
-                uSyncLog.InfoLog("Deleted File [{0}]", currentFile); 
+                LogHelper.Info<XmlDoc>("Deleted File [{0}]", ()=> currentFile); 
             }
             
             

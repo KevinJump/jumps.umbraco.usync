@@ -14,6 +14,8 @@ using System.IO;
 using Umbraco.Core.IO;
 
 using Umbraco.Core;
+using Umbraco.Core.Logging;
+
 using umbraco.businesslogic;
 
 
@@ -44,7 +46,8 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    helpers.uSyncLog.ErrorLog(ex, "uSync: Error Saving Template {0} - {1}", item.Text, ex.ToString());
+                    LogHelper.Info<SyncTemplate>("uSync: Error Saving Template {0} - {1}", 
+                        ()=>item.Text, ()=>ex.ToString());
                 }
             }
         }
@@ -60,7 +63,7 @@ namespace jumps.umbraco.usync
             }
             catch( Exception ex )
             {
-                helpers.uSyncLog.ErrorLog(ex, "uSync: Error saving all templates {0}", ex.ToString()); 
+                LogHelper.Info<SyncTemplate>("uSync: Error saving all templates {0}", ()=> ex.ToString()); 
             }
         }
 
@@ -104,7 +107,8 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        helpers.uSyncLog.DebugLog("Importing template {0} {1}", path, node.InnerXml); 
+                        LogHelper.Debug<SyncTemplate>("Importing template {0} {1}", 
+                            ()=> path, ()=> node.InnerXml); 
 
 
                        Template t = Template.Import(node,user);

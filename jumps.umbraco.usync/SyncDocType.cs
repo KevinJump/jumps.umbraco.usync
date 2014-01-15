@@ -15,12 +15,10 @@ using umbraco.BusinessLogic;
 using Umbraco.Core.IO;
 using umbraco;
 
-#if UMBRACO6
 using Umbraco.Core ; 
 using Umbraco.Core.Services;
 using Umbraco.Core.Models;
 using Umbraco.Core.Logging; 
-#endif
 
 namespace jumps.umbraco.usync
 {
@@ -56,7 +54,8 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception e)
                 {
-                    helpers.uSyncLog.DebugLog( "uSync: Error Saving DocumentType {0} - {1}", item.Alias, e.ToString() ) ; 
+                    LogHelper.Debug<SyncDocType>("uSync: Error Saving DocumentType {0} - {1}", 
+                        ()=> item.Alias, ()=> e.ToString()); 
                 }
             }
         }
@@ -81,7 +80,7 @@ namespace jumps.umbraco.usync
             catch( Exception ex )
             {
                 // error saving to disk, can happen if Umbraco has orphaned doctypes & GetAll thows an error! 
-                helpers.uSyncLog.DebugLog("uSync: Error Writing doctypes to disk {0}", ex.ToString());
+                LogHelper.Debug<SyncDocType>("uSync: Error Writing doctypes to disk {0}", ()=> ex.ToString());
             }
         }
         
@@ -263,7 +262,7 @@ namespace jumps.umbraco.usync
         {
             if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
             {
-                helpers.uSyncLog.DebugLog("DeletePropertyValue = false - exiting"); 
+                LogHelper.Debug<SyncDocType>("DeletePropertyValue = false - exiting"); 
                 return;
             }
 
@@ -280,8 +279,9 @@ namespace jumps.umbraco.usync
                 if (propertyNode == null)
                 {
                     // delete it from the doctype ? 
-                    propertiesToRemove.Add(property.Alias); 
-                    helpers.uSyncLog.DebugLog("Removing property {0} from {1}", property.Alias, docType.Name);
+                    propertiesToRemove.Add(property.Alias);
+                    LogHelper.Debug<SyncDocType>("Removing property {0} from {1}", 
+                        ()=> property.Alias, ()=> docType.Name);
                     
                 }                
             }
@@ -297,19 +297,15 @@ namespace jumps.umbraco.usync
         /// </summary>
         public static void AttachEvents()
         {
-#if UMBRACO6
             ContentTypeService.DeletingContentType += ContentTypeService_DeletingContentType;
             ContentTypeService.SavedContentType += ContentTypeService_SavedContentType;
-#else
-            DocumentType.AfterSave += DocumentType_AfterSave;
-            DocumentType.BeforeDelete += DocumentType_BeforeDelete;
-#endif
         }
 
-#if UMBRACO6
+
         static void ContentTypeService_SavedContentType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<IContentType> e)
         {
-            helpers.uSyncLog.DebugLog("SaveContent Type Fired for {0} types", e.SavedEntities.Count());
+            LogHelper.Debug<SyncDocType>("SaveContent Type Fired for {0} types", 
+                ()=> e.SavedEntities.Count());
             foreach (var docType in e.SavedEntities)
             {
                 SaveToDisk(new DocumentType(docType.Id));
@@ -318,37 +314,12 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_DeletingContentType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IContentType> e)
         {
-            helpers.uSyncLog.DebugLog("Deleting Type Fired for {0} types", e.DeletedEntities.Count());
+            LogHelper.Debug<SyncDocType>("Deleting Type Fired for {0} types", ()=> e.DeletedEntities.Count());
             // delete things (there can sometimes be more than one??)
             foreach (var docType in e.DeletedEntities)
             {
                 helpers.XmlDoc.ArchiveFile("DocumentType", GetDocPath(new DocumentType(docType.Id)), "def") ; 
             }
         }
-#else 
-        /// <summary>
-        ///  called when a document type is about to be deleted. 
-        ///  
-        /// we archive the file (rename it from .xml to .archive) 
-        /// this makes it not be read in on next application start.
-        /// </summary>
-        static void DocumentType_BeforeDelete(DocumentType sender, DeleteEventArgs e)
-        {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), GetDocPath(sender), "def");
-            e.Cancel = false; 
-            
-        }
-
-        /// <summary>
-        ///  called when a documenttype is saved 
-        ///  
-        /// we save to disk here, this means we capture any changes, or 
-        /// creations of new DocumentTypes. 
-        /// </summary>
-        static void DocumentType_AfterSave(DocumentType sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
-        {
-            SaveToDisk((DocumentType)sender);             
-        }
-#endif 
     }
 }

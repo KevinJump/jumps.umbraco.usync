@@ -15,6 +15,8 @@ using System.IO;
 using Umbraco.Core.IO;
 using umbraco;
 
+using Umbraco.Core.Logging;
+
 //  Check list
 // ====================
 //  SaveOne         X
@@ -42,12 +44,12 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    helpers.uSyncLog.ErrorLog(ex, "Saving DataType Failed {0}", item.Text );
+                    LogHelper.Error<SyncDataType>(string.Format("DataType Failed {0}", item.Text), ex);
                 }
             }
             else
             {
-                helpers.uSyncLog.DebugLog("Null DataType Save attempt - aborted");
+                LogHelper.Debug<SyncDataType>("Null DataType Save attempt - aborted");
             }
         }
 
@@ -66,7 +68,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                helpers.uSyncLog.DebugLog("Error saving all DataTypes, {0}", ex.ToString());
+                LogHelper.Debug<SyncDataType>("Error saving all DataTypes, {0}", ()=> ex.ToString());
             }
         }
 
@@ -104,7 +106,7 @@ namespace jumps.umbraco.usync
 
                         else
                         {
-                            helpers.uSyncLog.DebugLog("NULL NODE FOR {0}", file);
+                            LogHelper.Debug<SyncDataType>("NULL NODE FOR {0}", ()=> file);
                         }
                     }
                     
@@ -197,7 +199,7 @@ namespace jumps.umbraco.usync
                             // add new values only - because if we mess with old ones. it all goes pete tong..
                             if ((val.Value != null) && (!oldvals.ContainsValue(val.Value)))
                             {
-                                helpers.uSyncLog.DebugLog("Adding Prevalue [{0}]", val.Value);
+                                LogHelper.Debug<SyncDataType>("Adding Prevalue [{0}]", ()=> val.Value);
                                 PreValue p = new PreValue(0, 0, val.Value);
                                 p.DataTypeId = dtd.Id;
                                 p.Save();
@@ -217,7 +219,7 @@ namespace jumps.umbraco.usync
                             if (!newvals.ContainsValue(oldval.Value))
                             {
                                 PreValue o = new PreValue((int)oldval.Key);
-                                helpers.uSyncLog.DebugLog("In {0} Deleting prevalue [{1}]", dtd.Text, oldval.Value);
+                                LogHelper.Debug<SyncDataType>("In {0} Deleting prevalue [{1}]", ()=> dtd.Text, ()=> oldval.Value);
                                 o.Delete();
                             }
                         }
@@ -241,25 +243,27 @@ namespace jumps.umbraco.usync
         /// <returns></returns>
         public static DataTypeDefinition MatchImport(DataTypeDefinition dtd, XmlNode xmlData, User u)
         {
-            helpers.uSyncLog.DebugLog("usync - Match Import: for {0}", dtd.Text);
+            LogHelper.Debug<SyncDataType>("usync - Match Import: for {0}", ()=> dtd.Text);
 
             List<PreValue> current = GetPreValues(dtd);
             XmlNodeList target = xmlData.SelectNodes("PreValues/PreValue");
 
-            helpers.uSyncLog.DebugLog("uSync - Match Import: Counts [{0} Existing] [{1} New]", current.Count, target.Count); 
+            LogHelper.Debug<SyncDataType>("uSync - Match Import: Counts [{0} Existing] [{1} New]", 
+                ()=> current.Count, ()=> target.Count); 
 
             for(int n = 0; n < current.Count(); n++)
             {
                 XmlAttribute val = target[n].Attributes["Value"];
                 if (current[n].Value != val.Value)
                 {
-                    helpers.uSyncLog.DebugLog("uSync - Match Import: Overwrite {0} with {1}", current[n].Value, val.Value );
+                    LogHelper.Debug<SyncDataType>("uSync - Match Import: Overwrite {0} with {1}", 
+                        ()=> current[n].Value, ()=> val.Value);
                     current[n].Value = val.Value; 
                     current[n].Save(); 
                 }
             }
 
-            helpers.uSyncLog.DebugLog("uSync - Match Import: Complete");  
+            LogHelper.Debug<SyncDataType>("uSync - Match Import: Complete");  
             return dtd;
         }
 
@@ -274,7 +278,7 @@ namespace jumps.umbraco.usync
         /// <returns>the xmlelement representation of the type</returns>
         public static XmlElement DataTypeToXml(DataTypeDefinition dataType, XmlDocument xd)
         {
-            helpers.uSyncLog.DebugLog("DataType To XML"); 
+            LogHelper.Debug<SyncDataType>("DataType To XML"); 
 
             XmlElement dt = xd.CreateElement("DataType");
             dt.Attributes.Append(xmlHelper.addAttribute(xd, "Name", dataType.Text));
@@ -300,7 +304,7 @@ namespace jumps.umbraco.usync
 
         private static List<PreValue> GetPreValues(DataTypeDefinition dataType)
         {
-            helpers.uSyncLog.DebugLog("Getting Pre-Values"); 
+            LogHelper.Debug<SyncDataType>("Getting Pre-Values"); 
             return PreValues.GetPreValues(dataType.Id).Values.OfType<PreValue>().OrderBy(p => p.SortOrder).ThenBy(p => p.Id).ToList();
         }
 
@@ -330,32 +334,24 @@ namespace jumps.umbraco.usync
 
         public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
         {
-            helpers.uSyncLog.DebugLog("DataType Saving (Saving)");
+            LogHelper.Debug<SyncDataType>("DataType Saving (Saving)");
             SaveToDisk((DataTypeDefinition)sender);
-            helpers.uSyncLog.DebugLog("DataType Saved (Saving-complete)");
+            LogHelper.Debug<SyncDataType>("DataType Saved (Saving-complete)");
         }
 
-#if UMBRACO6
         //
         // umbraco 6.0.4 changed the defintion of this event! 
         //
         public static void DataTypeDefinition_AfterDelete(DataTypeDefinition sender, EventArgs e)
-#else 
-        public static void DataTypeDefinition_AfterDelete(object sender, DeleteEventArgs e)
 
-#endif 
         {
             if (typeof(DataTypeDefinition) == sender.GetType())
             {
                 helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), ((DataTypeDefinition)sender).Text);
             }
 
-#if UMBRACO6
             // no cancel... 
-#else
-            e.Cancel = false; 
-#endif
-            
+           
         }
         
     }

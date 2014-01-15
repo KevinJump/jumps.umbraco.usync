@@ -8,7 +8,9 @@ using umbraco.cms.businesslogic.language;
 
 using System.Xml;
 using System.IO;
+
 using Umbraco.Core.IO;
+using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync
 {
@@ -26,10 +28,10 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            helpers.uSyncLog.DebugLog(">>>> Language save all to disk");
+            LogHelper.Debug<SyncLanguage>(">>>> Language save all to disk");
             foreach (Language item in Language.GetAllAsList())
             {
-                helpers.uSyncLog.DebugLog(">>>> {0} <<<<<", item.CultureAlias);
+                LogHelper.Debug<SyncLanguage>(">>>> {0} <<<<<", ()=> item.CultureAlias);
                 SaveToDisk(item);
             }
         }
@@ -45,25 +47,25 @@ namespace jumps.umbraco.usync
 
         public static void ReadFromDisk(string path)
         {
-            helpers.uSyncLog.DebugLog("Reading from disk {0}", path); 
+            LogHelper.Debug<SyncLanguage>("Reading from disk {0}", ()=> path); 
             if (Directory.Exists(path))
             {
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
-                    helpers.uSyncLog.DebugLog("Reading file {0} from disk", file); 
+                    LogHelper.Debug<SyncLanguage>("Reading file {0} from disk", ()=> file); 
 
                     XmlDocument xmlDoc = new XmlDocument();
                     xmlDoc.Load(file);
 
-                    helpers.uSyncLog.DebugLog("XML Loaded"); 
+                    LogHelper.Debug<SyncLanguage>("XML Loaded"); 
 
                     XmlNode node = xmlDoc.SelectSingleNode("//Language");
 
-                    helpers.uSyncLog.DebugLog("Node Found"); 
+                    LogHelper.Debug<SyncLanguage>("Node Found"); 
 
                     if (node != null)
                     {
-                        helpers.uSyncLog.DebugLog("About to Load Language {0}", node.OuterXml); 
+                        LogHelper.Debug<SyncLanguage>("About to Load Language {0}", ()=> node.OuterXml); 
                         Language l = Language.Import(node);
 
                         if (l != null)
@@ -71,7 +73,7 @@ namespace jumps.umbraco.usync
                             l.Save();
                         }
                     }
-                    helpers.uSyncLog.DebugLog("Language done"); 
+                    LogHelper.Debug<SyncLanguage>("Language done"); 
                 }
             }
         }

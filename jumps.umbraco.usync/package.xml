@@ -15,7 +15,7 @@
   <info>
     <package>
       <name>uSync for Umbraco 6</name>
-      <version>1.5.6</version>
+      <version>1.6.0</version>
       <license url="http://www.opensource.org/licenses/mit-license.php">MIT license</license>
       <url>http://jumoo.co.uk/usync</url>
       <requirements>
@@ -29,7 +29,7 @@
       <website>http://kevin.jumoo.co.uk/</website>
     </author>
     <readme><![CDATA[
-uSync for Umbraco 6 v1.5.8
+uSync for Umbraco 6 v1.6.0
 =============================================
 
 uSync is a umbraco DB to/from disk syncing tool. 

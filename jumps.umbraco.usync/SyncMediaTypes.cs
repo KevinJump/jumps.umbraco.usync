@@ -9,21 +9,19 @@ using System.Xml;
 using System.IO ;
 
 using umbraco; 
-using Umbraco.Core ; 
 using umbraco.cms.businesslogic;
 using umbraco.cms.businesslogic.datatype;
 using umbraco.cms.businesslogic.media ;
 using umbraco.cms.businesslogic.propertytype;
 using umbraco.DataLayer;
 using umbraco.cms.businesslogic.template;
-using Umbraco.Core.IO;
 using umbraco.BusinessLogic ; 
 
-#if UMBRACO6
 using Umbraco.Core;
+using Umbraco.Core.IO;
 using Umbraco.Core.Services;
+using Umbraco.Core.Logging;
 //using Umbraco.Core.Models;
-#endif 
 
 namespace jumps.umbraco.usync
 {
@@ -41,7 +39,8 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    helpers.uSyncLog.DebugLog("uSync: Error Saving Media Type {0}, {1}", item.Text, ex.ToString()); 
+                    LogHelper.Info<SyncMediaTypes>("uSync: Error Saving Media Type {0}, {1}", 
+                        ()=> item.Text, ()=> ex.ToString()); 
                 }
             }
         }
@@ -59,7 +58,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                helpers.uSyncLog.ErrorLog(ex, "Error saving all media types {0}", ex.ToString());
+                LogHelper.Info<SyncMediaTypes>("Error saving all media types {0}", ()=> ex.ToString());
             }
         }
 
@@ -124,26 +123,20 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                helpers.uSyncLog.ErrorLog(ex, "Read MediaType Failed {0}", ex.ToString());
+                LogHelper.Info<SyncMediaTypes>("Read MediaType Failed {0}", ()=> ex.ToString());
                 throw new SystemException(String.Format("Read MediaType failed {0}", ex.ToString()));
             }
         }
 
         public static void AttachEvents()
         {
-#if UMBRACO6
             ContentTypeService.SavedMediaType += ContentTypeService_SavedMediaType;
             ContentTypeService.DeletingMediaType += ContentTypeService_DeletingMediaType;
-
-#else
-            MediaType.AfterSave += MediaType_AfterSave;
-            MediaType.BeforeDelete += MediaType_BeforeDelete;
-#endif
         }
 
         static void ContentTypeService_DeletingMediaType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<Umbraco.Core.Models.IMediaType> e)
         {
-            helpers.uSyncLog.DebugLog("DeletingMediaType for {0} items", e.DeletedEntities.Count());
+            LogHelper.Debug<SyncMediaTypes>("DeletingMediaType for {0} items", ()=> e.DeletedEntities.Count());
             foreach (var mediaType in e.DeletedEntities)
             {
                 helpers.XmlDoc.ArchiveFile("MediaType", GetMediaPath(new MediaType(mediaType.Id)), "def");
@@ -152,27 +145,12 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_SavedMediaType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<Umbraco.Core.Models.IMediaType> e)
         {
-            helpers.uSyncLog.DebugLog("SaveContent Type Fired for {0} types", e.SavedEntities.Count());
+            LogHelper.Debug<SyncMediaTypes>("SaveContent Type Fired for {0} types", ()=> e.SavedEntities.Count());
             foreach (var mediaType in e.SavedEntities)
             {
                 SaveToDisk(new MediaType(mediaType.Id));
             }
         }
-
-#if UMBRACO6
-#else 
-        static void MediaType_BeforeDelete(MediaType sender, DeleteEventArgs e)
-        {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), GetMediaPath(sender), "def");
-            e.Cancel = false; 
-        }
-
-
-        static void MediaType_AfterSave(MediaType sender, SaveEventArgs e)
-        {
-            SaveToDisk(sender); 
-        }
-#endif 
     }
 
     public class MediaTypeHelper
@@ -199,9 +177,7 @@ namespace jumps.umbraco.usync
             info.AppendChild(XmlHelper.AddTextNode(xd, "Description", mt.Description));
 
             // v6 property 
-#if UMBRACO6
             info.AppendChild(XmlHelper.AddTextNode(xd, "AllowAtRoot", mt.AllowAtRoot.ToString()));
-#endif
             XmlElement structure = xd.CreateElement("Structure");
             foreach (int child in mt.AllowedChildContentTypeIDs.ToList())
             {
@@ -209,7 +185,6 @@ namespace jumps.umbraco.usync
             }
             doc.AppendChild(structure);
 
-#if UMBRACO6
             //
             // in v6 - media types can be nested. 
             //
@@ -220,7 +195,6 @@ namespace jumps.umbraco.usync
                 if (pmt != null)
                     info.AppendChild(XmlHelper.AddTextNode(xd, "Master", pmt.Alias));
             }
-#endif 
 
             // stuff in the generic properties tab
             XmlElement props = xd.CreateElement("GenericProperties");
@@ -297,7 +271,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                helpers.uSyncLog.ErrorLog(ex, "Media type corrupt?"); 
+                LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", ()=> ex.ToString()); 
             }
 
             if (mt == null)
@@ -315,7 +289,7 @@ namespace jumps.umbraco.usync
             mt.IconUrl = xmlHelper.GetNodeValue(n.SelectSingleNode("Info/Icon"));
             mt.Thumbnail = xmlHelper.GetNodeValue(n.SelectSingleNode("Info/Thumbnail"));
             mt.Description = xmlHelper.GetNodeValue(n.SelectSingleNode("Info/Description"));
-#if UMBRACO6
+
             // v6 you can have allow at root. 
             // Allow at root (check for node due to legacy)
             bool allowAtRoot = false;
@@ -338,7 +312,6 @@ namespace jumps.umbraco.usync
                     mt.MasterContentType = pmt.Id;
                 
             }
-#endif
 
             //tabs
 
@@ -439,7 +412,7 @@ namespace jumps.umbraco.usync
                     }
                     catch (Exception ee)
                     {
-                        helpers.uSyncLog.ErrorLog(ee, "Packager: Error assigning property to tab: {0}", ee.ToString());
+                        LogHelper.Debug<SyncMediaTypes>("Packager: Error assigning property to tab: {0}", ()=> ee.ToString());
                     }
                     pt.Save(); 
                 }

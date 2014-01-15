@@ -11,7 +11,8 @@ using umbraco.cms.businesslogic.web;
 using umbraco.BusinessLogic; 
 
 using System.IO ;
-using Umbraco.Core.IO ; 
+using Umbraco.Core.IO ;
+using Umbraco.Core.Logging; 
 
 namespace jumps.umbraco.usync
 {
@@ -42,7 +43,7 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception ex)
                 {
-                    helpers.uSyncLog.ErrorLog(ex, "uSync: Error Reading Stylesheet {0} - {1}", item.Text, ex.ToString());
+                    LogHelper.Info<SyncStylesheet>("uSync: Error Reading Stylesheet {0} - {1}", () => item.Text, () => ex.ToString());
                     throw new SystemException(string.Format("error saving stylesheet {0}", item.Text), ex); 
                 }
             }
@@ -59,7 +60,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                helpers.uSyncLog.ErrorLog(ex, "uSync: Error Saving all Stylesheets {0}", ex.ToString());
+                LogHelper.Info<SyncStylesheet>("uSync: Error Saving all Stylesheets {0}", ()=> ex.ToString());
             }
         }
 
@@ -88,7 +89,7 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        helpers.uSyncLog.DebugLog("Stylesheet Install: {0}", file); 
+                        LogHelper.Debug<SyncStylesheet>("Stylesheet Install: {0}", ()=> file); 
                         StyleSheet s = StyleSheet.Import(node, user );
                         s.Save();
                     }
