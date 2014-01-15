@@ -9,15 +9,16 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>jumps.umbraco.usync</RootNamespace>
     <AssemblyName>jumps.umbraco.usync</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;UMBRACO6</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -40,13 +41,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="businesslogic">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\businesslogic.dll</HintPath>
+      <HintPath>..\Refrences\Umb6.1.6\businesslogic.dll</HintPath>
     </Reference>
     <Reference Include="cms">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\cms.dll</HintPath>
+      <HintPath>..\Refrences\Umb6.1.6\cms.dll</HintPath>
     </Reference>
     <Reference Include="interfaces">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\interfaces.dll</HintPath>
+      <HintPath>..\Refrences\Umb6.1.6\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -58,16 +59,16 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="umbraco">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\umbraco.dll</HintPath>
+      <HintPath>..\Refrences\Umb6.1.6\umbraco.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Core">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\Umbraco.Core.dll</HintPath>
+      <HintPath>..\Refrences\Umb6.1.6\Umbraco.Core.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.DataLayer">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\umbraco.DataLayer.dll</HintPath>
+      <HintPath>..\Refrences\Umb6.1.6\umbraco.DataLayer.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Web.UI">
-      <HintPath>..\..\..\..\..\..\Dev\Umbraco\versions\6.1.6\bin\Umbraco.Web.UI.dll</HintPath>
+    <Reference Include="umbraco.providers">
+      <HintPath>..\Refrences\Umb6.1.6\umbraco.providers.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -91,19 +92,24 @@
   <ItemGroup>
     <None Include="uSyncSettings.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="package.xml" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>@ECHO to 6.1.6
-@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.6\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.6\config\" /y /i /q
+    <PostBuildEvent>@ECHO - Coping to package folder.
+@XCOPY "$(TargetPath)" "$(SolutionDir)\Package\uSync\"  /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config"  "$(SolutionDir)\Package\uSync\"  /y /i /q
+@XCOPY "$(ProjectDir)package.xml" "$(SolutionDir)\Package\uSync\"  /y /i /q
 
-@ECHO to Release Folder
-@XCOPY "$(TargetPath)" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q</PostBuildEvent>
+@Echo to Umbraco Test Site (6.1.6)
+@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco6.1.6\Bin\"  /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco6.1.6\Config\"  /y /i /q
+</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

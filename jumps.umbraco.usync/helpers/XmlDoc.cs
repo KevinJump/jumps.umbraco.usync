@@ -153,7 +153,7 @@ namespace jumps.umbraco.usync.helpers
                     File.Delete(currentFile);
                     OnDeleted(new XmlDocFileEventArgs(currentFile));
 
-                    uSyncLog.DebugLog("Archived [{0}] to [{1}]", currentFile, archiveFile); 
+                    uSyncLog.InfoLog("Archived [{0}] to [{1}]", currentFile, archiveFile); 
                 }
             }
             catch(Exception ex)
@@ -166,6 +166,27 @@ namespace jumps.umbraco.usync.helpers
             }
 
         }
+
+        public static void DeleteuSyncFile(string type, string path, string name)
+        {
+            string liveRoot = IOHelper.MapPath(uSyncIO.RootFolder);
+            string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder);
+
+            string currentFile = string.Format(@"{0}\{1}\{2}.config",
+                liveRoot, GetTypeFolder(type), ScrubFile(name));
+
+            if (File.Exists(currentFile))
+            {
+                OnPreDelete(new XmlDocFileEventArgs(currentFile));
+                File.Delete(currentFile);
+                OnDeleted(new XmlDocFileEventArgs(currentFile));
+
+                uSyncLog.InfoLog("Deleted File [{0}]", currentFile); 
+            }
+            
+            
+        }
+
 
        
         /// <summary>

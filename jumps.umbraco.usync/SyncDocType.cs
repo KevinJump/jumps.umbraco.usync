@@ -172,7 +172,15 @@ namespace jumps.umbraco.usync
                     {
                         LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value); 
                         ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
-                        updated.Add(node.Element("Info").Element("Alias").Value, file); 
+
+                        if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
+                        {
+                            updated.Add(node.Element("Info").Element("Alias").Value, file);
+                        }
+                        else
+                        {
+                            LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder"); 
+                        }
                     }
                 }
             
