@@ -8,17 +8,14 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq; 
 
-using umbraco.cms.businesslogic;
-using umbraco.cms.businesslogic.web;
-using umbraco.cms.businesslogic.packager;
-using umbraco.BusinessLogic;
+using Umbraco.Core ;
 using Umbraco.Core.IO;
-using umbraco;
-
-using Umbraco.Core ; 
 using Umbraco.Core.Services;
 using Umbraco.Core.Models;
-using Umbraco.Core.Logging; 
+using Umbraco.Core.Logging;
+
+using jumps.umbraco.usync.Extensions;
+using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
@@ -31,7 +28,17 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncDocType
     {
-        static Dictionary<string, string> updated; 
+        static Dictionary<string, string> updated;
+
+        private static PackagingService _packageService;
+        private static IContentTypeService _contentTypeService; 
+
+        static SyncDocType()
+        {
+            _packageService = ApplicationContext.Current.Services.PackagingService;
+            _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
+        }
+
 
         /// <summary>
         /// save a document type to the disk, the document type will be 
@@ -41,16 +48,14 @@ namespace jumps.umbraco.usync
         /// this makes it easier to read them back in
         /// </summary>
         /// <param name="item">DocumentType to save</param>
-        public static void SaveToDisk(DocumentType item)
+        public static void SaveToDisk(IContentType item)
         {
             if (item != null)
             {
                 try
                 {
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    // add tabs..
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", xmlDoc);
+                    XElement element = item.ExportToXml();
+                    XmlDoc.SaveElement("DocumentType", item.GetSyncPath(), "def", element);
                 }
                 catch (Exception e)
                 {
@@ -69,7 +74,7 @@ namespace jumps.umbraco.usync
         {
             try
             {
-                foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
+                foreach (IContentType item in _contentTypeService.GetAllContentTypes())
                 {
                     if (item != null)
                     {
@@ -84,37 +89,7 @@ namespace jumps.umbraco.usync
             }
         }
         
-        /// <summary>
-        /// works out what the folder stucture for a doctype should be.
-        /// 
-        /// recurses up the parent path of the doctype, adding a folder
-        /// for each one, this then gives us a structure we can create
-        /// on the disk, that mimics that of the umbraco internal one
-        /// </summary>
-        /// <param name="item">DocType path to find</param>
-        /// <returns>folderstucture (relative to uSync folder)</returns>
-        private static string GetDocPath(DocumentType item)
-        {
-            string path = "";
-
-            if (item != null)
-            {
-                // does this documentType have a parent 
-                if (item.MasterContentType != 0)
-                {
-                    // recurse in to the parent to build the path
-                    path = GetDocPath(new DocumentType(item.MasterContentType));
-                }
-
-                // buld the final path (as path is "" to start with we always get
-                // a preceeding '/' on the path, which is nice
-                path = string.Format(@"{0}\{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
-            }
-         
-            return path; 
-        }
-
-        
+              
         /// <summary>
         /// Gets all teh documentTypes from the disk, and puts them into
         /// umbraco 
@@ -169,8 +144,8 @@ namespace jumps.umbraco.usync
                     XElement node = XElement.Load(file) ;                                                    
                     if (node != null ) 
                     {
-                        LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value); 
-                        ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
+                        LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
+                        node.ImportContentType();
 
                         if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
                         {
@@ -203,93 +178,25 @@ namespace jumps.umbraco.usync
 
                     if (docType != null)
                     {
+                        // is it a container (in v6 api but only really a v7 thing)
+                        docType.ImportContainerType(node);
+
                         // import structure
-                        ImportStructure(docType, node); 
+                        docType.ImportStructure(node);
                         
-                        // fix tab order 
-                        // TabSortOrder(docType, node); 
 
                         // delete things that are not in our source xml?
-                        RemoveMissingProperties(docType, node); 
-                        
-                        // save
-                        ApplicationContext.Current.Services.ContentTypeService.Save(docType);
+                        docType.ImportRemoveMissingProps(node);
+
+                        // fix tab order 
+                        docType.ImportTabSortOrder(node);
+
+                        _contentTypeService.Save(docType);
                     }
                 }
             }
         }
 
-        private static void ImportStructure(IContentType docType, XElement node)
-        {
-            XElement structure = node.Element("Structure");
-
-            List<ContentTypeSort> allowed = new List<ContentTypeSort>();
-            int sortOrder = 0;
-
-            foreach (var doc in structure.Elements("DocumentType"))
-            {
-                string alias = doc.Value;
-                IContentType aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
-
-                if (aliasDoc != null)
-                {
-                    allowed.Add(new ContentTypeSort(new Lazy<int>(() => aliasDoc.Id), sortOrder, aliasDoc.Name));
-                    sortOrder++;
-                }
-            }
-
-            docType.AllowedContentTypes = allowed;
-        }
-
-        private static void TabSortOrder(IContentType docType, XElement node)
-        {
-            XElement tabs = node.Element("tabs");
-
-            foreach (var tab in tabs.Elements("tab"))
-            {
-                var caption = tab.Element("Caption").Value; 
-
-                if (tab.Element("SortOrder") != null)
-                {
-                    var sortOrder = tab.Element("SortOrder").Value;
-                    docType.PropertyGroups[caption].SortOrder = int.Parse(sortOrder);                     
-                }
-            }
-        }
-
-        private static void RemoveMissingProperties(IContentType docType, XElement node)
-        {
-            if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
-            {
-                LogHelper.Debug<SyncDocType>("DeletePropertyValue = false - exiting"); 
-                return;
-            }
-
-            List<string> propertiesToRemove = new List<string>(); 
-
-            foreach (var property in docType.PropertyTypes)
-            {
-                // is this property in our xml ?
-                XElement propertyNode = node.Element("GenericProperties")
-                                            .Elements("GenericProperty")
-                                            .Where(x => x.Element("Alias").Value == property.Alias)
-                                            .SingleOrDefault();
-
-                if (propertyNode == null)
-                {
-                    // delete it from the doctype ? 
-                    propertiesToRemove.Add(property.Alias);
-                    LogHelper.Debug<SyncDocType>("Removing property {0} from {1}", 
-                        ()=> property.Alias, ()=> docType.Name);
-                    
-                }                
-            }
-
-            foreach (string alias in propertiesToRemove)
-            {
-                docType.RemovePropertyType(alias);
-            }
-        }
 
         /// <summary>
         /// attach events, adds the event handlers for this class 
@@ -307,7 +214,7 @@ namespace jumps.umbraco.usync
                 ()=> e.SavedEntities.Count());
             foreach (var docType in e.SavedEntities)
             {
-                SaveToDisk(new DocumentType(docType.Id));
+                SaveToDisk(docType);
             }
         }
 
@@ -317,7 +224,7 @@ namespace jumps.umbraco.usync
             // delete things (there can sometimes be more than one??)
             foreach (var docType in e.DeletedEntities)
             {
-                helpers.XmlDoc.ArchiveFile("DocumentType", GetDocPath(new DocumentType(docType.Id)), "def") ; 
+                helpers.XmlDoc.ArchiveFile("DocumentType", docType.GetSyncPath(), "def") ; 
             }
         }
     }
