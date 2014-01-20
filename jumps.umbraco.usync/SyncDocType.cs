@@ -243,7 +243,6 @@ namespace jumps.umbraco.usync
 
         private static void TabSortOrder(IContentType docType, XElement node)
         {
-            // not yet, probibly going to have to re-write quite a bit of the import/export to get this out
             XElement tabs = node.Element("tabs");
 
             foreach (var tab in tabs.Elements("tab"))

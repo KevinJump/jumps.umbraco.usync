@@ -215,6 +215,12 @@ namespace jumps.umbraco.usync
         {
             LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
 
+            if (!ApplicationContext.Current.IsConfigured)
+             {
+                 LogHelper.Info<uSync>("umbraco not configured, usync aborting");
+                 return;
+             }
+
             OnStarting(new uSyncEventArgs(_read, _write, _attach)); 
 
             // Save Everything to disk.
