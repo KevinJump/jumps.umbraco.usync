@@ -22,7 +22,7 @@ namespace jumps.umbraco.usync.Extensions
     /// </summary>
     public static class IContentTypeExtensions
     {
-        static PackagingService _packageService;
+        static IPackagingService _packageService;
         static IContentTypeService _contentTypeService;
 
         static IContentTypeExtensions()

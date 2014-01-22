@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>jumps.umbraco.usync</RootNamespace>
     <AssemblyName>jumps.umbraco.usync</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;UMBRACO6</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;UMBRACO7</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -44,13 +44,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="businesslogic">
-      <HintPath>..\Refrences\Umb6.1.6\businesslogic.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.0.2\businesslogic.dll</HintPath>
     </Reference>
     <Reference Include="cms">
-      <HintPath>..\Refrences\Umb6.1.6\cms.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.0.2\cms.dll</HintPath>
     </Reference>
     <Reference Include="interfaces">
-      <HintPath>..\Refrences\Umb6.1.6\interfaces.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.0.2\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -62,21 +62,22 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="umbraco">
-      <HintPath>..\Refrences\Umb6.1.6\umbraco.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.0.2\umbraco.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Core">
-      <HintPath>..\Refrences\Umb6.1.6\Umbraco.Core.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.0.2\Umbraco.Core.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.DataLayer">
-      <HintPath>..\Refrences\Umb6.1.6\umbraco.DataLayer.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.0.2\umbraco.DataLayer.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.providers">
-      <HintPath>..\Refrences\Umb6.1.6\umbraco.providers.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.0.2\umbraco.providers.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\IContentTypeExtensions.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
+    <Compile Include="helpers\uSyncStrings.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="helpers\XmlDocFileEventArgs.cs" />
     <Compile Include="SyncDataType.cs" />
