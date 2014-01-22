@@ -80,7 +80,7 @@ namespace jumps.umbraco.usync.helpers
             }
             else if ( File.Exists(targetFile))
             {
-                if ( !_versions)
+                if ( _versions)
                 {
                     ArchiveFile(
                         Path.GetDirectoryName(path),
