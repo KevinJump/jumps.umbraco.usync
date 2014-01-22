@@ -34,7 +34,18 @@ uSync for Umbraco 6 v1.6.0
 
 uSync is a umbraco DB to/from disk syncing tool. 
 
-uSync will write out the DocumentTypes, Macros, DataTypes,Dictionary Items, Languages, Templates and Stylesheets to disk so they can be added to source control, it also reads the same files from disk and adds them to the umbraco install. 
+uSync will write out the following to disk : 
+- DocumentTypes, 
+- Macros, 
+- DataTypes,
+- Dictionary Items, 
+- Languages, 
+- Templates 
+- Stylesheets 
+
+you can then source control them
+
+uSync will also read the same files at startup and add them to umbraco. 
 
 uSync is designed to aid the sycronization  and source control of umbraco installations, it needs to be used in conjunction with other tools as part of a calorie controlled installation. ]]></readme>
   </info>

@@ -157,6 +157,7 @@ namespace jumps.umbraco.usync.Extensions
 
                 if (propertyNode == null)
                 {
+                    LogHelper.Info<uSync>("Removing {0} from {1}", () => property.Alias, () => item.Name);
                     propertiesToRemove.Add(property.Alias);
                 }
                 else
@@ -216,21 +217,32 @@ namespace jumps.umbraco.usync.Extensions
                         if ( !propGroup.PropertyTypes.Any(x => x.Alias == property.Alias))
                         {
                             // if it's not in this prop group - we can move it it into it
+                            LogHelper.Info<uSync>("Moving {0} in {1} to {2}",
+                                () => property.Alias, () => item.Name, () => tab);
                             propertiesToMove.Add(property.Alias, tab);
                         }
                     }
-
-                    foreach(string alias in propertiesToRemove)
-                    {
-                        item.RemovePropertyType(alias);
-                    }
-
-                    foreach (KeyValuePair<string, string> movePair in propertiesToMove)
-                    {
-                        item.MovePropertyType(movePair.Key, movePair.Value);
-                    }
                 }
             }
+
+            foreach (string alias in propertiesToRemove)
+            {
+                LogHelper.Debug<uSync>("Removing {0}", () => alias);
+                item.RemovePropertyType(alias);
+            }
+
+            foreach (KeyValuePair<string, string> movePair in propertiesToMove)
+            {
+                item.MovePropertyType(movePair.Key, movePair.Value);
+            }
+
+            if (propertiesToRemove.Count > 0 || propertiesToMove.Count > 0)
+            {
+                LogHelper.Debug<uSync>("Saving {0}", () => item.Name);
+                _contentTypeService.Save(item);
+            }
+                
+
         }
 
         public static void ImportContainerType(this IContentType item, XElement node)
