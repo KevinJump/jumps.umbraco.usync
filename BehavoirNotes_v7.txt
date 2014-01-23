@@ -10,3 +10,11 @@ Macro - (works well on v7)
 	usync will create a new propery but it will think you deleted the
 	old one. the effect is the same but you actually get a new
 	property.
+
+DataTypes - 
+	
+	You can't change the type of a datatype once it's been synced
+  	(because the functions are internal to umbraco only)
+
+	PreValuing is using the dataservice - need to see what this does
+	with some of the more exotic datatypes.

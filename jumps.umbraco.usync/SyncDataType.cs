@@ -87,10 +87,57 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        packagingService.ImportDataTypeDefinitions(node); 
+                        var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
+
+                        packagingService.ImportDataTypeDefinitions(node);
+
+                        var dataTypeDefinitionId = new Guid(node.Attribute("Definition").Value);
+                        
+                        var definition = dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
+
+                        if ( definition != null )
+                        {
+                            /*
+                             can't do this - the proerties are private/interal
+                             */
+                            
+                            /*
+                            var id = node.Attribute("Definition").Value;
+                            var definition = dataTypeService.GetDataTypeDefinitionById(id);
+
+                            if ( definition != null )
+                            {
+                                
+                            }
+                            */
+
+                            UpdatePreValues(definition, node);
+                        }
                     }
                 }
             }
+        }
+
+        private static void UpdatePreValues(IDataTypeDefinition dataType, XElement node)
+        {
+            LogHelper.Info<uSync>("Updating preValues {0}", () => dataType.Id);
+            var preValues = node.Element("PreValues");
+            var dataTypeSerivce = ApplicationContext.Current.Services.DataTypeService;
+
+            if (preValues != null)
+            {
+                var valuesWithoutKeys = preValues.Elements("PreValue")
+                                                      .Where(x => ((string)x.Attribute("Alias")).IsNullOrWhiteSpace())
+                                                      .Select(x => x.Attribute("Value").Value);
+
+                var valuesWithKeys = preValues.Elements("PreValue")
+                                                     .Where(x => ((string)x.Attribute("Alias")).IsNullOrWhiteSpace() == false)
+                                                     .ToDictionary(key => (string)key.Attribute("Alias"), val => new PreValue((string)val.Attribute("Value")));
+
+                dataTypeSerivce.SavePreValues(dataType.Id, valuesWithKeys);
+                dataTypeSerivce.SavePreValues(dataType.Id, valuesWithoutKeys);
+            }
+
         }
 
         public static void AttachEvents()
