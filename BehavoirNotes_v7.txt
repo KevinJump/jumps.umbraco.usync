@@ -18,3 +18,12 @@ DataTypes -
 
 	PreValuing is using the dataservice - need to see what this does
 	with some of the more exotic datatypes.
+
+Templates -
+Stylesheets -
+
+	the actual contents of the files is only synced when the file
+	doesn't exist (i.e first time) - this is the prefered way for
+	development, as you will often edit the files outside of 
+	you need to copy the folders for it to actually sync.
+
