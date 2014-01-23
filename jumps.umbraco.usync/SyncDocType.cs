@@ -59,7 +59,7 @@ namespace jumps.umbraco.usync
                 }
                 catch (Exception e)
                 {
-                    LogHelper.Debug<SyncDocType>("uSync: Error Saving DocumentType {0} - {1}", 
+                    LogHelper.Info<SyncDocType>("uSync: Error Saving DocumentType {0} - {1}", 
                         ()=> item.Alias, ()=> e.ToString()); 
                 }
             }
@@ -85,7 +85,7 @@ namespace jumps.umbraco.usync
             catch( Exception ex )
             {
                 // error saving to disk, can happen if Umbraco has orphaned doctypes & GetAll thows an error! 
-                LogHelper.Debug<SyncDocType>("uSync: Error Writing doctypes to disk {0}", ()=> ex.ToString());
+                LogHelper.Info<SyncDocType>("uSync: Error Writing doctypes to disk {0}", ()=> ex.ToString());
             }
         }
         

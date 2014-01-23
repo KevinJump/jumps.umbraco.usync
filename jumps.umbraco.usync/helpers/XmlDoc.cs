@@ -74,6 +74,8 @@ namespace jumps.umbraco.usync.helpers
 
             OnPreSave(new XmlDocFileEventArgs(targetFile));
 
+            LogHelper.Info<uSync>("Saving {0}", () => targetFile);
+
             if (!Directory.Exists(folder))
             {
                 Directory.CreateDirectory(folder);

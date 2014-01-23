@@ -4,20 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using System.Xml ;
-using umbraco.cms.businesslogic;
-using umbraco.cms.businesslogic.template;
-
-using umbraco.BusinessLogic; 
+using System.Xml;
+using System.Xml.Linq;
 
 using System.IO; 
-using Umbraco.Core.IO;
 
 using Umbraco.Core;
+using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
-using umbraco.businesslogic;
+using Umbraco.Core.Models;
+using Umbraco.Core.Services;
 
+using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
@@ -33,31 +32,35 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncTemplate
     {
-        public static void SaveToDisk(Template item)
+
+        public static void SaveToDisk(ITemplate item)
         {
             if (item != null)
             {
                 try
                 {
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(
-                        item.GetType().ToString(), GetDocPath(item) , "def", xmlDoc);
+                    var packagingService = ApplicationContext.Current.Services.PackagingService;
+
+                    XElement node = packagingService.Export(item, true);
+
+                    XmlDoc.SaveElement("Template", XmlDoc.ScrubFile(item.Name) , node);
                 }
                 catch (Exception ex)
                 {
                     LogHelper.Info<SyncTemplate>("uSync: Error Saving Template {0} - {1}", 
-                        ()=>item.Text, ()=>ex.ToString());
+                        ()=>item.Name, ()=>ex.ToString());
                 }
             }
         }
 
         public static void SaveAllToDisk()
         {
+            var fileService = ApplicationContext.Current.Services.FileService; 
+
             try
             {
-                foreach (Template item in Template.GetAllAsList().ToArray())
-                {
+                foreach(Template item in fileService.GetTemplates() )
+                { 
                     SaveToDisk(item);
                 }
             }
@@ -67,12 +70,13 @@ namespace jumps.umbraco.usync
             }
         }
 
+        /*
         private static string GetDocPath(Template item)
         {
             string path = "";
             if (item != null)
             {
-                if (item.MasterTemplate != 0)
+                if (item != 0)
                 {
                     path = GetDocPath(new Template(item.MasterTemplate));
                 }
@@ -81,6 +85,7 @@ namespace jumps.umbraco.usync
             }
             return path;
         }
+        */
 
         public static void ReadAllFromDisk()
         {
@@ -96,35 +101,17 @@ namespace jumps.umbraco.usync
         {
             if (Directory.Exists(path))
             {
-                User user = new User(0); 
+                var packagingService = ApplicationContext.Current.Services.PackagingService ; 
 
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
 
-                    XmlNode node = xmlDoc.SelectSingleNode("//Template");
+                    XElement node = XElement.Load(file) ;                                                    
+                    if (node != null ) {
+                        LogHelper.Debug<SyncTemplate>("Importing template {0}", ()=> path);
+                        
+                        var templates = packagingService.ImportTemplates(node);
 
-                    if (node != null)
-                    {
-                        LogHelper.Debug<SyncTemplate>("Importing template {0} {1}", 
-                            ()=> path, ()=> node.InnerXml); 
-
-
-                       Template t = Template.Import(node,user);
-
-                        string master = global::umbraco.xmlHelper.GetNodeValue(node.SelectSingleNode("Master"));
-
-                        if (master.Trim() != "")
-                        {
-
-                            Template masterTemplate = Template.GetByAlias(master);
-                            if (masterTemplate != null)
-                            {
-                                t.MasterTemplate = masterTemplate.Id;
-                            }
-                            t.Save();
-                        }
                     }
                 }
 
@@ -137,25 +124,26 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents()
         {
-            Template.AfterSave += Template_AfterSave;
-            Template.AfterDelete += Template_AfterDelete;
+
+            FileService.SavedTemplate += FileService_SavedTemplate;
+            FileService.DeletedTemplate += FileService_DeletedTemplate;
 
         }
 
-        static void Template_AfterDelete(Template sender, DeleteEventArgs e)
+        static void FileService_DeletedTemplate(IFileService sender, Umbraco.Core.Events.DeleteEventArgs<ITemplate> e)
         {
-            // helpers.XmlDoc.ArchiveFile( helpers.XmlDoc.GetTypeFolder(sender.GetType().ToString()) + GetDocPath(sender), "def");
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), GetDocPath(sender), "def"); 
-
-
-            e.Cancel = false; 
+            foreach(var item in e.DeletedEntities )
+            {
+                XmlDoc.ArchiveFile("Templates", XmlDoc.ScrubFile(item.Name));
+            }
         }
 
-        static void Template_AfterSave(Template sender, SaveEventArgs e)
+        static void FileService_SavedTemplate(IFileService sender, Umbraco.Core.Events.SaveEventArgs<ITemplate> e)
         {
-            // save
-            SaveToDisk(sender);
+            foreach(var item in e.SavedEntities)
+            {
+                SaveToDisk(item);
+            }
         }
-        
     }
 }
