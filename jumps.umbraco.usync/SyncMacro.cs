@@ -5,16 +5,17 @@ using System.Text;
 using System.Threading.Tasks;
 
 using System.Xml ;
-using System.IO; 
+using System.Xml.Linq;
 
-using umbraco.cms.businesslogic; 
-using umbraco.cms.businesslogic.macro ;
-using umbraco.cms.businesslogic.packager ; 
-using umbraco.BusinessLogic;
+using System.IO;
 
+using Umbraco.Core;
+using Umbraco.Core.Services;
+using Umbraco.Core.Models;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
+using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
@@ -30,15 +31,17 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncMacro
     {
-        public static void SaveToDisk(Macro item)
+        public static void SaveToDisk(IMacro item)
         {
             if (item != null)
             {
                 try
                 {
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc);
+                    var packagingService = ApplicationContext.Current.Services.PackagingService;
+
+                    XElement node = packagingService.Export(item);
+
+                    XmlDoc.SaveElement("Macro", XmlDoc.ScrubFile(item.Alias), node);
                 }
                 catch (Exception ex)
                 {
@@ -51,7 +54,10 @@ namespace jumps.umbraco.usync
         {
             try
             {
-                foreach (Macro item in Macro.GetAll())
+                var macroService = ApplicationContext.Current.Services.MacroService;
+
+                
+                foreach (var item in macroService.GetAll())
                 {
                     SaveToDisk(item);
                 }
@@ -76,17 +82,15 @@ namespace jumps.umbraco.usync
         {
             if ( Directory.Exists(path) )
             {
+                var packagingService = ApplicationContext.Current.Services.PackagingService;
+
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
-
-                    XmlNode node = xmlDoc.SelectSingleNode("//macro");
+                    XElement node = XElement.Load(file);
 
                     if (node != null)
                     {
-                        Macro m = Macro.Import(node);
-                        m.Save();
+                        var macros = packagingService.ImportMacros(node);
                     }
                 }
             }
@@ -94,20 +98,24 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents()
         {
-            Macro.AfterSave += Macro_AfterSave;
-            Macro.AfterDelete += Macro_AfterDelete;
+            MacroService.Saved += MacroService_Saved;
+            MacroService.Deleted += MacroService_Deleted;
         }
 
-        static void Macro_AfterDelete(Macro sender, DeleteEventArgs e)
+        static void MacroService_Deleted(IMacroService sender, Umbraco.Core.Events.DeleteEventArgs<IMacro> e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Alias);
-
-            e.Cancel = false;
+            foreach(var macro in e.DeletedEntities)
+            {
+                XmlDoc.ArchiveFile("Macro", XmlDoc.ScrubFile(macro.Alias));
+            }
         }
 
-        static void Macro_AfterSave(Macro sender, SaveEventArgs e)
+        static void MacroService_Saved(IMacroService sender, Umbraco.Core.Events.SaveEventArgs<IMacro> e)
         {
-            SaveToDisk(sender); 
+            foreach(var macro in e.SavedEntities)
+            {
+                SaveToDisk(macro);
+            }
         }
-    }
+     }
 }

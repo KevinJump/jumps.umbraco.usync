@@ -43,7 +43,7 @@ namespace jumps.umbraco.usync
 
                     XElement node = packagingService.Export(item, true);
 
-                    XmlDoc.SaveElement("Template", XmlDoc.ScrubFile(item.Name) , node);
+                    XmlDoc.SaveElement("Template", XmlDoc.ScrubFile(item.Alias) , node);
                 }
                 catch (Exception ex)
                 {
@@ -124,22 +124,39 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents()
         {
+            global::umbraco.cms.businesslogic.template.Template.AfterDelete += Template_AfterDelete;
+            global::umbraco.cms.businesslogic.template.Template.AfterSave += Template_AfterSave;
 
+            /*
             FileService.SavedTemplate += FileService_SavedTemplate;
             FileService.DeletedTemplate += FileService_DeletedTemplate;
+             */
 
+        }
+
+        static void Template_AfterSave(global::umbraco.cms.businesslogic.template.Template sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
+        {
+            LogHelper.Info<uSync>("Template After Save");
+            SaveToDisk(ApplicationContext.Current.Services.FileService.GetTemplate(sender.Alias)); 
+        }
+
+        static void Template_AfterDelete(global::umbraco.cms.businesslogic.template.Template sender, global::umbraco.cms.businesslogic.DeleteEventArgs e)
+        {
+            LogHelper.Info<uSync>("Template after delete");
+            XmlDoc.ArchiveFile("Template", XmlDoc.ScrubFile(sender.Alias)); 
         }
 
         static void FileService_DeletedTemplate(IFileService sender, Umbraco.Core.Events.DeleteEventArgs<ITemplate> e)
         {
             foreach(var item in e.DeletedEntities )
             {
-                XmlDoc.ArchiveFile("Templates", XmlDoc.ScrubFile(item.Name));
+                XmlDoc.ArchiveFile("Template", XmlDoc.ScrubFile(item.Alias));
             }
         }
 
         static void FileService_SavedTemplate(IFileService sender, Umbraco.Core.Events.SaveEventArgs<ITemplate> e)
         {
+            LogHelper.Info<uSync>("Saving Templates"); 
             foreach(var item in e.SavedEntities)
             {
                 SaveToDisk(item);
