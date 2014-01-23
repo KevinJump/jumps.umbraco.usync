@@ -91,8 +91,89 @@ namespace jumps.umbraco.usync
                     if (node != null)
                     {
                         var macros = packagingService.ImportMacros(node);
+                        foreach( var macro in macros)
+                        {
+                            // second pass. actually make some changes...
+                            ApplyUpdates(macro, node);
+                        }
                     }
                 }
+            }
+        }
+
+        private static void ApplyUpdates(IMacro macro, XElement node)
+        {
+
+            if ( macro != null )
+            {
+
+                macro.Name = node.Element("name").Value;
+                macro.ControlType = node.Element("scriptType").Value;
+                macro.ControlAssembly = node.Element("scriptAssembly").Value;
+                macro.XsltPath = node.Element("xslt").Value;
+                macro.ScriptPath = node.Element("scriptingFile").Value;
+
+                macro.UseInEditor = 
+                    XmlDoc.GetValueOrDefault(node.Element("useInEditor"), false);
+
+                macro.CacheDuration = 
+                    XmlDoc.GetValueOrDefault(node.Element("refreshRate"), 0);
+
+                macro.CacheByMember =
+                    XmlDoc.GetValueOrDefault(node.Element("cacheByMember"), false);
+
+                macro.CacheByPage =
+                    XmlDoc.GetValueOrDefault(node.Element("cacheByPage"), false);
+
+                macro.DontRender =
+                    XmlDoc.GetValueOrDefault(node.Element("dontRender"), true);
+
+                var macroService = ApplicationContext.Current.Services.MacroService;
+
+                // update properties (the package service will add new ones)
+
+                var properties = node.Element("properties");
+                if ( properties != null )
+                {
+                    foreach(var property in properties.Elements())
+                    {
+                        var propertyAlias = property.Attribute("alias").Value;
+
+                        var prop = macro.Properties.First(x => x.Alias == propertyAlias);
+
+                        if ( prop != null)
+                        {
+                            prop.Name = property.Attribute("name").Value;
+                            prop.EditorAlias = property.Attribute("propertyType").Value;
+                        }
+                    }
+
+                }
+
+                // remove 
+                List<string> propertiesToRemove = new List<string>();
+
+                foreach(var currentProperty in macro.Properties)
+                {
+                    XElement propertyNode = node.Element("properties")
+                                                .Elements("property")
+                                                .Where(x => x.Attribute("alias").Value == currentProperty.Alias)
+                                                .SingleOrDefault();
+
+                    if ( propertyNode == null)
+                    {
+                        LogHelper.Info<uSync>("Removing {0}", ()=> currentProperty.Alias);
+                        propertiesToRemove.Add(currentProperty.Alias);
+                    }
+
+                }
+
+                foreach(string alias in propertiesToRemove)
+                {
+                    macro.Properties.Remove(alias);
+                }
+
+                macroService.Save(macro);
             }
         }
 

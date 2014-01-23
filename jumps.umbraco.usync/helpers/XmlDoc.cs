@@ -337,5 +337,40 @@ namespace jumps.umbraco.usync.helpers
             SyncFileWatcher.Start();
 
         }
+
+        #region XElement value getters 
+
+
+        public static bool GetValueOrDefault(XElement element, bool defaultValue)
+        {
+            if (element != null && !string.IsNullOrEmpty(element.Value))
+            {
+                return bool.Parse(element.Value);
+            }
+            return defaultValue;
+        }
+
+
+        public static int GetValueOrDefault(XElement element, int defaultValue)
+        {
+            if (element != null && !string.IsNullOrEmpty(element.Value))
+            {
+                return int.Parse(element.Value);
+            }
+            return defaultValue;
+        }
+
+
+        public static string GetValueOrDefault(XElement element, string defaultValue)
+        {
+            if (element != null && !string.IsNullOrEmpty(element.Value))
+            {
+                return element.Value;
+            }
+            return defaultValue;
+        }
+
+
+        #endregion
     }
 }

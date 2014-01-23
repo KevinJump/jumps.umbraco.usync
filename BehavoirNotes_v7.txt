@@ -1,0 +1,12 @@
+Known Behavior - uSync 2.1. for umbraco 7
+=========================================
+
+Macro - (works well on v7)
+
+	the key is the alias, so if you change the alias, you will get
+	a new macro at the other end not a rename.
+
+	the properties key of the alias to, if you rename the alias, then
+	usync will create a new propery but it will think you deleted the
+	old one. the effect is the same but you actually get a new
+	property.
