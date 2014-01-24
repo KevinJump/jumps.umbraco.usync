@@ -27,3 +27,28 @@ Stylesheets -
 	development, as you will often edit the files outside of 
 	you need to copy the folders for it to actually sync.
 
+Dictionary / Languages - 
+
+	Dictionary items suffer from a double save bug - 
+	that is when you make a change and click save - usync doesn't get
+	passed the change, clicking save again, causes usync to get the change
+	and store the changes.
+
+	the changes are not replicated upon change - but this bit of the 
+	api is in flux. 
+
+DocTypes - 
+
+	All bits of doctype are replicated and can change. 
+	Tab sort ordrer is maintained. 
+
+	The order of properties within a tab is not maintained. 
+
+	changing a property type will be replicated but if it changes
+	the underling datatype it may cause issues.
+
+MediaTypes - 
+
+	Media types are less evolved - import works, 
+
+	changes - 
