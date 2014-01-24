@@ -307,9 +307,16 @@ namespace jumps.umbraco.usync
             if (!String.IsNullOrEmpty(master))
             {
                 // throw new System.Exception(String.Format("Throwing in {0}, master {1}", mt.Text, master));
-                MediaType pmt = MediaType.GetByAlias(master);
-                if (pmt != null)
-                    mt.MasterContentType = pmt.Id;
+                try
+                {
+                    MediaType pmt = MediaType.GetByAlias(master);
+                    if (pmt != null)
+                        mt.MasterContentType = pmt.Id;
+                }
+                catch(Exception ex)
+                {
+                    LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", () => ex.ToString()); 
+                }
                 
             }
 
@@ -425,10 +432,18 @@ namespace jumps.umbraco.usync
                     ArrayList allowed = new ArrayList();
                     foreach (XmlNode structure in n.SelectNodes("Structure/MediaType"))
                     {
-                        MediaType dtt = MediaType.GetByAlias(xmlHelper.GetNodeValue(structure));
-                        if (dtt != null)
-                            allowed.Add(dtt.Id);
+                        try
+                        {
+                            MediaType dtt = MediaType.GetByAlias(xmlHelper.GetNodeValue(structure));
+                            if (dtt != null)
+                                allowed.Add(dtt.Id);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogHelper.Info<uSync>("Can't find structure mediatype - so skipping");
+                        }
                     }
+
                     int[] adt = new int[allowed.Count];
                     for (int i = 0; i < allowed.Count; i++)
                         adt[i] = (int)allowed[i];
