@@ -57,6 +57,7 @@ namespace jumps.umbraco.usync.Extensions
                 allowedItem.DisposeIfDisposable();
             }
 
+            // put the sort order on the tabs
             var tabs = element.Element("Tabs");
             foreach(var tab in item.PropertyGroups)
             {
@@ -66,6 +67,19 @@ namespace jumps.umbraco.usync.Extensions
                 {
                     tabNode.Add(new XElement("SortOrder", tab.SortOrder));
                 }
+            }
+
+            // put the sort order on the proerties ?
+            var properties = element.Element("GenericProperties");
+            foreach(var prop in item.PropertyTypes)
+            {
+                XElement propNode = properties.Elements().First(x => x.Element("Alias").Value == prop.Alias);
+
+                if ( propNode != null )
+                {
+                    propNode.Add(new XElement("SortOrder", prop.SortOrder));
+                }
+
             }
 
             return element;
@@ -209,6 +223,10 @@ namespace jumps.umbraco.usync.Extensions
                     property.Mandatory = propertyNode.Element("Mandatory").Value.ToLowerInvariant().Equals("true");
                     property.ValidationRegExp = propertyNode.Element("Validation").Value;
 
+                    XElement sortOrder = propertyNode.Element("SortOrder");
+                    if (sortOrder != null)
+                        property.SortOrder = int.Parse(sortOrder.Value); 
+                    
                     var tab = propertyNode.Element("Tab").Value;
                     if ( !string.IsNullOrEmpty(tab))
                     {
