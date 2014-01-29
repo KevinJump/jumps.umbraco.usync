@@ -67,7 +67,17 @@ namespace jumps.umbraco.usync.SyncProviders
                     tabNode.Add(new XElement("SortOrder", tab.SortOrder));
                 }
             }
-                
+
+            var properties = element.Element("GenericProperties");
+            foreach(var prop in item.PropertyTypes)
+            {
+                XElement propNode = properties.Elements().First(x => x.Element("Alias").Value == prop.Alias);
+
+                if (propNode != null)
+                { 
+                    propNode.Add(new XElement("SortOrder", prop.SortOrder));
+                }
+            }
 
             return element;
 
@@ -271,6 +281,10 @@ namespace jumps.umbraco.usync.SyncProviders
                     property.Description = propertyNode.Element("Description").Value;
                     property.Mandatory = propertyNode.Element("Mandatory").Value.ToLowerInvariant().Equals("true");
                     property.ValidationRegExp = propertyNode.Element("Validation").Value;
+
+                    var sortOrder = propertyNode.Element("SortOrder");
+                    if (sortOrder != null)
+                        property.SortOrder = int.Parse(sortOrder.Value);
 
                     /*
                     var helpText = propertyNode.Element("HelpText");
