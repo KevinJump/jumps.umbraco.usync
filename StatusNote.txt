@@ -1,0 +1,59 @@
+The State of uSync 1st Feb 2014
+-------------------------------
+
+Hello, I thought it might be good to give everyone a update on what state uSync is
+in at the moment - it's a bit of a mess, partly because I tried to change many 
+things at once, and a bit because things are changing in the core with each new
+version.
+
+As with many packages - usync comes in many versions, this mainly reflects the 
+evolving API within umbraco - when it becomes impossible to have a shared version
+a new branch of usync has to be made. the table below details the versions and 
+how they work.
+
+v1.3.3 - Umbraco 4
+==================
+A solid albeit simple version of uSync. this version doesn't include dictionary
+types, and some of the more advanced tweaks that have gone on since.
+
+v1.5.8 - Umbraco 6
+==================
+this is currently the default version of usync - it is fairy feature rich and does
+most of the things people want from usync. it however uses the legacy API and as
+such much of the code stops working post v6.1.x versions of umbraco. 
+
+v2.0.0rc3 - Umbraco 7
+=====================
+this is the experimental get a version out for 7 release - look away now.
+it does work (on v7.0.0/1) but it's a ugly mix of the v4 and v6 api - it just about
+holds together and almost certainly has some bugs in datatypes and doctypes.
+
+v2.1.0 - Umbraco6 (and soon7)
+=============================
+this is the bring it all back together release - using v1.5.8 as the core, most of
+the import/export functions have been migrated and tested with the new api. the 
+code is much cleaner and checks for a lot more stuff. 
+
+unfortunatyl as a result of this migration v2.1.0 has exposed some core bugs that make this version not quite ready
+for production use (especially on v7) - as these bugs are in the core, there isn't
+much i can do to bypass them inside usync, but the pull requests have been created
+and submitted to the core, so hopefully umbraco 7.0.3 should see uSync working strong
+again with umbraco. 
+
+when the latest umbraco release(s) contain these fixes uSync 2.1 will be the default
+version and v1.5.8 and v2.0.0rc3 will be removed to avoid confusion.
+
++=========+=======+=======+=======+=======+=========+========+========+
+| Version | 4.10+ | 6.0.x | 6.1.x | 6.2.0 | 7.0.0/1 | 7.0.2  | 7.0.3+ |
++=========+=======+=======+=======+=======+=========+========+========+
+| 1.3.3   |   X   |       |       |       |         |        |        |
++---------+-------+-------+-------+-------+---------+--------+--------+
+| 1.5.8   |       |   *   |   X   |       |         |        |        |
++---------+-------+-------+-------+-------+---------+--------+--------+
+| 2.0.0rc3|       |       |       |       |    #    |        |        |
++---------+-------+-------+-------+-------+---------+--------+--------+
+| 2.1.0   |       |       |       |   X   |         |        |    X   |
++---------+-------+-------+-------+-------+---------+--------+--------+
+
+* - works with 6.0.5/6 - but not extensively tested.
+# - only if you are feeling brave. 
