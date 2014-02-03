@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<umbPackage>
+  <files>
+    <file>
+      <guid>jumps.umbraco.usync.dll</guid>
+      <orgPath>/bin</orgPath>
+      <orgName>jumps.umbraco.usync.dll</orgName>
+    </file>
+    <file>
+      <guid>uSyncSettings.config</guid>
+      <orgPath>/config</orgPath>
+      <orgName>uSyncSettings.config</orgName>
+    </file>
+  </files>
+  <info>
+    <package>
+      <name>uSync (Beta Patch) for Umbraco 7</name>
+      <version>2.0.0</version>
+      <license url="http://www.opensource.org/licenses/mit-license.php">MIT license</license>
+      <url>http://jumoo.co.uk/usync</url>
+      <requirements>
+        <major>6</major>
+        <minor>1</minor>
+        <patch>0</patch>
+      </requirements>
+    </package>
+    <author>
+      <name>Kevin Jump</name>
+      <website>http://kevin.jumoo.co.uk/</website>
+    </author>
+    <readme>
+      <![CDATA[
+uSync (Beta Patch) for Umbraco 7
+=============================================
+
+* this is a sticking plaster release for umbraco 7.x *
+
+it works-ish but a much better and more stable release is coming, once some internal bugfixes have landed inside umbraco (probibly v7.1) 
+in the meantime this is an update of the RC3 release of usync for umbraco 7 - it sort of works. 
+
+
+uSync is a umbraco DB to/from disk syncing tool. 
+
+uSync will write out the following to disk : 
+- DocumentTypes, 
+- Macros, 
+- DataTypes,
+- Dictionary Items, 
+- Languages, 
+- Templates 
+- Stylesheets 
+
+you can then source control them
+
+uSync will also read the same files at startup and add them to umbraco. 
+
+uSync is designed to aid the sycronization  and source control of umbraco installations, it needs to be used in conjunction with other tools as part of a calorie controlled installation. ]]>
+    </readme>
+  </info>
+  <DocumentTypes />
+  <Templates />
+  <Stylesheets />
+  <Macros />
+  <DictionaryItems />
+  <Languages />
+  <DataTypes />
+</umbPackage>

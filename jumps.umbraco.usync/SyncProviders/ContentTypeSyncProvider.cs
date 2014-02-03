@@ -23,17 +23,11 @@ namespace jumps.umbraco.usync.SyncProviders
     /// </summary>
     public static class ContentTypeSyncProvider
     {
-        static PackagingService _packService;
-        static IContentTypeService _contentTypeService; 
-
-        static ContentTypeSyncProvider()
-        {
-            _packService = ApplicationContext.Current.Services.PackagingService;
-            _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
-        }
-
         public static XElement SyncExport(this IContentType item)
         {
+            var _packService = ApplicationContext.Current.Services.PackagingService;
+            var _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
+
             XElement element = _packService.Export(item);
 
             // some extras (help us sync)
@@ -90,7 +84,10 @@ namespace jumps.umbraco.usync.SyncProviders
         /// <param name="node"></param>
         public static IEnumerable<IContentType> SyncImport(this XElement node)
         {
-            LogHelper.Debug<SyncDocType>("Starting DocType Import [{0}]", () => node.Element("Info").Element("Alias").Value);
+            LogHelper.Debug<uSync>("Starting DocType Import [{0}]", () => node.Element("Info").Element("Alias").Value);
+
+            var _packService = ApplicationContext.Current.Services.PackagingService;
+
             
             // we need to check here, to see if this item is subject to the rename 
             XElement idElement = node.Element("Info").Element("Id");
@@ -116,7 +113,7 @@ namespace jumps.umbraco.usync.SyncProviders
                         item.Id);
                 }
 
-                LogHelper.Debug<SyncDocType>("Imported [{0}] with {1} properties", () => item.Alias, () => item.PropertyTypes.Count());
+                LogHelper.Debug<uSync>("Imported [{0}] with {1} properties", () => item.Alias, () => item.PropertyTypes.Count());
             }
 
             return imported; 
@@ -131,6 +128,8 @@ namespace jumps.umbraco.usync.SyncProviders
         public static void SyncImportStructure(this IContentType item, XElement node)
         {
             LogHelper.Debug<SyncDocType>("Importing Structure for {0}", () => item.Alias);
+
+            var _contentTypeService = ApplicationContext.Current.Services.ContentTypeService; 
 
             XElement structure = node.Element("Structure");
 
@@ -351,6 +350,7 @@ namespace jumps.umbraco.usync.SyncProviders
         public static string GetSyncPath(this IContentType item)
         {
             string path = "";
+            var _contentTypeService = ApplicationContext.Current.Services.ContentTypeService; 
 
             if (item != null)
             {

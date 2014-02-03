@@ -23,17 +23,11 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncDataTypesV7
     {
-        static IDataTypeService _dtService ;
-        static PackagingService _packService; 
-        static SyncDataTypesV7()
-        {
-            _dtService = ApplicationContext.Current.Services.DataTypeService;
-            _packService = ApplicationContext.Current.Services.PackagingService;
-        }
-
         public static void SaveAllToDisk()
         {
             try {
+                var _dtService = ApplicationContext.Current.Services.DataTypeService; 
+
                 foreach( IDataTypeDefinition dataType in _dtService.GetAllDataTypeDefinitions() )
                 {
                     if (dataType != null)
@@ -96,7 +90,11 @@ namespace jumps.umbraco.usync
         private static XElement Export(IDataTypeDefinition dataTypeDefinition)
         {
             var prevalues = new XElement("PreValues");
+            
+            var _dtService = ApplicationContext.Current.Services.DataTypeService;
+            _dtService.GetPreValuesByDataTypeId(dataTypeDefinition.Id);
 
+            
             var prevalueList = _dtService.GetPreValuesCollectionByDataTypeId(dataTypeDefinition.Id)
                 .FormatAsDictionary();
 
@@ -132,6 +130,8 @@ namespace jumps.umbraco.usync
 
         private static void ReadFromDisk(string path)
         {
+            var _packService = ApplicationContext.Current.Services.PackagingService; 
+
             if (Directory.Exists(path))
             {
                 foreach (string file in Directory.GetFiles(path, "*.config"))

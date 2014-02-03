@@ -38,14 +38,6 @@ namespace jumps.umbraco.usync
     {
         static Dictionary<string, string> updated;
 
-        private static PackagingService _packService ; 
-        private static IContentTypeService _contentTypeService ; 
-
-        static SyncDocType()
-        {
-            _packService = ApplicationContext.Current.Services.PackagingService;
-            _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
-        }
 
         #region DocType Exporting
 
@@ -87,6 +79,8 @@ namespace jumps.umbraco.usync
         {
             try
             {
+                var _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
+
                 foreach (IContentType item in _contentTypeService.GetAllContentTypes())
                 {
                     if (item != null)
@@ -181,6 +175,8 @@ namespace jumps.umbraco.usync
         {
             foreach(int delete in SyncActionLog.GetDeletes())
             {
+                var _contentTypeService = ApplicationContext.Current.Services.ContentTypeService; 
+
                 IContentType item = _contentTypeService.GetContentType(delete);
                 if ( item != null )
                 {
@@ -239,6 +235,7 @@ namespace jumps.umbraco.usync
         /// <returns></returns>
         public static IEnumerable<IContentType> ImportFromFile(string filepath)
         {
+            var _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
             if (!System.IO.File.Exists(filepath))
                 return null;
 
@@ -269,6 +266,8 @@ namespace jumps.umbraco.usync
 
         private static void SecondPassFitAndFix()
         {
+            var _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
+
             foreach (KeyValuePair<string, string> update in updated)
             {
                 XElement node = XElement.Load(update.Value);

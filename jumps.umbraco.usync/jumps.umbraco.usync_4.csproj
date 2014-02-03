@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -11,6 +11,7 @@
     <AssemblyName>jumps.umbraco.usync</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,6 +21,7 @@
     <DefineConstants>TRACE;DEBUG;UMBRACO7</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +30,7 @@
     <DefineConstants>TRACE;UMBRACO7</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Umbraco6|AnyCPU'">
     <OutputPath>bin\Umbraco6\</OutputPath>
@@ -37,19 +40,17 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="businesslogic, Version=1.0.5133.26610, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Downloads\Umbraco\UmbracoCms.7.0.1\bin\businesslogic.dll</HintPath>
+    <Reference Include="businesslogic">
+      <HintPath>..\References\Umb7.0.2\businesslogic.dll</HintPath>
     </Reference>
-    <Reference Include="cms, Version=1.0.5133.26611, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Downloads\Umbraco\UmbracoCms.7.0.1\bin\cms.dll</HintPath>
+    <Reference Include="cms">
+      <HintPath>..\References\Umb7.0.2\cms.dll</HintPath>
     </Reference>
-    <Reference Include="interfaces, Version=1.0.5133.26607, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Downloads\Umbraco\UmbracoCms.7.0.1\bin\interfaces.dll</HintPath>
+    <Reference Include="interfaces">
+      <HintPath>..\References\Umb7.0.2\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -62,21 +63,17 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="umbraco, Version=1.0.5133.26615, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Downloads\Umbraco\UmbracoCms.7.0.1\bin\umbraco.dll</HintPath>
+    <Reference Include="umbraco">
+      <HintPath>..\References\Umb7.0.2\umbraco.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Core, Version=1.0.5133.26607, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Downloads\Umbraco\UmbracoCms.7.0.1\bin\Umbraco.Core.dll</HintPath>
+    <Reference Include="Umbraco.Core">
+      <HintPath>..\References\Umb7.0.2\Umbraco.Core.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.DataLayer, Version=1.0.5133.26610, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Downloads\Umbraco\UmbracoCms.7.0.1\bin\umbraco.DataLayer.dll</HintPath>
+    <Reference Include="umbraco.DataLayer">
+      <HintPath>..\References\Umb7.0.2\umbraco.DataLayer.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.providers, Version=1.0.5133.26613, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Downloads\Umbraco\UmbracoCms.7.0.1\bin\umbraco.providers.dll</HintPath>
+    <Reference Include="umbraco.providers">
+      <HintPath>..\References\Umb7.0.2\umbraco.providers.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -106,23 +103,23 @@
   <ItemGroup>
     <None Include="uSyncSettings.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="package.xml" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>REM @ECHO to 6.1.6
-REM @XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\6.1.6\bin\" /y /i /q
-REM @XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\6.1.6\config\" /y /i /q
-
-@ECHO to 7.0.0
-@XCOPY "$(TargetPath)" "E:\Files\Dev\Umbraco\versions\7.0.0\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Files\Dev\Umbraco\versions\7.0.0\config\" /y /i /q
+    <PostBuildEvent>@ECHO to 7.0.2
+@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco7.0.2\bin\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "D:\Development\Web\Umbraco\DevUmbraco7.0.2\config\" /y /i /q
 
 @ECHO to Release Folder
-@XCOPY "$(TargetPath)" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "E:\Dropbox\uSync\Releases\latest\uSync_Umbraco4\7ddf1350-8c1a-4181-b902-576decb637e0" /y /i /q</PostBuildEvent>
+@XCOPY "$(TargetPath)" "$(SolutionDir)\package\usync\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "$(SolutionDir)\package\usync\" /y /i /q
+@XCOPY "$(ProjectDir)package.xml" "$(SolutionDir)\package\usync\" /y /i /q</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
