@@ -34,8 +34,8 @@ Dictionary / Languages -
 	passed the change, clicking save again, causes usync to get the change
 	and store the changes.
 
-	the changes are not replicated upon change - but this bit of the 
-	api is in flux. 
+	the changes are not replicated upon change - this is because dictionary
+	items only fire a saving event not a saved one.
 
 DocTypes - 
 
