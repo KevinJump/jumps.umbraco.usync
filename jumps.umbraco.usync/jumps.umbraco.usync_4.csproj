@@ -112,9 +112,9 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>@ECHO to 7.0.2
-@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco7.0.2\bin\" /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config" "D:\Development\Web\Umbraco\DevUmbraco7.0.2\config\" /y /i /q
+    <PostBuildEvent>@ECHO to 7.0.3
+@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco7.0.3\bin\" /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config" "D:\Development\Web\Umbraco\DevUmbraco7.0.3\config\" /y /i /q
 
 @ECHO to Release Folder
 @XCOPY "$(TargetPath)" "$(SolutionDir)\package\usync\" /y /i /q
