@@ -27,7 +27,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;UMBRACO6</DefineConstants>
+    <DefineConstants>TRACE;UMBRACO7</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\IContentTypeExtensions.cs" />
+    <Compile Include="helpers\tracker.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\uSyncStrings.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
@@ -110,9 +111,9 @@
 @XCOPY "$(ProjectDir)uSyncSettings.config"  "$(SolutionDir)\Package\uSync\"  /y /i /q
 @XCOPY "$(ProjectDir)package.xml" "$(SolutionDir)\Package\uSync\"  /y /i /q
 
-@Echo to Umbraco Test Site (6.1.6)
-@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco7.0.2\Bin\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco7.0.2\Config\"  /y /i /q
+@Echo to Umbraco Test Site (7.0.4)
+@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco7.0.4\Bin\"  /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco7.0.4\Config\"  /y /i /q
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

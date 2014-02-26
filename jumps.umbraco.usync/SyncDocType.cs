@@ -145,15 +145,23 @@ namespace jumps.umbraco.usync
                     if (node != null ) 
                     {
                         LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
-                        node.ImportContentType();
 
-                        if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
+                        if (uSyncSettings.QuickUpdates && Tracker.IsContentTypeOlder(node))
                         {
-                            updated.Add(node.Element("Info").Element("Alias").Value, file);
+                            node.ImportContentType();
+
+                            if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
+                            {
+                                updated.Add(node.Element("Info").Element("Alias").Value, file);
+                            }
+                            else
+                            {
+                                LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder");
+                            }
                         }
                         else
                         {
-                            LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder"); 
+                            LogHelper.Debug<SyncDocType>("Skipping {0} because the file isn't newer", () => Path.GetFileName(path));
                         }
                     }
                 }

@@ -162,6 +162,19 @@ namespace jumps.umbraco.usync
             }
         }
 
+        [ConfigurationProperty("quickUpdates", DefaultValue = "false", IsRequired = false)]
+        public Boolean QuickUpdates
+        {
+            get
+            {
+                return (Boolean)this["QuickUpdates"];
+            }
+            set
+            {
+                this["QuickUpdates"] = value;
+            }
+        }
+
     }
 
     public class PreservedPreValue : ConfigurationElement 
@@ -348,6 +361,11 @@ namespace jumps.umbraco.usync
         public static bool WatchFolder
         {
             get { return _settings.WatchFolder; }
+        }
+
+        public static bool QuickUpdates
+        {
+            get { return _settings.QuickUpdates; }
         }
 
         public static string[] PreservedPreValueDataTypes
