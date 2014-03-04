@@ -120,7 +120,7 @@ namespace jumps.umbraco.usync
 
         private static void UpdatePreValues(IDataTypeDefinition dataType, XElement node)
         {
-            LogHelper.Info<uSync>("Updating preValues {0}", () => dataType.Id);
+            // LogHelper.Info<uSync>("Updating preValues {0}", () => dataType.Id);
             var preValues = node.Element("PreValues");
             var dataTypeSerivce = ApplicationContext.Current.Services.DataTypeService;
 
