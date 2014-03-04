@@ -105,13 +105,11 @@ namespace jumps.umbraco.usync
 
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
-
                     XElement node = XElement.Load(file) ;                                                    
                     if (node != null ) {
                         LogHelper.Debug<SyncTemplate>("Importing template {0}", ()=> path);
                         
                         var templates = packagingService.ImportTemplates(node);
-
                     }
                 }
 

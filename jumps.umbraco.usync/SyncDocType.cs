@@ -145,8 +145,22 @@ namespace jumps.umbraco.usync
                     if (node != null ) 
                     {
                         LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
+                        bool update = false ; 
 
-                        if (uSyncSettings.QuickUpdates && Tracker.IsContentTypeOlder(node))
+                        if (uSyncSettings.QuickUpdates)
+                        {
+                            if (Tracker.IsContentTypeOlder(node))
+                            {
+                                // do update.
+                                update = true;
+                            }
+                        }
+                        else {
+                            // do update
+                            update = true ;
+                        }
+
+                        if (update)
                         {
                             node.ImportContentType();
 
@@ -161,7 +175,7 @@ namespace jumps.umbraco.usync
                         }
                         else
                         {
-                            LogHelper.Debug<SyncDocType>("Skipping {0} because the file isn't newer", () => Path.GetFileName(path));
+                            LogHelper.Info<SyncDocType>("Skipping update (db is newer?)");
                         }
                     }
                 }

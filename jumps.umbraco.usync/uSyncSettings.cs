@@ -162,16 +162,16 @@ namespace jumps.umbraco.usync
             }
         }
 
-        [ConfigurationProperty("quickUpdates", DefaultValue = "false", IsRequired = false)]
+        [ConfigurationProperty("quickUpdate", DefaultValue = "false", IsRequired = false)]
         public Boolean QuickUpdates
         {
             get
             {
-                return (Boolean)this["QuickUpdates"];
+                return (Boolean)this["quickUpdate"];
             }
             set
             {
-                this["QuickUpdates"] = value;
+                this["quickUpdate"] = value;
             }
         }
 

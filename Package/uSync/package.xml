@@ -14,12 +14,12 @@
   </files>
   <info>
     <package>
-      <name>uSync for Umbraco 6</name>
+      <name>uSync for Umbraco 7</name>
       <version>2.1.0</version>
       <license url="http://www.opensource.org/licenses/mit-license.php">MIT license</license>
       <url>http://jumoo.co.uk/usync</url>
       <requirements>
-        <major>6</major>
+        <major>7</major>
         <minor>1</minor>
         <patch>0</patch>
       </requirements>
@@ -29,7 +29,7 @@
       <website>http://kevin.jumoo.co.uk/</website>
     </author>
     <readme><![CDATA[
-uSync for Umbraco 6 v2.1.0
+uSync for Umbraco 7 v2.1.0
 =============================================
 
 uSync is a umbraco DB to/from disk syncing tool. 
