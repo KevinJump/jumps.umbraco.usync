@@ -55,9 +55,10 @@ namespace jumps.umbraco.usync
                 try
                 {
                     XElement element = item.ExportToXml();
+                    element.AddMD5Hash();
                     XmlDoc.SaveElement("DocumentType", item.GetSyncPath(), "def", element);
                 }
-                catch (Exception e)
+                catch (Exception e) 
                 {
                     LogHelper.Info<SyncDocType>("uSync: Error Saving DocumentType {0} - {1}", 
                         ()=> item.Alias, ()=> e.ToString()); 
@@ -145,22 +146,8 @@ namespace jumps.umbraco.usync
                     if (node != null ) 
                     {
                         LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
-                        bool update = false ; 
 
-                        if (uSyncSettings.QuickUpdates)
-                        {
-                            if (Tracker.IsContentTypeOlder(node))
-                            {
-                                // do update.
-                                update = true;
-                            }
-                        }
-                        else {
-                            // do update
-                            update = true ;
-                        }
-
-                        if (update)
+                        if (Tracker.ContentTypeChanged(node))
                         {
                             node.ImportContentType();
 
@@ -175,7 +162,7 @@ namespace jumps.umbraco.usync
                         }
                         else
                         {
-                            LogHelper.Info<SyncDocType>("Skipping update (db is newer?)");
+                            LogHelper.Info<SyncDocType>("Skipping update (Matching Hash Values)");
                         }
                     }
                 }
@@ -193,6 +180,8 @@ namespace jumps.umbraco.usync
             foreach (KeyValuePair<string, string> update in updated)
             {
                 XElement node = XElement.Load(update.Value);
+                LogHelper.Debug<uSync>("Second pass {0}", () => update.Value);
+
                 if (node != null)
                 {
                     // load the doctype
@@ -200,19 +189,25 @@ namespace jumps.umbraco.usync
 
                     if (docType != null)
                     {
+                        LogHelper.Debug<uSync>("Container Type", () => update.Value);
+
                         // is it a container (in v6 api but only really a v7 thing)
                         docType.ImportContainerType(node);
 
+                        LogHelper.Debug<uSync>("Structure", () => update.Value);
                         // import structure
                         docType.ImportStructure(node);
-                        
 
+
+                        LogHelper.Debug<uSync>("Missing Property Removal", () => update.Value);
                         // delete things that are not in our source xml?
                         docType.ImportRemoveMissingProps(node);
 
+                        LogHelper.Debug<uSync>("Sort order", () => update.Value);
                         // fix tab order 
                         docType.ImportTabSortOrder(node);
 
+                        LogHelper.Debug<uSync>("Save", () => update.Value);
                         _contentTypeService.Save(docType);
                     }
                 }

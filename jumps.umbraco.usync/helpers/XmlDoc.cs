@@ -13,6 +13,10 @@ using umbraco.BusinessLogic ;
 using Umbraco.Core.IO ;
 using Umbraco.Core.Logging;
 
+using System.Security.Cryptography;
+
+using jumps.umbraco.usync.Extensions;
+
 using System.Runtime.InteropServices; 
 
 namespace jumps.umbraco.usync.helpers
@@ -234,6 +238,37 @@ namespace jumps.umbraco.usync.helpers
             
             
         }
+
+        //
+        // Compute the MD5 of an xml file
+        //
+        public static string CalculateMD5Hash(XElement node)
+        {
+            string md5Hash = "";
+            MemoryStream stream = new MemoryStream();
+            node.Save(stream);
+
+            stream.Position = 0;
+
+            using (var md5 = MD5.Create())
+            {
+                md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
+            }
+
+            stream.Close();
+
+            return md5Hash; 
+        }
+
+        public static string GetPreCalculatedHash(XElement node)
+        {
+            XElement hashNode = node.Element("Hash");
+            if ( hashNode == null )
+                return "" ;
+
+            return hashNode.Value ; 
+        }
+
 
 
        

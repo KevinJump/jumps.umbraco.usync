@@ -36,10 +36,11 @@ namespace jumps.umbraco.usync.Extensions
             XElement element = _packageService.Export(item);
 
             // some extra stuff (we want)
-            element.Element("Info").Add(new XElement("key", item.Key));
-            element.Element("Info").Add(new XElement("Id", item.Id));
-            element.Element("Info").Add(new XElement("Updated", item.UpdateDate));
-            element.Element("Info").Add(new XElement("Container", item.IsContainer.ToString()));
+            // element.Element("Info").Add(new XElement("key", item.Key));
+            // element.Element("Info").Add(new XElement("Id", item.Id));
+            // element.Element("Info").Add(new XElement("Updated", item.UpdateDate));
+            if ( element.Element("Info").Element("Container") == null )
+                element.Element("Info").Add(new XElement("Container", item.IsContainer.ToString()));
 
             // fix the current (v6.1/v7.0.1) api doesn't do
             // structure export proper
@@ -55,6 +56,15 @@ namespace jumps.umbraco.usync.Extensions
                     structure.Add(new XElement("DocumentType", allowedItem.Alias));
                 }
                 allowedItem.DisposeIfDisposable();
+            }
+
+            // clear the emptyis
+            foreach(var e in structure.Elements("DocumentType"))
+            {
+                if ( String.IsNullOrEmpty(e.Value) )
+                {
+                    e.Remove();
+                }
             }
 
             // put the sort order on the tabs
@@ -88,12 +98,11 @@ namespace jumps.umbraco.usync.Extensions
         public static IEnumerable<IContentType> ImportContentType(this XElement node)
         {
             XElement idElement = node.Element("Info").Element("Id");
-
-            IEnumerable<IContentType> imported = _packageService.ImportContentTypes(node, false);
-
+            IEnumerable<IContentType> imported = _packageService.ImportContentTypes(node, false, raiseEvents: false );
             return imported; 
 
         }
+    
 
         /*
          * Import Part 2 - these functions all do post import 2nd pass 

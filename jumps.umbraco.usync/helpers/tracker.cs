@@ -13,6 +13,10 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 
+using Umbraco.Core.Logging;
+using System.Security.Cryptography; 
+
+
 using jumps.umbraco.usync.Extensions;
 
 namespace jumps.umbraco.usync.helpers
@@ -23,25 +27,25 @@ namespace jumps.umbraco.usync.helpers
     /// </summary>
     public static class Tracker
     {
-        public static bool IsContentTypeOlder(XElement node)
+        public static bool ContentTypeChanged(XElement node)
         {
-            XElement updated = node.Element("Info").Element("Updated");
-            if ( updated == null )
-                return true ; 
+            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            if (string.IsNullOrEmpty(filehash))
+                return true; 
 
-            XElement idElement = node.Element("Info").Element("Id");
-            if (idElement == null)
-                return true;
-
+            XElement aliasElement = node.Element("Info").Element("Alias");
+            if (aliasElement == null)
+                return true; 
+            
             var _contentService = ApplicationContext.Current.Services.ContentTypeService;
-            var item = _contentService.GetContentType(int.Parse(idElement.Value));
+            var item = _contentService.GetContentType(aliasElement.Value);
+            if (item == null) // import because it's new. 
+                return true; 
 
-            if (item == null)
-                return true;
+            XElement export = item.ExportToXml();
+            string dbMD5 = XmlDoc.CalculateMD5Hash(export);
 
-            DateTime fileUpdate = DateTime.Parse(updated.Value);
-
-            return (fileUpdate > item.UpdateDate);
+            return ( !filehash.Equals(dbMD5)); 
         }
 
     }

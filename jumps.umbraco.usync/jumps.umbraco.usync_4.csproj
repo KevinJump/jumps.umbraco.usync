@@ -79,6 +79,7 @@
     <Compile Include="helpers\tracker.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\uSyncStrings.cs" />
+    <Compile Include="helpers\XElementExtensions.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="helpers\XmlDocFileEventArgs.cs" />
     <Compile Include="SyncDataType.cs" />

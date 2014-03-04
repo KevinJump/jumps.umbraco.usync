@@ -89,6 +89,7 @@ namespace jumps.umbraco.usync
                     {
                         var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
 
+                        LogHelper.Debug<uSync>("Importing DataType {0}", () => file);
                         packagingService.ImportDataTypeDefinitions(node);
 
                         var dataTypeDefinitionId = new Guid(node.Attribute("Definition").Value);
