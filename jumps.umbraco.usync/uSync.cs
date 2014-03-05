@@ -278,7 +278,14 @@ namespace jumps.umbraco.usync
 
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
         {
-            DoOnStart();
+            if ( Umbraco.Core.Configuration.UmbracoVersion.Current.Major >= 7 && 
+                Umbraco.Core.Configuration.UmbracoVersion.Current.Minor >= 1 ) 
+            {
+                DoOnStart();
+            }
+            else {
+                LogHelper.Info<uSync>("########### this version of usync if for Umbraco 7.1 and above ##########");
+            }
         }
 
         public void OnApplicationStarting(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)
