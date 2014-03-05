@@ -33,23 +33,37 @@ I am going to update this - as a stop gap to get a usync version on 7.0.2/3
 but it has a known bug - with doctype properties that reside on the generic 
 properties tab causes the import/export of doctypes to fail. 
 
-v2.1.0 - Umbraco6 (and soon7)
+v2.1.0 - Umbraco6 (defunct)
 =============================
 this is the bring it all back together release - using v1.5.8 as the core, most of
 the import/export functions have been migrated and tested with the new api. the 
 code is much cleaner and checks for a lot more stuff. 
 
-unfortunatyl as a result of this migration v2.1.0 has exposed some core bugs that make this version not quite ready
+unfortunately as a result of this migration v2.1.0 has exposed some core bugs that make this version not quite ready
 for production use (especially on v7) - as these bugs are in the core, there isn't
-much i can do to bypass them inside usync, but the pull requests have been created
-and submitted to the core, so hopefully umbraco 7.0.4 should see uSync working strong
-again with umbraco. 
+much i can do to bypass them inside usync.
 
-when the latest umbraco release(s) contain these fixes uSync 2.1 will be the default
+** This makes this version a bit defunct really ** 
+
+v2.2.0 - Umbraco 7.1
+=====================
+This (will be)/is the latest and greatest version, it uses the new api where it
+is possible to, so doctypes,datatypes,macros and templates go via the new api.
+
+It also introduces performance enhancements - the new api triggers a lot when you
+add things (even with raise events = false) - so usync now only does things it has
+to - it adds a hash to all xml files and checks this before applying any changes. 
+
+This version works with the latest nightly builds of umbraco (3rdMar) so should be
+fine for v7.1 on release.
+
+**
+when the latest umbraco release(s) contain these fixes uSync 2.2 will be the default
 version and v1.5.8 and v2.0.0rc3 will be removed to avoid confusion.
+**
 
 +=========+=======+=======+=======+=======+=========+==========+========+
-| Version | 4.10+ | 6.0.x | 6.1.x | 6.2.0 | 7.0.0/1 | 7.0.2/3  |  7.x   |
+| Version | 4.10+ | 6.0.x | 6.1.x | 6.2.0 | 7.0.0/1 | 7.0.2-4  |  7.1   |
 +=========+=======+=======+=======+=======+=========+==========+========+
 | 1.3.3   |   X   |       |       |       |         |          |        |
 +---------+-------+-------+-------+-------+---------+----------+--------+
@@ -59,7 +73,9 @@ version and v1.5.8 and v2.0.0rc3 will be removed to avoid confusion.
 +---------+-------+-------+-------+-------+---------+----------+--------+
 | 2.0.0rc4|       |       |       |       |         |    ?     |        |
 +---------+-------+-------+-------+-------+---------+----------+--------+
-| 2.1.0   |       |       |       |   X   |         |          |    X   |
+| 2.1.0   |       |       |       |       |         |          |        |
++---------+-------+-------+-------+-------+---------+----------+--------+
+| 2.2.0   |       |       |       | maybe |         |          |    X   |
 +---------+-------+-------+-------+-------+---------+----------+--------+
 
 * - works with 6.0.5/6 - but not extensively tested.

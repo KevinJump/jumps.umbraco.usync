@@ -1,4 +1,4 @@
-Known Behavior - uSync 2.1. for umbraco 7
+Known Behavior - uSync 2.2. for umbraco 7
 =========================================
 
 Macro - (works well on v7)
@@ -51,4 +51,3 @@ MediaTypes -
 
 	Media types are less evolved - import works, 
 
-	changes - 
