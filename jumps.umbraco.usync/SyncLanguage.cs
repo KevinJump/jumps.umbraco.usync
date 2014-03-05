@@ -12,6 +12,9 @@ using System.IO;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
+using jumps.umbraco.usync.helpers;
+using System.Diagnostics;
+
 namespace jumps.umbraco.usync
 {
     public class SyncLanguage
@@ -22,6 +25,7 @@ namespace jumps.umbraco.usync
             {
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc(); 
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                xmlDoc.AddMD5Hash();
                 helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.CultureAlias, xmlDoc) ; 
             }
         }
@@ -38,11 +42,17 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             string path = IOHelper.MapPath(String.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "Language"));
 
             ReadFromDisk(path);
+
+            sw.Stop();
+            LogHelper.Info<uSync>("Processed Languages ({0}ms)", () => sw.ElapsedMilliseconds);
         }
 
         public static void ReadFromDisk(string path)

@@ -12,7 +12,11 @@ using umbraco.BusinessLogic;
 
 using System.IO ;
 using Umbraco.Core.IO ;
-using Umbraco.Core.Logging; 
+using Umbraco.Core.Logging;
+
+using System.Diagnostics;
+
+using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
@@ -37,8 +41,11 @@ namespace jumps.umbraco.usync
             {
                 try
                 {
+                    
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    xmlDoc.AddMD5Hash();
+
                     helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
                 }
                 catch (Exception ex)
@@ -66,12 +73,17 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "StyleSheet" )) ;
 
-            ReadFromDisk(path); 
+            ReadFromDisk(path);
+
+            sw.Stop();
+            LogHelper.Info<uSync>("Processed Stylesheets ({0}ms)", ()=> sw.ElapsedMilliseconds);
         }
 
         public static void ReadFromDisk(string path)
@@ -89,9 +101,12 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        LogHelper.Debug<SyncStylesheet>("Stylesheet Install: {0}", ()=> file); 
-                        StyleSheet s = StyleSheet.Import(node, user );
-                        s.Save();
+                        if (Tracker.StylesheetChanges(xmlDoc))
+                        {
+                            LogHelper.Info<SyncStylesheet>("Processing Stylesheet: {0}", () => file);
+                            StyleSheet s = StyleSheet.Import(node, user);
+                            s.Save();
+                        }
                     }
                 }
             }

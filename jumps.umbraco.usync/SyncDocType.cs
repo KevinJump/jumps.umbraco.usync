@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 using System.IO;
 using System.Xml;
-using System.Xml.Linq; 
+using System.Xml.Linq;
+
+using System.Diagnostics; 
 
 using Umbraco.Core ;
 using Umbraco.Core.IO;
@@ -31,7 +33,8 @@ namespace jumps.umbraco.usync
         static Dictionary<string, string> updated;
 
         private static IPackagingService _packageService;
-        private static IContentTypeService _contentTypeService; 
+        private static IContentTypeService _contentTypeService;
+        private static int _readCount; 
 
         static SyncDocType()
         {
@@ -98,6 +101,9 @@ namespace jumps.umbraco.usync
         public static void ReadAllFromDisk()
         {
             // start the enumberation, get the root
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            _readCount = 0;
 
             // TODO: nicer way of getting the type string 
             //       (without creating a dummy doctype?)
@@ -110,6 +116,7 @@ namespace jumps.umbraco.usync
 
             // import stuff
             ReadFromDisk(path);
+            LogHelper.Debug<uSync>("Processing DocTypes Part 1 - complete ({0}ms)", () => sw.ElapsedMilliseconds);
 
             //
             // Fit and Fix : 
@@ -117,7 +124,10 @@ namespace jumps.umbraco.usync
             // than traversing the tree again. Also we just do the update of the bit we
             // need to update
             // 
-            SecondPassFitAndFix(); 
+            SecondPassFitAndFix();
+            sw.Stop();
+
+            LogHelper.Info<uSync>("Processed Doctypes [{0}]({1}ms)", ()=> _readCount, ()=> sw.ElapsedMilliseconds);
 
 
         }
@@ -145,10 +155,12 @@ namespace jumps.umbraco.usync
                     XElement node = XElement.Load(file) ;                                                    
                     if (node != null ) 
                     {
-                        LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
+                        // LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
+                        _readCount++; 
 
                         if (Tracker.ContentTypeChanged(node))
                         {
+                            LogHelper.Info<SyncDocType>("Updading DocType {0}", ()=> node.Element("Info").Element("Alias"));
                             node.ImportContentType();
 
                             if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
@@ -162,7 +174,7 @@ namespace jumps.umbraco.usync
                         }
                         else
                         {
-                            LogHelper.Info<SyncDocType>("Skipping update (Matching Hash Values)");
+                            LogHelper.Debug<SyncDocType>("Skipping update (Matching Hash Values)");
                         }
                     }
                 }

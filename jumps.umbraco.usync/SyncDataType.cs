@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Diagnostics; 
+
 using System.Xml;
 using System.Xml.Linq;
 
@@ -33,6 +35,7 @@ namespace jumps.umbraco.usync
                 try
                 {
                     XElement node = packagingService.Export(item);
+                    node.AddMD5Hash();
                     XmlDoc.SaveElement("DataTypeDefinition", XmlDoc.ScrubFile(item.Name), node); 
                 }
                 catch (Exception ex)
@@ -50,6 +53,9 @@ namespace jumps.umbraco.usync
         {
             try
             {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+
                 var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
 
                 foreach (var item in dataTypeService.GetAllDataTypeDefinitions() )
@@ -59,6 +65,9 @@ namespace jumps.umbraco.usync
                         SaveToDisk(item);
                     }
                 }
+
+                sw.Stop();
+                LogHelper.Info<uSync>("Datatypes to disk ({0}ms}", () => sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
@@ -68,11 +77,17 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "DataTypeDefinition"));
 
-            ReadFromDisk(path); 
+            ReadFromDisk(path);
+
+            sw.Stop();
+            LogHelper.Info<uSync>("Processed data types ({0}ms)", () => sw.ElapsedMilliseconds);
         }
 
         public static void ReadFromDisk(string path)
@@ -87,32 +102,36 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
-
-                        LogHelper.Debug<uSync>("Importing DataType {0}", () => file);
-                        packagingService.ImportDataTypeDefinitions(node);
-
-                        var dataTypeDefinitionId = new Guid(node.Attribute("Definition").Value);
-                        
-                        var definition = dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
-
-                        if ( definition != null )
+                        if (Tracker.DataTypeChanged(node))
                         {
-                            /*
-                             can't do this - the proerties are private/interal
-                             */
-                            
-                            /*
-                            var id = node.Attribute("Definition").Value;
-                            var definition = dataTypeService.GetDataTypeDefinitionById(id);
 
-                            if ( definition != null )
+                            var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
+
+                            LogHelper.Debug<uSync>("Importing DataType {0}", () => file);
+                            packagingService.ImportDataTypeDefinitions(node);
+
+                            var dataTypeDefinitionId = new Guid(node.Attribute("Definition").Value);
+
+                            var definition = dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
+
+                            if (definition != null)
                             {
-                                
-                            }
-                            */
+                                /*
+                                 can't do this - the proerties are private/interal
+                                 */
 
-                            UpdatePreValues(definition, node);
+                                /*
+                                var id = node.Attribute("Definition").Value;
+                                var definition = dataTypeService.GetDataTypeDefinitionById(id);
+
+                                if ( definition != null )
+                                {
+                                
+                                }
+                                */
+
+                                UpdatePreValues(definition, node);
+                            }
                         }
                     }
                 }

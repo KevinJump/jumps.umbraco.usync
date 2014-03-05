@@ -16,6 +16,8 @@ using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
 
+using System.Diagnostics;
+
 using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
@@ -42,6 +44,7 @@ namespace jumps.umbraco.usync
                     var packagingService = ApplicationContext.Current.Services.PackagingService;
 
                     XElement node = packagingService.Export(item, true);
+                    node.AddMD5Hash(item.Alias + item.Name);
 
                     XmlDoc.SaveElement("Template", XmlDoc.ScrubFile(item.Alias) , node);
                 }
@@ -90,12 +93,17 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "Template"));
 
             ReadFromDisk(path);
+
+            sw.Stop();
+            LogHelper.Info<uSync>("Processed Templates ({0}ms)", () => sw.ElapsedMilliseconds);
         }
 
         public static void ReadFromDisk(string path)
@@ -108,9 +116,13 @@ namespace jumps.umbraco.usync
                 {
                     XElement node = XElement.Load(file) ;                                                    
                     if (node != null ) {
-                        LogHelper.Debug<SyncTemplate>("Importing template {0}", ()=> path);
-                        
-                        var templates = packagingService.ImportTemplates(node);
+
+                        if (Tracker.TemplateChanged(node))
+                        {
+                            LogHelper.Info<SyncTemplate>("Importing template {0}", () => path);
+
+                            var templates = packagingService.ImportTemplates(node);
+                        }
                     }
                 }
 

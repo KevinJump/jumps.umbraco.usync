@@ -23,6 +23,9 @@ using Umbraco.Core.Services;
 using Umbraco.Core.Logging;
 //using Umbraco.Core.Models;
 
+using System.Diagnostics;
+using jumps.umbraco.usync.helpers;
+
 namespace jumps.umbraco.usync
 {
     public class SyncMediaTypes
@@ -35,6 +38,7 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
+                    xmlDoc.AddMD5Hash();
                     helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetMediaPath(item), "def", xmlDoc);
                 }
                 catch (Exception ex)
@@ -85,6 +89,8 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
@@ -92,6 +98,9 @@ namespace jumps.umbraco.usync
 
             ReadFromDisk(path, false);
             ReadFromDisk(path, true);
+
+            sw.Stop();
+            LogHelper.Info<uSync>("Processed Media types ({0}ms)", () => sw.ElapsedMilliseconds);
         }
 
         

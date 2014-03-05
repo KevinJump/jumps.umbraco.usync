@@ -22,5 +22,24 @@ namespace jumps.umbraco.usync.helpers
             node.Add(new XElement("Hash", md5));
         }
 
+        public static void AddMD5Hash(this XElement node, string values)
+        {
+            string md5 = XmlDoc.CalculateMD5Hash(values);
+            node.Add(new XElement("Hash", md5));
+        }
+    }
+
+    public static class XmlDocumentExtentions
+    {
+
+        public static void AddMD5Hash(this XmlDocument node)
+        {
+            
+            string md5 = XmlDoc.CalculateMD5Hash(node);
+            var n = node.CreateElement("Hash");
+            n.InnerText = md5;
+            node.DocumentElement.AppendChild(n);
+        }
+
     }
 }

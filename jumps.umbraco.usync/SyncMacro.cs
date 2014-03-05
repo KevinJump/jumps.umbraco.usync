@@ -15,6 +15,8 @@ using Umbraco.Core.Models;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
+using System.Diagnostics;
+
 using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
@@ -40,6 +42,7 @@ namespace jumps.umbraco.usync
                     var packagingService = ApplicationContext.Current.Services.PackagingService;
 
                     XElement node = packagingService.Export(item);
+                    node.AddMD5Hash();
 
                     XmlDoc.SaveElement("Macro", XmlDoc.ScrubFile(item.Alias), node);
                 }
@@ -70,11 +73,17 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "Macro"));
 
-            ReadFromDisk(path); 
+            ReadFromDisk(path);
+
+            sw.Stop();
+            LogHelper.Info<uSync>("Processed Macros ({0}ms)", () => sw.ElapsedMilliseconds);
 
         }
 

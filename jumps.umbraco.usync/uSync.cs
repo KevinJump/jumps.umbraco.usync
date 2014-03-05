@@ -24,6 +24,8 @@ using umbraco.businesslogic;
 using umbraco.BusinessLogic;
 using Umbraco.Web;
 
+using System.Diagnostics;
+
 
 namespace jumps.umbraco.usync
 {
@@ -179,7 +181,6 @@ namespace jumps.umbraco.usync
             {
                 LogHelper.Info<uSync>("Read stopped by usync.stop");
             }
-
         }
 
         /// <summary>
@@ -231,6 +232,9 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
 
             if (!ApplicationContext.Current.IsConfigured)
@@ -266,8 +270,8 @@ namespace jumps.umbraco.usync
             }
 
             WatchFolder();
-
-            LogHelper.Info<uSync>("uSync Initilized");
+            sw.Stop();
+            LogHelper.Info<uSync>("uSync Initilized ({0}ms)", ()=> sw.ElapsedMilliseconds);
             OnComplete(new uSyncEventArgs(_read, _write, _attach));
 
         }

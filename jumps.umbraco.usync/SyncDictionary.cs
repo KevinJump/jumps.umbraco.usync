@@ -13,6 +13,9 @@ using umbraco.cms.businesslogic;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
+using jumps.umbraco.usync.helpers;
+using System.Diagnostics;
+
 namespace jumps.umbraco.usync
 {
     public class SyncDictionary
@@ -25,6 +28,8 @@ namespace jumps.umbraco.usync
 
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                xmlDoc.AddMD5Hash();
+                
                 helpers.XmlDoc.SaveXmlDoc("Dictionary", 
                     _sh.CleanString( item.key, Umbraco.Core.Strings.CleanStringType.Ascii),
                     xmlDoc);
@@ -46,11 +51,17 @@ namespace jumps.umbraco.usync
 
         public static void ReadAllFromDisk()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
                 "Dictionary"));
 
             ReadFromDisk(path);
+
+            sw.Stop();
+            LogHelper.Info<uSync>("Processed Dictionary items ({0}ms)", () => sw.ElapsedMilliseconds);
 
         }
 
