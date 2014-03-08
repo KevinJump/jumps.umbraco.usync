@@ -256,7 +256,6 @@ namespace jumps.umbraco.usync.helpers
             }
 
             stream.Close();
-
             return md5Hash; 
         }
 

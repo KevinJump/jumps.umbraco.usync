@@ -160,7 +160,7 @@ namespace jumps.umbraco.usync
 
                         if (Tracker.ContentTypeChanged(node))
                         {
-                            LogHelper.Info<SyncDocType>("Updading DocType {0}", ()=> node.Element("Info").Element("Alias"));
+                            LogHelper.Info<SyncDocType>("Updading DocType {0}", ()=> node.Element("Info").Element("Alias").Value);
                             node.ImportContentType();
 
                             if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))

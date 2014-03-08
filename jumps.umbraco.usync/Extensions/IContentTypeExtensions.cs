@@ -45,9 +45,20 @@ namespace jumps.umbraco.usync.Extensions
             // fix the current (v6.1/v7.0.1) api doesn't do
             // structure export proper
             var structure = element.Element("Structure");
-            foreach(var allowedType in item.AllowedContentTypes)
+
+
+            //
+            // order isn't always right, and we care because we get hash values
+            // 
+            SortedList<int, ContentTypeSort> allowedTypes = new SortedList<int, ContentTypeSort>();
+            foreach(var t in item.AllowedContentTypes)
             {
-                var allowedItem = _contentTypeService.GetContentType(allowedType.Id.Value);
+                allowedTypes.Add(t.Id.Value, t);
+            }
+
+            foreach(var allowedType in allowedTypes)
+            {
+                var allowedItem = _contentTypeService.GetContentType(allowedType.Value.Id.Value);
 
                 // if it's not already there add this item to the structure
                 // so when the api is fixed we won't add anything.
@@ -55,6 +66,7 @@ namespace jumps.umbraco.usync.Extensions
                 {
                     structure.Add(new XElement("DocumentType", allowedItem.Alias));
                 }
+
                 allowedItem.DisposeIfDisposable();
             }
 
