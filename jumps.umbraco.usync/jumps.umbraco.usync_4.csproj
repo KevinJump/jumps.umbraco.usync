@@ -112,12 +112,9 @@
 @XCOPY "$(ProjectDir)uSyncSettings.config"  "$(SolutionDir)\Package\uSync\"  /y /i /q
 @XCOPY "$(ProjectDir)package.xml" "$(SolutionDir)\Package\uSync\"  /y /i /q
 
-@Echo to Umbraco Test Site (7.0.4)
-@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco7.0.4\Bin\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco7.0.4\Config\"  /y /i /q
-@Echo to Umbraco Test Site (7.1)
-@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco7.1\Bin\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco7.1\Config\"  /y /i /q
+@Echo to Umbraco Test Site (7.1.0)
+@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco7.1.0\Bin\"  /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco7.1.0\Config\"  /y /i /q
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
