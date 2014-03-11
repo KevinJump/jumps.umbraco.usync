@@ -46,6 +46,8 @@ namespace jumps.umbraco.usync.Extensions
             // structure export proper
             var structure = element.Element("Structure");
 
+            // empty it out. 
+            structure.RemoveNodes();
 
             //
             // order isn't always right, and we care because we get hash values
@@ -59,25 +61,10 @@ namespace jumps.umbraco.usync.Extensions
             foreach(var allowedType in allowedTypes)
             {
                 var allowedItem = _contentTypeService.GetContentType(allowedType.Value.Id.Value);
-
-                // if it's not already there add this item to the structure
-                // so when the api is fixed we won't add anything.
-                if ( !structure.Elements().Any(x => x.Value == allowedItem.Alias))
-                {
-                    structure.Add(new XElement("DocumentType", allowedItem.Alias));
-                }
-
+                structure.Add(new XElement("DocumentType", allowedItem.Alias));
                 allowedItem.DisposeIfDisposable();
             }
-
-            // clear the emptyis
-            foreach(var e in structure.Elements("DocumentType"))
-            {
-                if ( String.IsNullOrEmpty(e.Value) )
-                {
-                    e.Remove();
-                }
-            }
+            
 
             // put the sort order on the tabs
             var tabs = element.Element("Tabs");
@@ -200,16 +187,31 @@ namespace jumps.umbraco.usync.Extensions
                     // at this point we write our properties over those 
                     // in the db - because the import doesn't do this 
                     // for existing items.
+                    LogHelper.Debug<uSync>("Updating prop {0} for {1}", () => property.Alias, () => item.Alias);
 
+
+                    /* not sure we need to do this, we just call EditorAlias - it will find it ? */
+                    /*
                     var legacyEditorId = Guid.Empty;
                     Guid.TryParse(propertyNode.Element("Type").Value, out legacyEditorId);
 
-                    var dataTypeDefinitionId = new Guid(propertyNode.Element("Definition").Value);
 
+                    if ( legacyEditorId == Guid.Empty)
+                    {
+                        // new style id...?
+                    }
+
+                    var dataTypeDefinitionId = new Guid(propertyNode.Element("Definition").Value);
                     IDataTypeService _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
 
                     var dataTypeDefinition = _dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
+                    */
+                    var editorAlias = propertyNode.Element("Type").Value; 
 
+                    IDataTypeService _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
+                    var dataTypeDefinition = _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).FirstOrDefault();
+
+                    /*
                     if ( dataTypeDefinition != null &&
                          dataTypeDefinition.Key == dataTypeDefinitionId  )
                     {
@@ -225,7 +227,7 @@ namespace jumps.umbraco.usync.Extensions
                             dataTypeDefinition = dataTypeDefinitions.First();
                         }
                     }
-
+                    */
 
                     if ( dataTypeDefinition != null)
                     {
