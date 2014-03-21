@@ -67,7 +67,7 @@ namespace jumps.umbraco.usync
                 }
 
                 sw.Stop();
-                LogHelper.Info<uSync>("Datatypes to disk ({0}ms}", () => sw.ElapsedMilliseconds);
+                LogHelper.Info<uSync>("Datatypes to disk ({0}ms)", () => sw.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
