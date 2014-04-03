@@ -7,6 +7,16 @@
       <orgName>jumps.umbraco.usync.dll</orgName>
     </file>
     <file>
+      <guid>jumoo.usync.ui.dll</guid>
+      <orgPath>/bin</orgPath>
+      <orgName>jumoo.usync.ui.dll</orgName>
+    </file>
+    <file>
+      <guid>uSyncUi.ascx</guid>
+      <orgPath>/umbraco/plugins/uSync</orgPath>
+      <orgName>uSyncUi.ascx</orgName>
+    </file>
+    <file>
       <guid>uSyncSettings.config</guid>
       <orgPath>/config</orgPath>
       <orgName>uSyncSettings.config</orgName>
@@ -57,4 +67,16 @@ uSync is designed to aid the sycronization  and source control of umbraco instal
   <DictionaryItems />
   <Languages />
   <DataTypes />
+  <Actions>
+    <Action runat="install" alias="addDashboardSection" dashboardAlias="usyncUi">
+      <section>
+        <areas>
+          <area>developer</area>
+        </areas>
+        <tab caption="uSync Dashboard">
+          <control>/Umbraco/Plugins/usync/uSyncUi.ascx</control>
+        </tab>
+      </section>
+    </Action>
+  </Actions>
 </umbPackage>

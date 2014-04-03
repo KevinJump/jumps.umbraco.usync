@@ -304,7 +304,8 @@ namespace jumps.umbraco.usync
     public class uSyncSettings {
 
         private static string _settingfile = "usyncSettings.config"; 
-        private static uSyncSettingsSection _settings ; 
+        private static uSyncSettingsSection _settings ;
+        private static Configuration config;
 
         static uSyncSettings()
         {
@@ -314,7 +315,7 @@ namespace jumps.umbraco.usync
                 fileMap.ExeConfigFilename = IOHelper.MapPath(string.Format("~/config/{0}", _settingfile));
 
                 // load the settings file
-                Configuration config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
+                config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
                 
                 _settings = (uSyncSettingsSection)config.GetSection("usync");
             }
@@ -324,6 +325,11 @@ namespace jumps.umbraco.usync
             }
         }
 
+        public static void Save()
+        {
+            _settings.CurrentConfiguration.Save(ConfigurationSaveMode.Full);
+        }
+
         public static bool Versions {
             get { return _settings.Versions; }
         }
@@ -331,16 +337,19 @@ namespace jumps.umbraco.usync
         public static bool Write
         {
             get { return _settings.Write  ; }
+            set { _settings.Write = value; }
         }
 
         public static bool Read
         {
             get { return _settings.Read ; }
+            set { _settings.Read = value;  }
         }
 
         public static bool Attach
         {
             get { return _settings.Attach ; }
+            set { _settings.Attach = value; }
         }
 
         public static string Folder
@@ -361,6 +370,7 @@ namespace jumps.umbraco.usync
         public static bool WatchFolder
         {
             get { return _settings.WatchFolder; }
+            set { _settings.WatchFolder = value; }
         }
 
         public static bool QuickUpdates

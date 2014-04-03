@@ -1,0 +1,23 @@
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="uSyncUi.ascx.cs" Inherits="jumoo.usync.ui.uSyncUi" %>
+<div id="usyncDashboard">
+    <div class="propertypane">
+        <div class="propertyItem">
+            <h3>uSync Dashboard</h3>
+            <p>
+                Out the box usync does everything automagically, if you want to
+                have more control of what usync does, you can use this dashboard
+            </p>
+            <h4>uSync Settings</h4>
+            <p>untick all of these and usync will stop writing things to disk
+                unless you tell it to.
+            </p>
+            <ul class="unstyled">
+                <li><asp:CheckBox ID="chkRead" runat="server" Text="Read on Startup" /></li>
+                <li><asp:CheckBox ID="chkWrite" runat="server" Text="Write on startup" /></li>            
+                <li><asp:CheckBox ID="chkAttatch" runat="server" Text="Write on Saves" /></li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+<asp:Button ID="btnSave" runat="server" CssClass="btn btn-default" OnClick="btnSave_Click" Text="Save Settings" />
