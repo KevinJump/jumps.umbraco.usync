@@ -83,12 +83,12 @@ namespace jumps.umbraco.usync
         private void GetSettings() 
         {
             LogHelper.Debug<uSync>("Get Settings");
-                       
+
             _read = uSyncSettings.Read;
-            LogHelper.Debug<uSync>("Settings : Read = {0}", () => _read); 
+            LogHelper.Debug<uSync>("Settings : Read = {0}", () => _read);
 
             _write = uSyncSettings.Write;
-            LogHelper.Debug<uSync>("Settings : Write = {0}", ()=> _write); 
+            LogHelper.Debug<uSync>("Settings : Write = {0}", () => _write);
 
             _attach = uSyncSettings.Attach;
             LogHelper.Debug<uSync>("Settings : Attach = {0}", () => _attach);

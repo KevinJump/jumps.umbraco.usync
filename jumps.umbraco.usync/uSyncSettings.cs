@@ -314,20 +314,36 @@ namespace jumps.umbraco.usync
                 ExeConfigurationFileMap fileMap = new ExeConfigurationFileMap();
                 fileMap.ExeConfigFilename = IOHelper.MapPath(string.Format("~/config/{0}", _settingfile));
 
-                // load the settings file
-                config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
-                
-                _settings = (uSyncSettingsSection)config.GetSection("usync");
+                if (System.IO.File.Exists(fileMap.ExeConfigFilename))
+                {
+                    // load the settings file
+                    config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
+
+                    if (config != null)
+                    {
+                        _settings = (uSyncSettingsSection)config.GetSection("usync");
+                    }
+                }
             }
             catch (Exception ex)
             {
-                 LogHelper.Info<uSyncSettings>("Error loading settings file {0}", ()=> ex.ToString());
+                LogHelper.Info<uSyncSettings>("Error loading settings file {0}", () => ex.ToString());
+            }
+            finally
+            {
+
+                if (_settings == null)
+                {
+                    LogHelper.Info<uSyncSettings>("WARNING: Working with no config file");
+                    _settings = new uSyncSettingsSection(); // default config - won't be savable mind?
+                }
             }
         }
 
         public static void Save()
         {
-            _settings.CurrentConfiguration.Save(ConfigurationSaveMode.Full);
+            if ( _settings != null ) 
+                _settings.CurrentConfiguration.Save(ConfigurationSaveMode.Full);
         }
 
         public static bool Versions {
