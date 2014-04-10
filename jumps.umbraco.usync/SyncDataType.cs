@@ -94,44 +94,37 @@ namespace jumps.umbraco.usync
         {
             if (Directory.Exists(path))
             {
-                var packagingService = ApplicationContext.Current.Services.PackagingService; 
+                var packagingService = ApplicationContext.Current.Services.PackagingService;
 
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
-                    XElement node = XElement.Load(file);
+                    XElement element = XElement.Load(file);
 
-                    if (node != null)
+                    if (element != null)
                     {
-                        if (Tracker.DataTypeChanged(node))
+                        if (Tracker.DataTypeChanged(element))
                         {
+                            var name = element.Name.LocalName;
+                            var dataTypeElements = name.Equals("DataTypes")
+                                           ? (from doc in element.Elements("DataType") select doc).ToList()
+                                           : new List<XElement> { element };
 
-                            var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
-
-                            LogHelper.Debug<uSync>("Importing DataType {0}", () => file);
-                            packagingService.ImportDataTypeDefinitions(node);
-
-                            var dataTypeDefinitionId = new Guid(node.Attribute("Definition").Value);
-
-                            var definition = dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
-
-                            if (definition != null)
+                            foreach (var node in dataTypeElements)
                             {
-                                /*
-                                 can't do this - the proerties are private/interal
-                                 */
+                                var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
+                                packagingService.ImportDataTypeDefinitions(node);
 
-                                /*
-                                var id = node.Attribute("Definition").Value;
-                                var definition = dataTypeService.GetDataTypeDefinitionById(id);
-
-                                if ( definition != null )
+                                var def = node.Attribute("Definition");
+                                if (def != null)
                                 {
-                                
+                                    var dataTypeDefinitionId = new Guid(def.Value);
+                                    var definition = dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
+                                    if (definition != null)
+                                    {
+                                        UpdatePreValues(definition, node);
+                                    }
                                 }
-                                */
-
-                                UpdatePreValues(definition, node);
-                            }
+                            } /* end for each */
                         }
                     }
                 }
@@ -140,7 +133,6 @@ namespace jumps.umbraco.usync
 
         private static void UpdatePreValues(IDataTypeDefinition dataType, XElement node)
         {
-            // LogHelper.Info<uSync>("Updating preValues {0}", () => dataType.Id);
             var preValues = node.Element("PreValues");
             var dataTypeSerivce = ApplicationContext.Current.Services.DataTypeService;
 
@@ -157,7 +149,6 @@ namespace jumps.umbraco.usync
                 dataTypeSerivce.SavePreValues(dataType.Id, valuesWithKeys);
                 dataTypeSerivce.SavePreValues(dataType.Id, valuesWithoutKeys);
             }
-
         }
 
         public static void AttachEvents()

@@ -19,6 +19,7 @@ using Umbraco.Core.Services;
 using System.Diagnostics;
 
 using jumps.umbraco.usync.helpers;
+using jumps.umbraco.usync.Extensions;
 
 namespace jumps.umbraco.usync
 {
@@ -44,6 +45,7 @@ namespace jumps.umbraco.usync
                     var packagingService = ApplicationContext.Current.Services.PackagingService;
 
                     XElement node = packagingService.Export(item, true);
+                    // XElement node = item.ExportToXML();
                     node.AddMD5Hash(item.Alias + item.Name);
 
                     XmlDoc.SaveElement("Template", XmlDoc.ScrubFile(item.Alias) , node);

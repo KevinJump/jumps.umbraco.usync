@@ -44,13 +44,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="businesslogic">
-      <HintPath>..\Refrences\Umb7.0.2\businesslogic.dll</HintPath>
+      <HintPath>..\..\..\Web\Umbraco\DevUmbraco7.1.0\bin\businesslogic.dll</HintPath>
     </Reference>
-    <Reference Include="cms">
-      <HintPath>..\Refrences\Umb7.0.2\cms.dll</HintPath>
+    <Reference Include="cms, Version=1.0.5133.26611, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Web\Umbraco\DevUmbraco7.1.0\bin\cms.dll</HintPath>
     </Reference>
-    <Reference Include="interfaces">
-      <HintPath>..\Refrences\Umb7.0.2\interfaces.dll</HintPath>
+    <Reference Include="Examine">
+      <HintPath>..\..\..\Web\Umbraco\DevUmbraco7.1.0\bin\Examine.dll</HintPath>
+    </Reference>
+    <Reference Include="interfaces, Version=1.0.5133.26607, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Web\Umbraco\DevUmbraco7.1.0\bin\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -61,21 +66,25 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="umbraco">
-      <HintPath>..\Refrences\Umb7.0.2\umbraco.dll</HintPath>
+    <Reference Include="umbraco, Version=1.0.5133.26615, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Web\Umbraco\DevUmbraco7.1.0\bin\umbraco.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Core">
-      <HintPath>..\Refrences\Umb7.0.2\Umbraco.Core.dll</HintPath>
+    <Reference Include="Umbraco.Core, Version=1.0.5133.26607, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Web\Umbraco\DevUmbraco7.1.0\bin\Umbraco.Core.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.DataLayer">
-      <HintPath>..\Refrences\Umb7.0.2\umbraco.DataLayer.dll</HintPath>
+    <Reference Include="umbraco.DataLayer, Version=1.0.5133.26610, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Web\Umbraco\DevUmbraco7.1.0\bin\umbraco.DataLayer.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.providers">
-      <HintPath>..\Refrences\Umb7.0.2\umbraco.providers.dll</HintPath>
+    <Reference Include="Umbraco.Web.UI">
+      <HintPath>..\..\..\Web\Umbraco\DevUmbraco7.1.0\bin\Umbraco.Web.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\IContentTypeExtensions.cs" />
+    <Compile Include="Extensions\ITemplateExtensions.cs" />
     <Compile Include="helpers\tracker.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\uSyncStrings.cs" />
