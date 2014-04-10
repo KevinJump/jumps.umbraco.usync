@@ -82,20 +82,29 @@ namespace jumps.umbraco.usync
 
         private void GetSettings() 
         {
-            LogHelper.Debug<uSync>("Get Settings");
+            try
+            {
+                LogHelper.Debug<uSync>("Get Settings");
 
-            _read = uSyncSettings.Read;
-            LogHelper.Debug<uSync>("Settings : Read = {0}", () => _read);
+                _read = uSyncSettings.Read;
+                LogHelper.Debug<uSync>("Settings : Read = {0}", () => _read);
 
-            _write = uSyncSettings.Write;
-            LogHelper.Debug<uSync>("Settings : Write = {0}", () => _write);
+                _write = uSyncSettings.Write;
+                LogHelper.Debug<uSync>("Settings : Write = {0}", () => _write);
 
-            _attach = uSyncSettings.Attach;
-            LogHelper.Debug<uSync>("Settings : Attach = {0}", () => _attach);
+                _attach = uSyncSettings.Attach;
+                LogHelper.Debug<uSync>("Settings : Attach = {0}", () => _attach);
 
-            // Remove version check
-            // we don't work on pre v6.0.1 anymore anyway 
-            _docTypeSaveWorks = true ; 
+                // Remove version check
+                // we don't work on pre v6.0.1 anymore anyway 
+                _docTypeSaveWorks = true;
+            }
+            catch ( Exception ex )
+            {
+                // usync settings failed - that's not good. 
+                LogHelper.Error<uSync>("Cannot read usync settings", ex);
+                throw ex; 
+            }
         }
 
         /// <summary>
@@ -232,47 +241,57 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
-            LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
-
-            if (!ApplicationContext.Current.IsConfigured)
-             {
-                 LogHelper.Info<uSync>("umbraco not configured, usync aborting");
-                 return;
-             }
-
-            OnStarting(new uSyncEventArgs(_read, _write, _attach)); 
-
-            // Save Everything to disk.
-            // only done first time or when write = true           
-            if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write )
+            try
             {
-                SaveAllToDisk();
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+
+                LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
+
+                if (!ApplicationContext.Current.IsConfigured)
+                {
+                    LogHelper.Info<uSync>("umbraco not configured, usync aborting");
+                    return;
+                }
+
+                OnStarting(new uSyncEventArgs(_read, _write, _attach));
+
+                // Save Everything to disk.
+                // only done first time or when write = true           
+                if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write)
+                {
+                    SaveAllToDisk();
+                }
+
+                //
+                // we take the disk and sync it to the DB, this is how 
+                // you can then distribute using uSync.
+                //
+
+                if (_read)
+                {
+                    ReadAllFromDisk();
+                }
+
+                if (_attach)
+                {
+                    // everytime. register our events to all the saves..
+                    // that way we capture things as they are done.
+                    AttachToAll();
+                }
+
+                WatchFolder();
+                sw.Stop();
+                LogHelper.Info<uSync>("uSync Initilized ({0}ms)", () => sw.ElapsedMilliseconds);
+                OnComplete(new uSyncEventArgs(_read, _write, _attach));
             }
-
-            //
-            // we take the disk and sync it to the DB, this is how 
-            // you can then distribute using uSync.
-            //
-
-            if (_read)
+            catch(Exception ex)
             {
-                ReadAllFromDisk();
+                if ( uSyncSettings.DontThrowErrors )
+                    LogHelper.Error<uSync>("Error Running uSync", ex);
+                else 
+                    throw ex; 
             }
-
-            if (_attach)
-            {
-                // everytime. register our events to all the saves..
-                // that way we capture things as they are done.
-                AttachToAll(); 
-            }
-
-            WatchFolder();
-            sw.Stop();
-            LogHelper.Info<uSync>("uSync Initilized ({0}ms)", ()=> sw.ElapsedMilliseconds);
-            OnComplete(new uSyncEventArgs(_read, _write, _attach));
 
         }
 

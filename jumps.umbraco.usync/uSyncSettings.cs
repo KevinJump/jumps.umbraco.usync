@@ -162,6 +162,19 @@ namespace jumps.umbraco.usync
             }
         }
 
+        [ConfigurationProperty("dontThrowErrors", DefaultValue = "false", IsRequired = false)]
+        public Boolean DontThrowErrors
+        {
+            get
+            {
+                return (Boolean)this["dontThrowErrors"];
+            }
+            set
+            {
+                this["dontThrowErrors"] = value;
+            }
+        }
+
         [ConfigurationProperty("quickUpdate", DefaultValue = "false", IsRequired = false)]
         public Boolean QuickUpdates
         {
@@ -387,6 +400,12 @@ namespace jumps.umbraco.usync
         {
             get { return _settings.WatchFolder; }
             set { _settings.WatchFolder = value; }
+        }
+
+        public static bool DontThrowErrors
+        {
+            get { return _settings.DontThrowErrors; }
+            set { _settings.DontThrowErrors = value; }
         }
 
         public static bool QuickUpdates
