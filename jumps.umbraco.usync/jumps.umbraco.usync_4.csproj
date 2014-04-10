@@ -84,7 +84,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\IContentTypeExtensions.cs" />
-    <Compile Include="Extensions\ITemplateExtensions.cs" />
     <Compile Include="helpers\tracker.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\uSyncStrings.cs" />
