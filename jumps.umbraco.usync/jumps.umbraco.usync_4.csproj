@@ -112,6 +112,10 @@
 @Echo to Umbraco Test Site (6.1.6)
 @XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco6.1.6\Bin\"  /y /i /q
 @XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco6.1.6\Config\"  /y /i /q
+
+@Echo to Umbraco Test Site (6.2.0)
+@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco6.2.0\Bin\"  /y /i /q
+@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco6.2.0\Config\"  /y /i /q
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

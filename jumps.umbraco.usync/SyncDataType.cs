@@ -5,25 +5,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using System.Xml;
-using umbraco.cms.businesslogic;
-using umbraco.cms.businesslogic.datatype ;
-
-using umbraco.BusinessLogic ; 
-
 using System.IO;
-using Umbraco.Core.IO;
+using System.Xml;
+
 using umbraco;
+using umbraco.BusinessLogic;
+using umbraco.cms.businesslogic;
+using umbraco.cms.businesslogic.datatype;
+
+using Umbraco.Core;
+using Umbraco.Core.IO;
+using Umbraco.Core.Models;
 
 using Umbraco.Core.Logging;
-
-//  Check list
-// ====================
-//  SaveOne         X
-//  SaveAll         X
-//  OnSave          (Works in 4.11.5)
-//  OnDelete        X
-//  ReadFromDisk    X
+using DataTypeDefinition = umbraco.cms.businesslogic.datatype.DataTypeDefinition;
 
 namespace jumps.umbraco.usync
 {
@@ -152,10 +147,25 @@ namespace jumps.umbraco.usync
                     if (dataType == null)
                         throw new NullReferenceException("Could not resolve a data type with id " + _id);
 
-
-
                     dtd.DataType = dataType;
                     dtd.Save();
+
+                    // if it's set we call the new API to set the DB type
+                    var _dbType = xmlData.Attributes["dbtype"];
+                    if (_dbType != null)
+                    {
+                        var _dtService = ApplicationContext.Current.Services.DataTypeService;
+                        var _dt = _dtService.GetDataTypeDefinitionById(dtd.UniqueId);
+                        if ( _dt != null)
+                        {
+                            DataTypeDatabaseType dbType =
+                                (DataTypeDatabaseType)Enum.Parse(typeof(DataTypeDatabaseType), _dbType.Value);
+
+                            _dt.DatabaseType = dbType;
+                            _dtService.Save(_dt);
+                        }
+                    }
+
                 }
 
 
@@ -230,6 +240,7 @@ namespace jumps.umbraco.usync
             return null;
         }
 
+
         /// <summary>
         ///  the more agressive pre-value manager - basically for Multi-Node Tree Pickers
         ///  
@@ -267,6 +278,18 @@ namespace jumps.umbraco.usync
             return dtd;
         }
 
+
+        private static string GetDbType(DataTypeDefinition dataType)
+        {
+            var _dataService = ApplicationContext.Current.Services.DataTypeService;
+            var dbType = _dataService.GetDataTypeDefinitionById(dataType.UniqueId);
+
+            if (dbType != null)
+                return dbType.DatabaseType.ToString();
+
+            return null;
+        }
+
         /// <summary>
         /// DataType ToXML - taken from the core (must learn to patch sometime)
         /// 
@@ -284,6 +307,11 @@ namespace jumps.umbraco.usync
             dt.Attributes.Append(xmlHelper.addAttribute(xd, "Name", dataType.Text));
             dt.Attributes.Append(xmlHelper.addAttribute(xd, "Id", dataType.DataType.Id.ToString()));
             dt.Attributes.Append(xmlHelper.addAttribute(xd, "Definition", dataType.UniqueId.ToString()));
+
+            var dbType = GetDbType(dataType);
+            if (!String.IsNullOrEmpty(dbType))
+                dt.Attributes.Append(xmlHelper.addAttribute(xd, "dbtype", dbType));
+            
 
             // templates
             XmlElement prevalues = xd.CreateElement("PreValues");
