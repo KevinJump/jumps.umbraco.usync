@@ -1,0 +1,10 @@
+<dashBoard>
+    <section alias="StartupDeveloperDashboardSection">
+        <areas>
+          <area>developer</area>
+        </areas>
+        <tab caption="uSync Dashboard">
+          <control>/Umbraco/Plugins/usync/uSyncUi.ascx</control>
+        </tab>
+    </section>
+</dashBoard>
