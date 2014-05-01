@@ -229,17 +229,21 @@ namespace jumps.umbraco.usync.Extensions
                     }
                     */
 
+                    /*
                     if ( dataTypeDefinition != null)
                     {
                         // phew we have found what we are looking for.
 
                         // now we set it in the DB 
-                        property.DataTypeDefinitionId = dataTypeDefinition.Id;
+                        // property.DataTypeDefinitionId = dataTypeDefinition.Id;
 
-                        // this is probilby wrong, because you can't 
+                        // this is wrong, because you can't 
                         // actually change the DataTypeId and that prob
                         // matters when changing a type.
+
+                        // TODO: make changes to the datatype import/export properly. 
                     }
+                    */
 
                     property.Name = propertyNode.Element("Name").Value;
                     property.Description = propertyNode.Element("Description").Value;
