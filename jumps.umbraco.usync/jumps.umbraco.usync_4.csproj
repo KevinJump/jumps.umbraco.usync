@@ -43,14 +43,17 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="businesslogic">
-      <HintPath>..\Refrences\Umb6.1.6\businesslogic.dll</HintPath>
+    <Reference Include="businesslogic, Version=1.0.5021.24868, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.2.0\businesslogic.dll</HintPath>
     </Reference>
-    <Reference Include="cms">
-      <HintPath>..\Refrences\Umb6.1.6\cms.dll</HintPath>
+    <Reference Include="cms, Version=1.0.5021.24868, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.2.0\cms.dll</HintPath>
     </Reference>
-    <Reference Include="interfaces">
-      <HintPath>..\Refrences\Umb6.1.6\interfaces.dll</HintPath>
+    <Reference Include="interfaces, Version=1.0.5021.24867, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.2.0\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -61,22 +64,28 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="umbraco">
-      <HintPath>..\Refrences\Umb6.1.6\umbraco.dll</HintPath>
+    <Reference Include="umbraco, Version=1.0.5021.24870, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.2.0\umbraco.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.Core">
-      <HintPath>..\Refrences\Umb6.1.6\Umbraco.Core.dll</HintPath>
+    <Reference Include="Umbraco.Core, Version=1.0.5021.24867, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.2.0\Umbraco.Core.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.DataLayer">
-      <HintPath>..\Refrences\Umb6.1.6\umbraco.DataLayer.dll</HintPath>
+    <Reference Include="umbraco.DataLayer, Version=1.0.5021.24868, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.2.0\umbraco.DataLayer.dll</HintPath>
     </Reference>
-    <Reference Include="umbraco.providers">
-      <HintPath>..\Refrences\Umb6.1.6\umbraco.providers.dll</HintPath>
+    <Reference Include="umbraco.providers, Version=1.0.5021.24869, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.2.0\umbraco.providers.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\IContentTypeExtensions.cs" />
+    <Compile Include="helpers\tracker.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
+    <Compile Include="helpers\XElementExtensions.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="helpers\XmlDocFileEventArgs.cs" />
     <Compile Include="SyncDataType.cs" />

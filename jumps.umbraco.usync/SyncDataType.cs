@@ -15,7 +15,7 @@ using umbraco.cms.businesslogic.datatype;
 
 using Umbraco.Core;
 using Umbraco.Core.IO;
-using Umbraco.Core.Models;
+// using Umbraco.Core.Models;
 
 using Umbraco.Core.Logging;
 using DataTypeDefinition = umbraco.cms.businesslogic.datatype.DataTypeDefinition;
@@ -158,8 +158,8 @@ namespace jumps.umbraco.usync
                         var _dt = _dtService.GetDataTypeDefinitionById(dtd.UniqueId);
                         if ( _dt != null)
                         {
-                            DataTypeDatabaseType dbType =
-                                (DataTypeDatabaseType)Enum.Parse(typeof(DataTypeDatabaseType), _dbType.Value);
+                            Umbraco.Core.Models.DataTypeDatabaseType dbType =
+                                (Umbraco.Core.Models.DataTypeDatabaseType)Enum.Parse(typeof(Umbraco.Core.Models.DataTypeDatabaseType), _dbType.Value);
 
                             _dt.DatabaseType = dbType;
                             _dtService.Save(_dt);

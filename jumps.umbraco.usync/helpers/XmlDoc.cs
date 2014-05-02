@@ -8,6 +8,8 @@ using System.IO ;
 using System.Xml ;
 using System.Xml.Linq;
 
+using System.Security.Cryptography;
+
 using umbraco.BusinessLogic ; 
 
 using Umbraco.Core.IO ;
@@ -335,5 +337,64 @@ namespace jumps.umbraco.usync.helpers
             SyncFileWatcher.Start();
 
         }
+
+        //
+        // Compute the MD5 of an xml file
+        //
+        public static string CalculateMD5Hash(XElement node)
+        {
+            string md5Hash = "";
+            MemoryStream stream = new MemoryStream();
+            node.Save(stream);
+
+            stream.Position = 0;
+
+            using (var md5 = MD5.Create())
+            {
+                md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
+            }
+
+            stream.Close();
+            return md5Hash;
+        }
+
+        public static string CalculateMD5Hash(XmlDocument node)
+        {
+            string md5Hash = "";
+            MemoryStream stream = new MemoryStream();
+            node.Save(stream);
+
+            stream.Position = 0;
+
+            using (var md5 = MD5.Create())
+            {
+                md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
+            }
+
+            stream.Close();
+
+            return md5Hash;
+        }
+
+        public static string CalculateMD5Hash(string input)
+        {
+            string hash = "";
+            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            using (var md5 = MD5.Create())
+            {
+                hash = BitConverter.ToString(md5.ComputeHash(inputBytes)).Replace("-", "").ToLower();
+            }
+            return hash;
+        }
+
+        public static string GetPreCalculatedHash(XElement node)
+        {
+            XElement hashNode = node.Element("Hash");
+            if (hashNode == null)
+                return "";
+
+            return hashNode.Value;
+        }
+
     }
 }

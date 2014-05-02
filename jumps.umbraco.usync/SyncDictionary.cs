@@ -25,7 +25,7 @@ namespace jumps.umbraco.usync
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
                 helpers.XmlDoc.SaveXmlDoc("Dictionary", 
-                    _sh.Recode(item.key, Umbraco.Core.Strings.CleanStringType.Ascii),
+                    _sh.CleanString(item.key, Umbraco.Core.Strings.CleanStringType.Ascii),
                     xmlDoc);
             }
         }

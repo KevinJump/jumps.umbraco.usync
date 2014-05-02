@@ -55,6 +55,7 @@ namespace jumps.umbraco.usync
                 try
                 {
                     XElement element = item.ExportToXml();
+                    element.AddMD5Hash();
                     XmlDoc.SaveElement("DocumentType", item.GetSyncPath(), "def", element);
                 }
                 catch (Exception e)
@@ -144,16 +145,19 @@ namespace jumps.umbraco.usync
                     XElement node = XElement.Load(file) ;                                                    
                     if (node != null ) 
                     {
-                        LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
-                        node.ImportContentType();
+                        if (Tracker.ContentTypeChanged(node))
+                        {
+                            LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
+                            node.ImportContentType();
 
-                        if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
-                        {
-                            updated.Add(node.Element("Info").Element("Alias").Value, file);
-                        }
-                        else
-                        {
-                            LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder"); 
+                            if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
+                            {
+                                updated.Add(node.Element("Info").Element("Alias").Value, file);
+                            }
+                            else
+                            {
+                                LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder");
+                            }
                         }
                     }
                 }
