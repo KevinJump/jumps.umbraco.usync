@@ -109,10 +109,6 @@
 @XCOPY "$(ProjectDir)uSyncSettings.config"  "$(SolutionDir)\Package\uSync\"  /y /i /q
 @XCOPY "$(ProjectDir)package.xml" "$(SolutionDir)\Package\uSync\"  /y /i /q
 
-@Echo to Umbraco Test Site (6.1.6)
-@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco6.1.6\Bin\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco6.1.6\Config\"  /y /i /q
-
 @Echo to Umbraco Test Site (6.2.0)
 @XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco6.2.0\Bin\"  /y /i /q
 @XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\DevUmbraco6.2.0\Config\"  /y /i /q
