@@ -153,6 +153,27 @@ namespace jumps.umbraco.usync
                             LogHelper.Info<SyncTemplate>("Importing template {0}", () => path);
 
                             var templates = packagingService.ImportTemplates(node);
+
+
+                            // master setting - doesn't appear to be a thing on the import so we do it here...
+                            if ( node.Element("Master") != null && !string.IsNullOrEmpty(node.Element("Master").Value) )
+                            {
+                                var master = node.Element("Master");
+                                var template = templates.FirstOrDefault();
+
+                                if (  template != null)
+                                {
+                                    var masterTemplate = ApplicationContext.Current.Services.FileService.GetTemplate(master.Value);
+
+                                    if ( masterTemplate != null )
+                                    {
+                                        template.SetMasterTemplate(masterTemplate);
+                                        ApplicationContext.Current.Services.FileService.SaveTemplate(template);
+                                        LogHelper.Info<uSync>("uSync has stepped in and set the master to {0}", () => masterTemplate.Alias);
+                                    }
+                                }
+
+                            }
                         }
                     }
                 }
