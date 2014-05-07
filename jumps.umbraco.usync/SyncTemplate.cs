@@ -45,9 +45,23 @@ namespace jumps.umbraco.usync
                     var packagingService = ApplicationContext.Current.Services.PackagingService;
 
                     XElement node = packagingService.Export(item, true);
+
+                    if ( node.Element("Master") == null)
+                    {
+                        // manually add the master..
+                        int masterId = GetMasterId(item);
+                        if ( masterId > 0 )
+                        {
+                            var master = ApplicationContext.Current.Services.FileService.GetTemplate(masterId);
+                            if ( master != null )
+                            {
+                                node.Add(new XElement("Master", master.Alias));
+                            }
+                        }
+                    }
                     node.AddMD5Hash(item.Alias + item.Name);
 
-                    XmlDoc.SaveElement("Template", XmlDoc.ScrubFile(item.Alias) , node);
+                    XmlDoc.SaveElement("Template", GetTemplatePath(item), XmlDoc.ScrubFile(item.Alias) , node);
                 }
                 catch (Exception ex)
                 {
@@ -60,7 +74,7 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            var fileService = ApplicationContext.Current.Services.FileService; 
+            var fileService = ApplicationContext.Current.Services.FileService;
 
             try
             {
@@ -75,22 +89,38 @@ namespace jumps.umbraco.usync
             }
         }
 
-        /*
-        private static string GetDocPath(Template item)
+        private static int GetMasterId(ITemplate item)
+        {
+            // go old school to the get the master id.
+            global::umbraco.cms.businesslogic.template.Template t = new global::umbraco.cms.businesslogic.template.Template(item.Id);
+
+            if (t.MasterTemplate > 0)
+                return t.MasterTemplate;
+
+            return -1;
+        }
+        
+        
+        private static string GetTemplatePath(ITemplate item)
+        {
+            return GetDocPath(new global::umbraco.cms.businesslogic.template.Template(item.Id));
+        }
+
+        private static string GetDocPath(global::umbraco.cms.businesslogic.template.Template item)
         {
             string path = "";
             if (item != null)
             {
-                if (item != 0)
+                if (item.MasterTemplate > 0)
                 {
-                    path = GetDocPath(new Template(item.MasterTemplate));
+                    path = GetDocPath(new global::umbraco.cms.businesslogic.template.Template(item.MasterTemplate));
                 }
 
                 path = string.Format("{0}//{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
             }
             return path;
         }
-        */
+        
 
         public static void ReadAllFromDisk()
         {
