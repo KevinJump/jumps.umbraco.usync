@@ -25,7 +25,7 @@
   <info>
     <package>
       <name>uSync for Umbraco 7.1</name>
-      <version>2.2.2</version>
+      <version>2.3.0</version>
       <license url="http://www.opensource.org/licenses/mit-license.php">MIT license</license>
       <url>http://jumoo.co.uk/usync</url>
       <requirements>
@@ -38,7 +38,7 @@
       <name>Kevin Jump</name>
       <website>http://kevin.jumoo.co.uk/</website>
     </author>
-    <readme><![CDATA[uSync v2.2.2
+    <readme><![CDATA[uSync v2.3.0
 #==============================================
 # This version requires Umbraco 7.1 or Above
 #==============================================
