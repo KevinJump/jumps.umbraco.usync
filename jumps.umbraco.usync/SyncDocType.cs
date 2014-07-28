@@ -30,7 +30,7 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncDocType
     {
-        static Dictionary<string, string> updated;
+        static Dictionary<string, XElement> updated;
 
         private static IPackagingService _packageService;
         private static IContentTypeService _contentTypeService;
@@ -112,7 +112,7 @@ namespace jumps.umbraco.usync
                 "DocumentType"));
 
             // rest the alias names
-            updated = new Dictionary<string, string>();
+            updated = new Dictionary<string, XElement>();
 
             // import stuff
             ReadFromDisk(path);
@@ -165,7 +165,7 @@ namespace jumps.umbraco.usync
 
                             if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
                             {
-                                updated.Add(node.Element("Info").Element("Alias").Value, file);
+                                updated.Add(node.Element("Info").Element("Alias").Value, node);
                             }
                             else
                             {
@@ -189,9 +189,9 @@ namespace jumps.umbraco.usync
 
         private static void SecondPassFitAndFix()
         {
-            foreach (KeyValuePair<string, string> update in updated)
+            foreach (KeyValuePair<string, XElement> update in updated)
             {
-                XElement node = XElement.Load(update.Value);
+                XElement node = update.Value;
                 LogHelper.Debug<uSync>("Second pass {0}", () => update.Value);
 
                 if (node != null)
@@ -239,21 +239,27 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_SavedContentType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<IContentType> e)
         {
-            LogHelper.Debug<SyncDocType>("SaveContent Type Fired for {0} types", 
-                ()=> e.SavedEntities.Count());
-            foreach (var docType in e.SavedEntities)
+            if (!uSync.EventsPaused)
             {
-                SaveToDisk(docType);
+                LogHelper.Debug<SyncDocType>("SaveContent Type Fired for {0} types",
+                    () => e.SavedEntities.Count());
+                foreach (var docType in e.SavedEntities)
+                {
+                    SaveToDisk(docType);
+                }
             }
         }
 
         static void ContentTypeService_DeletingContentType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IContentType> e)
         {
-            LogHelper.Debug<SyncDocType>("Deleting Type Fired for {0} types", ()=> e.DeletedEntities.Count());
-            // delete things (there can sometimes be more than one??)
-            foreach (var docType in e.DeletedEntities)
+            if (!uSync.EventsPaused)
             {
-                helpers.XmlDoc.ArchiveFile("DocumentType", docType.GetSyncPath(), "def") ; 
+                LogHelper.Debug<SyncDocType>("Deleting Type Fired for {0} types", () => e.DeletedEntities.Count());
+                // delete things (there can sometimes be more than one??)
+                foreach (var docType in e.DeletedEntities)
+                {
+                    helpers.XmlDoc.ArchiveFile("DocumentType", docType.GetSyncPath(), "def");
+                }
             }
         }
     }

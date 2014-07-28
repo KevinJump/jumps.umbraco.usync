@@ -199,30 +199,42 @@ namespace jumps.umbraco.usync
 
         static void Template_AfterSave(global::umbraco.cms.businesslogic.template.Template sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
         {
-            LogHelper.Info<uSync>("Template After Save");
-            SaveToDisk(ApplicationContext.Current.Services.FileService.GetTemplate(sender.Alias)); 
+            if (!uSync.EventsPaused)
+            {
+                LogHelper.Info<uSync>("Template After Save");
+                SaveToDisk(ApplicationContext.Current.Services.FileService.GetTemplate(sender.Alias));
+            }
         }
 
         static void Template_AfterDelete(global::umbraco.cms.businesslogic.template.Template sender, global::umbraco.cms.businesslogic.DeleteEventArgs e)
         {
-            LogHelper.Info<uSync>("Template after delete");
-            XmlDoc.ArchiveFile("Template", XmlDoc.ScrubFile(sender.Alias)); 
+            if (!uSync.EventsPaused)
+            {
+                LogHelper.Info<uSync>("Template after delete");
+                XmlDoc.ArchiveFile("Template", XmlDoc.ScrubFile(sender.Alias));
+            }
         }
 
         static void FileService_DeletedTemplate(IFileService sender, Umbraco.Core.Events.DeleteEventArgs<ITemplate> e)
         {
-            foreach(var item in e.DeletedEntities )
+            if (!uSync.EventsPaused)
             {
-                XmlDoc.ArchiveFile("Template", XmlDoc.ScrubFile(item.Alias));
+                foreach (var item in e.DeletedEntities)
+                {
+                    XmlDoc.ArchiveFile("Template", XmlDoc.ScrubFile(item.Alias));
+                }
             }
         }
 
         static void FileService_SavedTemplate(IFileService sender, Umbraco.Core.Events.SaveEventArgs<ITemplate> e)
         {
-            LogHelper.Info<uSync>("Saving Templates"); 
-            foreach(var item in e.SavedEntities)
+            if (!uSync.EventsPaused)
             {
-                SaveToDisk(item);
+                LogHelper.Info<uSync>("Saving Templates");
+                foreach (var item in e.SavedEntities)
+                {
+                    SaveToDisk(item);
+                }
             }
         }
     }

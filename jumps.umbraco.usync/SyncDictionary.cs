@@ -112,71 +112,75 @@ namespace jumps.umbraco.usync
 
         static void DictionaryItem_Deleting(Dictionary.DictionaryItem sender, EventArgs e)
         {
-            lock (_deleteLock)
+            if (!uSync.EventsPaused)
             {
-                if (sender.hasChildren)
+                lock (_deleteLock)
                 {
-                    // we get the delets in a backwards order, so we add all the children of this
-                    // node to the list we are not going to delete when we get asked to.
-                    // 
-                    foreach(Dictionary.DictionaryItem child in sender.Children)
+                    if (sender.hasChildren)
                     {
-                        _dChildren.Add(child.id) ; 
+                        // we get the delets in a backwards order, so we add all the children of this
+                        // node to the list we are not going to delete when we get asked to.
+                        // 
+                        foreach (Dictionary.DictionaryItem child in sender.Children)
+                        {
+                            _dChildren.Add(child.id);
+                        }
                     }
-                }
 
-                if (_dChildren.Contains(sender.id))
-                {
-                    // this is a child of a parent we have already deleted.
-                    _dChildren.Remove(sender.id);
-                    LogHelper.Debug<SyncDictionary>("No Deleteing Dictionary item {0} because we deleted it's parent", 
-                        ()=> sender.key); 
-                }
-                else
-                {
-                    //actually delete 
-
-
-                    LogHelper.Debug<SyncDictionary>("Deleting Dictionary Item {0}",  ()=> sender.key);
-
-                    // when you delete a tree, the top gets called before the children. 
-                    //             
-                    if (!sender.IsTopMostItem())
+                    if (_dChildren.Contains(sender.id))
                     {
-                        // if it's not top most, we save it's parent (that will delete)
-
-                        SaveToDisk(GetTop(sender));
+                        // this is a child of a parent we have already deleted.
+                        _dChildren.Remove(sender.id);
+                        LogHelper.Debug<SyncDictionary>("No Deleteing Dictionary item {0} because we deleted it's parent",
+                            () => sender.key);
                     }
                     else
                     {
-                        // it's top we need to delete
-                        helpers.XmlDoc.ArchiveFile("Dictionary", sender.key);
+                        //actually delete 
 
+
+                        LogHelper.Debug<SyncDictionary>("Deleting Dictionary Item {0}", () => sender.key);
+
+                        // when you delete a tree, the top gets called before the children. 
+                        //             
+                        if (!sender.IsTopMostItem())
+                        {
+                            // if it's not top most, we save it's parent (that will delete)
+
+                            SaveToDisk(GetTop(sender));
+                        }
+                        else
+                        {
+                            // it's top we need to delete
+                            helpers.XmlDoc.ArchiveFile("Dictionary", sender.key);
+
+                        }
                     }
                 }
-            }
-            
-            
+
+            }            
             
         }
 
 
         static void DictionaryItem_Saving(Dictionary.DictionaryItem sender, EventArgs e)
         {
-            SaveToDisk(GetTop(sender));
+            if (!uSync.EventsPaused)
+            {
+                SaveToDisk(GetTop(sender));
+            }
         }
 
         private static Dictionary.DictionaryItem GetTop(Dictionary.DictionaryItem item)
         {
-
             if (!item.IsTopMostItem())
             {
-                LogHelper.Debug<SyncDictionary>("is Top Most [{0}]", ()=> item.IsTopMostItem());
+                LogHelper.Debug<SyncDictionary>("is Top Most [{0}]", () => item.IsTopMostItem());
                 try
                 {
                     if (item.Parent != null)
                     {
-                        LogHelper.Debug<SyncDictionary>("parent [{0}]", ()=> item.Parent.key);
+                        LogHelper.Debug<SyncDictionary>("parent [{0}]", () => item.Parent.key);
                         return GetTop(item.Parent);
                     }
                 }
@@ -191,7 +195,7 @@ namespace jumps.umbraco.usync
 
             }
 
-            return item; 
+            return item;
         }
     }
 }

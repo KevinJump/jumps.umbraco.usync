@@ -124,14 +124,20 @@ namespace jumps.umbraco.usync
 
         static void StyleSheet_BeforeDelete(StyleSheet sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Text);
-            e.Cancel = false;
+            if (!uSync.EventsPaused)
+            {
+                helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Text);
+                e.Cancel = false;
+            }
         }
         
 
         static void StyleSheet_AfterSave(StyleSheet sender, SaveEventArgs e)
         {
-            SaveToDisk(sender); 
+            if (!uSync.EventsPaused)
+            {
+                SaveToDisk(sender);
+            }
         }
     }
 }

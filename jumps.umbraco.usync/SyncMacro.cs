@@ -194,17 +194,23 @@ namespace jumps.umbraco.usync
 
         static void MacroService_Deleted(IMacroService sender, Umbraco.Core.Events.DeleteEventArgs<IMacro> e)
         {
-            foreach(var macro in e.DeletedEntities)
+            if (!uSync.EventsPaused)
             {
-                XmlDoc.ArchiveFile("Macro", XmlDoc.ScrubFile(macro.Alias));
+                foreach (var macro in e.DeletedEntities)
+                {
+                    XmlDoc.ArchiveFile("Macro", XmlDoc.ScrubFile(macro.Alias));
+                }
             }
         }
 
         static void MacroService_Saved(IMacroService sender, Umbraco.Core.Events.SaveEventArgs<IMacro> e)
         {
-            foreach(var macro in e.SavedEntities)
+            if (!uSync.EventsPaused)
             {
-                SaveToDisk(macro);
+                foreach (var macro in e.SavedEntities)
+                {
+                    SaveToDisk(macro);
+                }
             }
         }
      }

@@ -18,7 +18,7 @@
         <div class="propertyItem">
             <div class="span12">
             <p>
-                Out the box usync does everything automagically, if you want to
+                Out-the-box usync does everything automagically, if you want to
                 have more control of what usync does, you can use this dashboard
             </p>
             <h3>uSync Settings:</h3>

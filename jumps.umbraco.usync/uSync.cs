@@ -51,7 +51,13 @@ namespace jumps.umbraco.usync
 
         // our own events - fired when we start and stop
         public static event uSyncBulkEventHander Starting;
-        public static event uSyncBulkEventHander Initialized; 
+        public static event uSyncBulkEventHander Initialized;
+
+        public static bool EventsPaused = false;
+
+
+        // locking readall. 
+        public static object _readSync = new object();
 
         /// <summary>
         /// do the stuff we do when we start, using locks, and flags so
@@ -148,42 +154,49 @@ namespace jumps.umbraco.usync
         {
             if (!File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop")))
             {
-
-                LogHelper.Debug<uSync>("Reading from Disk - starting");
-
-                if (uSyncSettings.Elements.Templates)
-                    SyncTemplate.ReadAllFromDisk();
-
-                if (uSyncSettings.Elements.Stylesheets)
-                    SyncStylesheet.ReadAllFromDisk();
-
-                if (uSyncSettings.Elements.DataTypes)
-                    SyncDataType.ReadAllFromDisk();
-
-                if (uSyncSettings.Elements.DocumentTypes)
-                    SyncDocType.ReadAllFromDisk();
-
-                if (uSyncSettings.Elements.Macros)
-                    SyncMacro.ReadAllFromDisk();
-
-                if (uSyncSettings.Elements.MediaTypes)
-                    SyncMediaTypes.ReadAllFromDisk();
-
-                if (uSyncSettings.Elements.Dictionary)
+                lock (_readSync)
                 {
-                    SyncLanguage.ReadAllFromDisk();
-                    SyncDictionary.ReadAllFromDisk();
-                }
 
-                LogHelper.Debug<uSync>("Reading from Disk - End"); 
+                    EventsPaused = true;
 
-                if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
-                {
-                    LogHelper.Debug<uSync>("Renaming once file");
+                    LogHelper.Debug<uSync>("Reading from Disk - starting");
 
-                    File.Move(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once"),
-                        Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
-                    LogHelper.Debug<uSync>("Once renamed to stop");
+                    if (uSyncSettings.Elements.Templates)
+                        SyncTemplate.ReadAllFromDisk();
+
+                    if (uSyncSettings.Elements.Stylesheets)
+                        SyncStylesheet.ReadAllFromDisk();
+
+                    if (uSyncSettings.Elements.DataTypes)
+                        SyncDataType.ReadAllFromDisk();
+
+                    if (uSyncSettings.Elements.DocumentTypes)
+                        SyncDocType.ReadAllFromDisk();
+
+                    if (uSyncSettings.Elements.Macros)
+                        SyncMacro.ReadAllFromDisk();
+
+                    if (uSyncSettings.Elements.MediaTypes)
+                        SyncMediaTypes.ReadAllFromDisk();
+
+                    if (uSyncSettings.Elements.Dictionary)
+                    {
+                        SyncLanguage.ReadAllFromDisk();
+                        SyncDictionary.ReadAllFromDisk();
+                    }
+
+                    LogHelper.Debug<uSync>("Reading from Disk - End");
+
+                    if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
+                    {
+                        LogHelper.Debug<uSync>("Renaming once file");
+
+                        File.Move(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once"),
+                            Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
+                        LogHelper.Debug<uSync>("Once renamed to stop");
+                    }
+
+                    EventsPaused = false;
                 }
             }
             else

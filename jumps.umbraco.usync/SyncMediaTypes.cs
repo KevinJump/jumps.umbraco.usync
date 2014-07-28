@@ -145,19 +145,25 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_DeletingMediaType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<Umbraco.Core.Models.IMediaType> e)
         {
-            LogHelper.Debug<SyncMediaTypes>("DeletingMediaType for {0} items", ()=> e.DeletedEntities.Count());
-            foreach (var mediaType in e.DeletedEntities)
+            if (!uSync.EventsPaused)
             {
-                helpers.XmlDoc.ArchiveFile("MediaType", GetMediaPath(new MediaType(mediaType.Id)), "def");
+                LogHelper.Debug<SyncMediaTypes>("DeletingMediaType for {0} items", () => e.DeletedEntities.Count());
+                foreach (var mediaType in e.DeletedEntities)
+                {
+                    helpers.XmlDoc.ArchiveFile("MediaType", GetMediaPath(new MediaType(mediaType.Id)), "def");
+                }
             }
         }
 
         static void ContentTypeService_SavedMediaType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<Umbraco.Core.Models.IMediaType> e)
         {
-            LogHelper.Debug<SyncMediaTypes>("SaveContent Type Fired for {0} types", ()=> e.SavedEntities.Count());
-            foreach (var mediaType in e.SavedEntities)
+            if (!uSync.EventsPaused)
             {
-                SaveToDisk(new MediaType(mediaType.Id));
+                LogHelper.Debug<SyncMediaTypes>("SaveContent Type Fired for {0} types", () => e.SavedEntities.Count());
+                foreach (var mediaType in e.SavedEntities)
+                {
+                    SaveToDisk(new MediaType(mediaType.Id));
+                }
             }
         }
     }

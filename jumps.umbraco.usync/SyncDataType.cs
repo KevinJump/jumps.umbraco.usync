@@ -159,17 +159,23 @@ namespace jumps.umbraco.usync
 
         static void DataTypeService_Deleted(IDataTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IDataTypeDefinition> e)
         {
-            foreach(var item in e.DeletedEntities)
+            if (!uSync.EventsPaused)
             {
-                XmlDoc.ArchiveFile("DataTypeDefinition", XmlDoc.ScrubFile(item.Name));
+                foreach (var item in e.DeletedEntities)
+                {
+                    XmlDoc.ArchiveFile("DataTypeDefinition", XmlDoc.ScrubFile(item.Name));
+                }
             }
         }
 
         static void DataTypeService_Saved(IDataTypeService sender, Umbraco.Core.Events.SaveEventArgs<IDataTypeDefinition> e)
         {
-            foreach(var item in e.SavedEntities)
+            if (!uSync.EventsPaused)
             {
-                SaveToDisk(item);
+                foreach (var item in e.SavedEntities)
+                {
+                    SaveToDisk(item);
+                }
             }
         }
         
