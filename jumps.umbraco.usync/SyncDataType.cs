@@ -36,6 +36,9 @@ namespace jumps.umbraco.usync
                 {
                     XElement node = packagingService.Export(item);
                     node.AddMD5Hash();
+                    node = ReplaceCotentNodes(node);
+                    // content node hunting goes here....
+                   
                     XmlDoc.SaveElement("DataTypeDefinition", XmlDoc.ScrubFile(item.Name), node); 
                 }
                 catch (Exception ex)
@@ -121,7 +124,8 @@ namespace jumps.umbraco.usync
                                     var definition = dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
                                     if (definition != null)
                                     {
-                                        UpdatePreValues(definition, node);
+                                        var cNode = HuntContentNodes(node);
+                                        UpdatePreValues(definition, cNode);
                                     }
                                 }
                             } /* end for each */
@@ -178,6 +182,107 @@ namespace jumps.umbraco.usync
                 }
             }
         }
-        
+
+        #region Node Hunting 
+
+        /// <summary>
+        ///  goes through the prevalues and makes content ids portable.
+        /// </summary>
+        private static XElement ReplaceCotentNodes(XElement node)
+        {
+            var preValues = node.Elements("PreValues");
+            foreach (var preValue in preValues)
+            {
+                if (!((string)preValue.Attribute("Alias")).IsNullOrWhiteSpace())
+                {
+                    if ((string)preValue.Attribute("Alias") == "startNode") // will be is in our list from the config file?
+                    {
+                        // need to hunt inside value for anything that looks like a content node....
+
+                        // if we find something, we need to build the contents path up (using aliases)
+
+                        // save the path in the node tree (which we may need to create)
+
+                        // attach the node tree to the XElement
+
+                        // replace the contentnode in the string with [{usyncnode:N}]
+                        // where N is count of Node Ids we've found (might be more than one?)
+
+                    }
+                }
+
+            }
+            return node;
+        }
+
+
+        /// <summary>
+        ///  turns portable content ids back into static ones.
+        /// </summary>
+        private static XElement HuntContentNodes(XElement node)
+        {
+            var preValues = node.Elements("PreValues");
+            foreach (var preValue in preValues)
+            {
+                if (!((string)preValue.Attribute("Value")).IsNullOrWhiteSpace())
+                {
+
+                    var val = (string)preValue.Attribute("Value");
+
+                    // do a regex to find all [{usyncnode:N}] values
+                    if (true)
+                    {
+                        // we have a live one. 
+
+                        // look for a node tree
+
+                        // look in the node tree for a node with the name of this prevalues Alias
+
+                        // get the value of the node 
+
+                        // this is a path (built with aliases) - traverse from the root node and 
+                        // try to find this path
+
+                        // when we get to the end, we have our contentID
+
+                        // replace [{usyncnode}] with the content ID 
+
+                    }
+
+                }
+            }
+
+            return node;
+        }
+
+        #endregion
+
     }
 }
+
+/* THE MNTP FIX : Outline solution */
+/* 
+  on save... 
+		If you find a valid content node [regex or via preConfig in usyncsettings???] 
+ 
+			- build it's node path (based on content aliases)  
+			- save that to the end of the config file....(below)
+			- replace in string with [[usync::nodevalue]] ? 
+  
+  <node>
+	<startNode>/path/to/node/in/cms/</startNode>
+  </node>
+  
+  On read ....  
+		if any prevalue contains [[usync::nodevalue]] then
+		
+		look in node tree for it /node/{alias} 
+		
+		the value is the path... search the content find the path
+		get the final ID. replace [[usync::nodevalue]] with 
+		the ID. bob's you anties live in lover.
+ 
+        fall back we can't find the new node, set it to the root
+        content for the site?
+  
+*/
