@@ -22,7 +22,7 @@ namespace jumps.umbraco.usync.helpers
         {
             var _contentService = ApplicationContext.Current.Services.ContentService;
 
-            LogHelper.Info<ContentWalker>("Walking the path for node id: {0}", () => id);
+            LogHelper.Debug<ContentWalker>("Walking the path for node id: {0}", () => id);
             var content = _contentService.GetById(id);
             if (content != null)
             {
@@ -48,22 +48,16 @@ namespace jumps.umbraco.usync.helpers
         {
             var _contentService = ApplicationContext.Current.Services.ContentService;
 
-            LogHelper.Info<ContentWalker>("Getting the id for path: {0}", () => path);
+            LogHelper.Debug<ContentWalker>("Getting the id for path: {0}", () => path);
 
             if (!string.IsNullOrWhiteSpace(path))
             {
                 var bits = path.Split('\\');                
                 var rootName = bits[0];
 
-                foreach(var contentNode in _contentService.GetByLevel(1))
-                {
-                    LogHelper.Info<ContentWalker>("Content at Root: {0}", ()=> contentNode.Name);
-                }
-
                 var root = _contentService.GetByLevel(1).Where(x => x.Name == rootName).FirstOrDefault();
                 if ( root != null )
                 {
-                    LogHelper.Info<ContentWalker>("We have a matching root");
                     // recurse into the rest of it...
                     return GetLastId(_contentService, root.Id, bits, 2);
                 }
@@ -74,7 +68,7 @@ namespace jumps.umbraco.usync.helpers
 
         private int GetLastId(IContentService _service, int parentId, string[] bits, int level)
         {
-            LogHelper.Info<ContentWalker>("Recursing {0} - {1}", () => level, () => parentId);
+            LogHelper.Debug<ContentWalker>("Recursing {0} - {1}", () => level, () => parentId);
 
             var here = _service.GetChildrenByName(parentId, bits[level - 1]).FirstOrDefault();
             // var here = node.Children().Where(x => x.Name == bits[level-1]).FirstOrDefault();            
@@ -82,7 +76,7 @@ namespace jumps.umbraco.usync.helpers
             {
                 if (bits.Length == level)
                 {
-                    LogHelper.Info<ContentWalker>("We are at level {0} we thing {1} is our node", () => level, () => here.Name);
+                    LogHelper.Debug<ContentWalker>("We are at level {0} we thing {1} is our node", () => level, () => here.Name);
                     return here.Id;
                 }
                 else if (bits.Length > level)
@@ -92,13 +86,13 @@ namespace jumps.umbraco.usync.helpers
                 else
                 {
                     // we've gone to far if we get here...
-                    LogHelper.Info<ContentWalker>("Somethings gone wrong, we've gone to far...."); 
+                    LogHelper.Debug<ContentWalker>("Somethings gone wrong, we've gone to far...."); 
                     return -1;
                 }
             }
             else
             {
-                LogHelper.Info<ContentWalker>("Couldn't find {0}", () => bits[level - 1]);
+                LogHelper.Debug<ContentWalker>("Couldn't find {0}", () => bits[level - 1]);
                 return -1; 
             }
         }
@@ -139,23 +133,16 @@ namespace jumps.umbraco.usync.helpers
         {
             var _mediaService = ApplicationContext.Current.Services.MediaService;
 
-            LogHelper.Info<MediaWalker>("Getting the id for path: {0}", () => path);
+            LogHelper.Debug<MediaWalker>("Getting the id for path: {0}", () => path);
 
             if (!string.IsNullOrWhiteSpace(path))
             {
                 var bits = path.Split('\\');
                 var rootName = bits[0];
 
-                foreach (var contentNode in _mediaService.GetByLevel(1))
-                {
-                    LogHelper.Info<MediaWalker>("Content at Root: {0}", () => contentNode.Name);
-                }
-
                 var root = _mediaService.GetByLevel(1).Where(x => x.Name == rootName).FirstOrDefault();
                 if (root != null)
                 {
-                    LogHelper.Info<MediaWalker>("We have a matching root");
-                    // recurse into the rest of it...
                     return GetLastId(_mediaService, root.Id, bits, 2);
                 }
             }
@@ -165,7 +152,7 @@ namespace jumps.umbraco.usync.helpers
 
         private int GetLastId(IMediaService _service, int parentId, string[] bits, int level)
         {
-            LogHelper.Info<ContentWalker>("Recursing {0} - {1}", () => level, () => parentId);
+            LogHelper.Debug<MediaWalker>("Recursing {0} - {1}", () => level, () => parentId);
 
             var here = _service.GetChildren(parentId).Where(x => x.Name == bits[level - 1]).FirstOrDefault();
             // var here = _service.GetChildrenByName(parentId, bits[level - 1]).FirstOrDefault();
@@ -174,7 +161,7 @@ namespace jumps.umbraco.usync.helpers
             {
                 if (bits.Length == level)
                 {
-                    LogHelper.Info<MediaWalker>("We are at level {0} we thing {1} is our node", () => level, () => here.Name);
+                    LogHelper.Debug<MediaWalker>("We are at level {0} we think {1} is our node", () => level, () => here.Name);
                     return here.Id;
                 }
                 else if (bits.Length > level)
@@ -184,13 +171,13 @@ namespace jumps.umbraco.usync.helpers
                 else
                 {
                     // we've gone to far if we get here...
-                    LogHelper.Info<MediaWalker>("Somethings gone wrong, we've gone to far....");
+                    LogHelper.Debug<MediaWalker>("Somethings gone wrong, we've gone to far....");
                     return -1;
                 }
             }
             else
             {
-                LogHelper.Info<MediaWalker>("Couldn't find {0}", () => bits[level - 1]);
+                LogHelper.Debug<MediaWalker>("Couldn't find {0}", () => bits[level - 1]);
                 return -1;
             }
         }

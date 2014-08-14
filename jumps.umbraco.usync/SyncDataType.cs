@@ -283,8 +283,8 @@ namespace jumps.umbraco.usync
 
                         if ( uSyncSettings.dataTypeSettings.ContentPreValueAliases.Contains((string)preValue.Attribute("Alias")) )
                         {
-                            // need to hunt inside value for anything that looks like a content node....
-                            LogHelper.Info<SyncDataType>("going to try find a node id in this...");
+                            LogHelper.Info<SyncDataType>("Mapping Content Ids in PreValue {0}", () => preValue.Attribute("Alias"));
+
                             var propVal = (string)preValue.Attribute("Value");
 
                             if ( !String.IsNullOrWhiteSpace(propVal)) 
@@ -347,7 +347,7 @@ namespace jumps.umbraco.usync
             { 
                 if ( nodes.HasElements && preValues.HasElements )
                 {
-                    LogHelper.Info<SyncDataType>("This DataType has nodes and prevalue trees."); 
+                    LogHelper.Info<SyncDataType>("Mapping PreValue Content Ids to Local Content Id Values"); 
 
                     foreach(var nodepath in nodes.Elements("Node"))
                     {
@@ -355,7 +355,6 @@ namespace jumps.umbraco.usync
                         var alias = (string)nodepath.Attribute("Alias");
                         if ( !String.IsNullOrWhiteSpace(alias))
                         {
-                            LogHelper.Info<SyncDataType>("Looking for a preValue with {0} Alias", () => alias);
                             // find the alias in the preValues...
                             var preVal = preValues.Elements().Where(x => (string)x.Attribute("Alias") == alias).FirstOrDefault();
                             if ( preVal != null )
@@ -363,28 +362,25 @@ namespace jumps.umbraco.usync
                                 var preValVal = (string)preVal.Attribute("Value");
                                 if (!string.IsNullOrWhiteSpace(preValVal))
                                 {
-                                    LogHelper.Info<SyncDataType>("We have the preValue (we think....) {0}", ()=> preValVal);
+                                    LogHelper.Debug<SyncDataType>("We have the preValue (we think....) {0}", ()=> preValVal);
 
                                     var nodeidPath = (string)nodepath.Attribute("Value");
                                     var nodeid = (string)nodepath.Attribute("Id");
 
-                                    LogHelper.Info<SyncDataType>("We have the value and id so we can go do stuff.");
-
                                     if ( !string.IsNullOrWhiteSpace(nodeidPath)) {
 
-                                        LogHelper.Info<SyncDataType>("the nodeidPath wasn't null {0}", () => nodeidPath);
                                         int id = -1;
                                         
                                         var nodeType = (string)nodepath.Attribute("Type");
                                         if ( nodeType == "media" )
                                         {
-                                            LogHelper.Info<SyncDataType>("searching for a media node");
+                                            LogHelper.Debug<SyncDataType>("searching for a media node");
                                             MediaWalker mw = new MediaWalker();
                                             id = mw.GetIdFromPath(nodeidPath);
                                         }
                                         else
                                         {
-                                            LogHelper.Info<SyncDataType>("searching for a content node");
+                                            LogHelper.Debug<SyncDataType>("searching for a content node");
                                             ContentWalker cw = new ContentWalker();
                                             id = cw.GetIdFromPath(nodeidPath);
                                         }
@@ -392,11 +388,11 @@ namespace jumps.umbraco.usync
                                         if (id != -1)
                                         {
                                             preVal.SetAttributeValue("Value", preValVal.Replace(nodeid, id.ToString()));
-                                            LogHelper.Info<SyncDataType>("Set preValue value to {0}", () => preVal.Attribute("Value"));
+                                            LogHelper.Debug<SyncDataType>("Set preValue value to {0}", () => preVal.Attribute("Value"));
                                         }
                                         else
                                         {
-                                            LogHelper.Info<SyncDataType>("We didn't match the pre-value so we're leaving it alone");
+                                            LogHelper.Debug<SyncDataType>("We didn't match the pre-value so we're leaving it alone");
                                         }
                                     }
                                     else
