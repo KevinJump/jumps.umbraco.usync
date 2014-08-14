@@ -33,6 +33,7 @@ namespace jumps.umbraco.usync.helpers
         private static IContentTypeService _contentService;
         private static IPackagingService _packagingService;
         private static IDataTypeService _dataTypeService;
+        
         static Tracker()
         {
             _fileService = ApplicationContext.Current.Services.FileService;
@@ -85,6 +86,7 @@ namespace jumps.umbraco.usync.helpers
             XElement export = _packagingService.Export(item, false);
             string dbMD5 = XmlDoc.CalculateMD5Hash(export);
 
+            // LogHelper.Info<uSync>("XML File (we just got to hash from) {0}", () => export.ToString());
             // LogHelper.Info<uSync>("File {0} : Guid {1}", () => filehash, () => dbMD5);
 
             return (!filehash.Equals(dbMD5));

@@ -116,9 +116,9 @@ namespace jumps.umbraco.usync
                                            ? (from doc in element.Elements("DataType") select doc).ToList()
                                            : new List<XElement> { element };
 
+                            var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
                             foreach (var node in dataTypeElements)
                             {
-                                var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
                                 packagingService.ImportDataTypeDefinitions(node);
 
                                 var def = node.Attribute("Definition");
@@ -387,8 +387,12 @@ namespace jumps.umbraco.usync
 
                                         if (id != -1)
                                         {
-                                            preVal.SetAttributeValue("Value", preValVal.Replace(nodeid, id.ToString()));
-                                            LogHelper.Debug<SyncDataType>("Set preValue value to {0}", () => preVal.Attribute("Value"));
+                                            // try to illiminate changes for changes sake. 
+                                            if (preValVal.Contains(nodeid) && nodeid != id.ToString())
+                                            {
+                                                preVal.SetAttributeValue("Value", preValVal.Replace(nodeid, id.ToString()));
+                                                LogHelper.Debug<SyncDataType>("Set preValue value to {0}", () => preVal.Attribute("Value"));
+                                            }
                                         }
                                         else
                                         {
