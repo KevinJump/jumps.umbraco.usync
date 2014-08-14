@@ -20,6 +20,10 @@ using Umbraco.Core.Logging;
 
 using jumps.umbraco.usync.helpers;
 
+using System.Text.RegularExpressions;
+
+using System.Timers;
+
 namespace jumps.umbraco.usync
 {
     /// <summary>
@@ -155,11 +159,31 @@ namespace jumps.umbraco.usync
             }
         }
 
+        private static Timer _saveTimer;
+        private static Queue<int> _saveQueue;
+        private static object _saveLock; 
+
         public static void AttachEvents()
         {
             DataTypeService.Saved += DataTypeService_Saved;
             DataTypeService.Deleted += DataTypeService_Deleted;
+
+
+            // delay trigger - used (upto and including umb 7.1.4
+            // saved event on a datatype is called before prevalues
+            // are saved - so we just wait a little while before 
+            // we save our datatype... 
+            //  not ideal but them's the breaks.
+            //
+            //
+            //
+            _saveTimer = new Timer(8128); // a perfect waiting time
+            _saveTimer.Elapsed += _saveTimer_Elapsed;
+
+            _saveQueue = new Queue<int>();
+            _saveLock = new object();
         }
+
 
         static void DataTypeService_Deleted(IDataTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IDataTypeDefinition> e)
         {
@@ -176,113 +200,226 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventsPaused)
             {
-                foreach (var item in e.SavedEntities)
+                if (e.SavedEntities.Count() > 0)
                 {
-                    SaveToDisk(item);
+                    // at the moment this is true for all versions of umbraco 7+
+                    // when a fix appears we will version check this code away.
+                    //
+                    // whole app only runs on 7.1+ so just check for < 7.5 ?
+                    // if ( Umbraco.Core.Configuration.UmbracoVersion.Current.Major == 7 && 
+                    //      Umbraco.Core.Configuration.UmbracoVersion.Current.Minor < 5 ) {
+
+                    if (uSyncSettings.dataTypeSettings.WaitAndSave)
+                    {         
+                        // we lock so saves can't happen while we add to the queue.
+                        lock (_saveLock)
+                        {
+                            // we reset the time, this means if two or more saves 
+                            // happen close together, then they will be queued up
+                            // only when no datatype saves have happened in the 
+                            // timer elapsed period will saves start to happen.
+                            //
+                            _saveTimer.Stop();
+                            _saveTimer.Start();
+
+                            foreach (var item in e.SavedEntities)
+                            {
+                                _saveQueue.Enqueue(item.Id);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (var item in e.SavedEntities)
+                        {
+                            SaveToDisk(item);
+                        }
+                    }
                 }
             }
         }
 
-        #region Node Hunting 
+        static void _saveTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            // we lock so things can't be added to the queue while we save them.
+            // typically a save is ~ 50ms
+            lock (_saveLock)
+            {
+                while (_saveQueue.Count > 0)
+                {
+                    var dataTypeService = ApplicationContext.Current.Services.DataTypeService;
+
+                    int typeId = _saveQueue.Dequeue();
+
+                    var item = dataTypeService.GetDataTypeDefinitionById(typeId);
+                    if (item != null)
+                    {
+                        SaveToDisk(item);
+                    }
+                }
+            }
+
+            throw new NotImplementedException();
+        }
+
+
+        #region Node Hunting (the MultiNode Tree Picker fix)
 
         /// <summary>
         ///  goes through the prevalues and makes content ids portable.
         /// </summary>
         private static XElement ReplaceCotentNodes(XElement node)
         {
-            var preValues = node.Elements("PreValues");
-            foreach (var preValue in preValues)
+            XElement nodepaths = null; 
+
+            var preValueRoot = node.Element("PreValues");
+            if (preValueRoot.HasElements)
             {
-                if (!((string)preValue.Attribute("Alias")).IsNullOrWhiteSpace())
+                var preValues = preValueRoot.Elements("PreValue");
+                foreach (var preValue in preValues)
                 {
-                    if ((string)preValue.Attribute("Alias") == "startNode") // will be is in our list from the config file?
+                    if (!((string)preValue.Attribute("Alias")).IsNullOrWhiteSpace())
                     {
-                        // need to hunt inside value for anything that looks like a content node....
 
-                        // if we find something, we need to build the contents path up (using aliases)
+                        if ( uSyncSettings.dataTypeSettings.ContentPreValueAliases.Contains((string)preValue.Attribute("Alias")) )
+                        {
+                            // need to hunt inside value for anything that looks like a content node....
+                            LogHelper.Info<SyncDataType>("going to try find a node id in this...");
+                            var propVal = (string)preValue.Attribute("Value");
 
-                        // save the path in the node tree (which we may need to create)
+                            if ( !String.IsNullOrWhiteSpace(propVal)) 
+                            {
+                                foreach(Match m in Regex.Matches(propVal, @"\d{1,9}"))
+                                {
+                                    int id ;
 
-                        // attach the node tree to the XElement
+                                    if ( int.TryParse(m.Value, out id))
+                                    {
+                                        // we have an ID : yippe, time to do some walking...
+                                        string type = "content";
 
-                        // replace the contentnode in the string with [{usyncnode:N}]
-                        // where N is count of Node Ids we've found (might be more than one?)
+                                        helpers.ContentWalker cw = new ContentWalker();
+                                        string nodePath = cw.GetPathFromID(id);
 
+                                        if ( string.IsNullOrWhiteSpace(nodePath) )
+                                        {
+                                            // try media ...
+                                            type = "media";
+                                            helpers.MediaWalker mw = new MediaWalker();
+                                            nodePath = mw.GetPathFromID(id);
+
+                                        }
+
+                                        if (!string.IsNullOrWhiteSpace(nodePath))
+                                        {
+
+                                            // attach the node tree to the XElement
+                                            if (nodepaths == null)
+                                            {
+                                                nodepaths = new XElement("Nodes");
+                                                node.Add(nodepaths);
+                                            }
+                                            nodepaths.Add(new XElement("Node",
+                                                new XAttribute("Id", m.Value),
+                                                new XAttribute("Value", nodePath),
+                                                new XAttribute("Alias", (string)preValue.Attribute("Alias")),
+                                                new XAttribute("Type", type)));
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-
             }
             return node;
         }
-
 
         /// <summary>
         ///  turns portable content ids back into static ones.
         /// </summary>
         private static XElement HuntContentNodes(XElement node)
         {
-            var preValues = node.Elements("PreValues");
-            foreach (var preValue in preValues)
-            {
-                if (!((string)preValue.Attribute("Value")).IsNullOrWhiteSpace())
+            var nodes = node.Element("Nodes");
+            var preValues = node.Element("PreValues");
+
+            if (nodes != null && preValues != null ) 
+            { 
+                if ( nodes.HasElements && preValues.HasElements )
                 {
+                    LogHelper.Info<SyncDataType>("This DataType has nodes and prevalue trees."); 
 
-                    var val = (string)preValue.Attribute("Value");
-
-                    // do a regex to find all [{usyncnode:N}] values
-                    if (true)
+                    foreach(var nodepath in nodes.Elements("Node"))
                     {
-                        // we have a live one. 
+                        // go through the mapped things, and see if they are 
+                        var alias = (string)nodepath.Attribute("Alias");
+                        if ( !String.IsNullOrWhiteSpace(alias))
+                        {
+                            LogHelper.Info<SyncDataType>("Looking for a preValue with {0} Alias", () => alias);
+                            // find the alias in the preValues...
+                            var preVal = preValues.Elements().Where(x => (string)x.Attribute("Alias") == alias).FirstOrDefault();
+                            if ( preVal != null )
+                            {
+                                var preValVal = (string)preVal.Attribute("Value");
+                                if (!string.IsNullOrWhiteSpace(preValVal))
+                                {
+                                    LogHelper.Info<SyncDataType>("We have the preValue (we think....) {0}", ()=> preValVal);
 
-                        // look for a node tree
+                                    var nodeidPath = (string)nodepath.Attribute("Value");
+                                    var nodeid = (string)nodepath.Attribute("Id");
 
-                        // look in the node tree for a node with the name of this prevalues Alias
+                                    LogHelper.Info<SyncDataType>("We have the value and id so we can go do stuff.");
 
-                        // get the value of the node 
+                                    if ( !string.IsNullOrWhiteSpace(nodeidPath)) {
 
-                        // this is a path (built with aliases) - traverse from the root node and 
-                        // try to find this path
+                                        LogHelper.Info<SyncDataType>("the nodeidPath wasn't null {0}", () => nodeidPath);
+                                        int id = -1;
+                                        
+                                        var nodeType = (string)nodepath.Attribute("Type");
+                                        if ( nodeType == "media" )
+                                        {
+                                            LogHelper.Info<SyncDataType>("searching for a media node");
+                                            MediaWalker mw = new MediaWalker();
+                                            id = mw.GetIdFromPath(nodeidPath);
+                                        }
+                                        else
+                                        {
+                                            LogHelper.Info<SyncDataType>("searching for a content node");
+                                            ContentWalker cw = new ContentWalker();
+                                            id = cw.GetIdFromPath(nodeidPath);
+                                        }
 
-                        // when we get to the end, we have our contentID
+                                        if (id != -1)
+                                        {
+                                            preVal.SetAttributeValue("Value", preValVal.Replace(nodeid, id.ToString()));
+                                            LogHelper.Info<SyncDataType>("Set preValue value to {0}", () => preVal.Attribute("Value"));
+                                        }
+                                        else
+                                        {
+                                            LogHelper.Info<SyncDataType>("We didn't match the pre-value so we're leaving it alone");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        LogHelper.Info<SyncDataType>("Couldn't retrieve nodeIdPath from Value");
+                                    }
 
-                        // replace [{usyncnode}] with the content ID 
+                                }
+                            }
 
+                        }
                     }
-
                 }
+            
             }
+            
 
             return node;
         }
+
+
 
         #endregion
 
     }
 }
-
-/* THE MNTP FIX : Outline solution */
-/* 
-  on save... 
-		If you find a valid content node [regex or via preConfig in usyncsettings???] 
- 
-			- build it's node path (based on content aliases)  
-			- save that to the end of the config file....(below)
-			- replace in string with [[usync::nodevalue]] ? 
-  
-  <node>
-	<startNode>/path/to/node/in/cms/</startNode>
-  </node>
-  
-  On read ....  
-		if any prevalue contains [[usync::nodevalue]] then
-		
-		look in node tree for it /node/{alias} 
-		
-		the value is the path... search the content find the path
-		get the final ID. replace [[usync::nodevalue]] with 
-		the ID. bob's you anties live in lover.
- 
-        fall back we can't find the new node, set it to the root
-        content for the site?
-  
-*/

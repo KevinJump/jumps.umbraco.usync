@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\IContentTypeExtensions.cs" />
+    <Compile Include="helpers\ContentWalker.cs" />
     <Compile Include="helpers\tracker.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
     <Compile Include="helpers\uSyncStrings.cs" />
@@ -96,7 +97,9 @@
     <Compile Include="uSyncSettings.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="uSyncSettings.config" />
+    <None Include="uSyncSettings.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="package.xml" />
@@ -112,10 +115,8 @@
 @XCOPY "$(ProjectDir)uSyncSettings.config"  "$(SolutionDir)\Package\uSync\"  /y /i /q
 @XCOPY "$(ProjectDir)package.xml" "$(SolutionDir)\Package\uSync\"  /y /i /q
 
-@Echo to Umbraco Test Site (uSyncTarget)
-@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\uSyncSites\uSyncTarget\Bin\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncSettings.config"  "D:\Development\Web\Umbraco\uSyncSites\uSyncTarget\Config\"  /y /i /q
-</PostBuildEvent>
+call $(SolutionDir)\ToUmbracoInstall.cmd "$(TargetPath)" bin
+call $(SolutionDir)\ToUmbracoInstall.cmd  "$(ProjectDir)uSyncSettings.config" config</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

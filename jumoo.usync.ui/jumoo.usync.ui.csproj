@@ -131,8 +131,9 @@
 @XCOPY "$(ProjectDir)uSyncUi.ascx"  "$(SolutionDir)\Package\uSync\"  /y /i /q
 
 @Echo to Umbraco Test Site (uSyncTarget)
-@XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\uSyncSites\uSyncTarget\Bin\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncUi.ascx" "D:\Development\Web\Umbraco\uSyncSites\uSyncTarget\Umbraco\Plugins\usync\"  /y /i /q</PostBuildEvent>
+$(SolutionDir)\ToUmbracoInstall.cmd "$(TargetPath)"  bin
+$(SolutionDir)\ToUmbracoInstall.cmd "$(ProjectDir)uSyncUi.ascx" Umbraco\Plugins\usync\
+</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

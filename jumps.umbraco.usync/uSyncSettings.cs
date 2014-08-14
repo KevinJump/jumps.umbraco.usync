@@ -149,6 +149,11 @@ namespace jumps.umbraco.usync
             get { return (uSyncDocTypeSettings)this["DocumentTypes"]; }
         }
 
+        [ConfigurationProperty("DataTypes", IsRequired=false)]
+        public uSyncDataTypeSettings DataTypeSettings {
+            get { return (uSyncDataTypeSettings)this["DataTypes"]; }
+        }
+
         [ConfigurationProperty("watchFolder", DefaultValue = "false", IsRequired = false)]
         public Boolean WatchFolder
         {
@@ -295,6 +300,22 @@ namespace jumps.umbraco.usync
             get { return (Boolean)this["DeletePropertyValues"]; }
         }
     }
+
+    public class uSyncDataTypeSettings  : ConfigurationElement
+    {
+        [ConfigurationProperty("ContentPreValueAliases", DefaultValue = "startNode, startNodeId", IsRequired = false)]
+        public String ContentPreValueAliases
+        {
+            get { return (String)this["ContentPreValueAliases"]; }
+        }
+
+        [ConfigurationProperty("WaitAndSave", DefaultValue = true, IsRequired = false)]
+        public Boolean WaitAndSave
+        {
+            get { return (Boolean)this["WaitAndSave"]; }
+        }
+
+    }
 /*
         public static List<string> PreservedPreValues
         {
@@ -431,6 +452,11 @@ namespace jumps.umbraco.usync
         public static uSyncDocTypeSettings docTypeSettings
         {
             get { return _settings.DocTypeSettings; }
+        }
+
+        public static uSyncDataTypeSettings dataTypeSettings 
+        {
+            get { return _settings.DataTypeSettings; }
         }
     }
   
