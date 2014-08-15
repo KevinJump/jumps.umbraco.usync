@@ -239,6 +239,36 @@ namespace jumps.umbraco.usync.helpers
             
         }
 
+        /// <summary>
+        ///  a slightly more complex one - for data types we take the preVal id fields
+        ///  away - because they are internal and change per install. 
+        /// </summary>
+        /// <returns></returns>
+        public static string CalculateMD5Hash(XElement node, Boolean removePreValIds)
+        {
+            if (removePreValIds)
+            {
+                XElement copy = new XElement(node);
+                var preValueRoot = copy.Element("PreValues");
+                if (preValueRoot.HasElements)
+                {
+                    var preValues = preValueRoot.Elements("PreValue");
+                    foreach (var preValue in preValues)
+                    {
+                        // find pre-vals - blank ids...
+                        preValue.SetAttributeValue("Id", "");
+                    }
+                }
+                return CalculateMD5Hash(copy);
+            }
+            else
+            {
+                return CalculateMD5Hash(node);
+            }
+
+        }
+
+
         //
         // Compute the MD5 of an xml file
         //

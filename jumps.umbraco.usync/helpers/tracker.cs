@@ -84,7 +84,7 @@ namespace jumps.umbraco.usync.helpers
 
             //var packagingService = ApplicationContext.Current.Services.PackagingService;
             XElement export = _packagingService.Export(item, false);
-            string dbMD5 = XmlDoc.CalculateMD5Hash(export);
+            string dbMD5 = XmlDoc.CalculateMD5Hash(export, true);
 
             // LogHelper.Info<uSync>("XML File (we just got to hash from) {0}", () => export.ToString());
             // LogHelper.Info<uSync>("File {0} : Guid {1}", () => filehash, () => dbMD5);
