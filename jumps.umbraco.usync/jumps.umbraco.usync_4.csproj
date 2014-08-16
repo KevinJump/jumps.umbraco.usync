@@ -44,13 +44,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="businesslogic">
-      <HintPath>..\Refrences\Umb7.1.1\businesslogic.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.1.4\businesslogic.dll</HintPath>
     </Reference>
     <Reference Include="cms">
-      <HintPath>..\Refrences\Umb7.1.1\cms.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.1.4\cms.dll</HintPath>
     </Reference>
     <Reference Include="interfaces">
-      <HintPath>..\Refrences\Umb7.1.1\interfaces.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.1.4\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -62,16 +62,16 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="umbraco">
-      <HintPath>..\Refrences\Umb7.1.1\umbraco.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.1.4\umbraco.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Core">
-      <HintPath>..\Refrences\Umb7.1.1\Umbraco.Core.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.1.4\Umbraco.Core.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.DataLayer">
-      <HintPath>..\Refrences\Umb7.1.1\umbraco.DataLayer.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.1.4\umbraco.DataLayer.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.providers">
-      <HintPath>..\Refrences\Umb7.1.1\umbraco.providers.dll</HintPath>
+      <HintPath>..\Refrences\Umb7.1.4\umbraco.providers.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

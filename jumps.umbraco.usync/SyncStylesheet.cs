@@ -11,8 +11,13 @@ using umbraco.cms.businesslogic.web;
 using umbraco.BusinessLogic; 
 
 using System.IO ;
-using Umbraco.Core.IO ;
+
+using Umbraco.Core;
+using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
+
+using Umbraco.Core.Models;
+using Umbraco.Core.Services;
 
 using System.Diagnostics;
 
@@ -41,7 +46,6 @@ namespace jumps.umbraco.usync
             {
                 try
                 {
-                    
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
                     xmlDoc.AddMD5Hash();

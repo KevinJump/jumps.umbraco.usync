@@ -281,6 +281,7 @@ namespace jumps.umbraco.usync
                     if (!((string)preValue.Attribute("Alias")).IsNullOrWhiteSpace())
                     {
 
+                        // look for an alias name that contains a content node
                         if ( uSyncSettings.dataTypeSettings.ContentPreValueAliases.Contains((string)preValue.Attribute("Alias")) )
                         {
                             LogHelper.Info<SyncDataType>("Mapping Content Ids in PreValue {0}", () => preValue.Attribute("Alias"));
@@ -303,11 +304,10 @@ namespace jumps.umbraco.usync
 
                                         if ( string.IsNullOrWhiteSpace(nodePath) )
                                         {
-                                            // try media ...
+                                            // Didn't find the content id try media ...
                                             type = "media";
                                             helpers.MediaWalker mw = new MediaWalker();
                                             nodePath = mw.GetPathFromID(id);
-
                                         }
 
                                         if (!string.IsNullOrWhiteSpace(nodePath))

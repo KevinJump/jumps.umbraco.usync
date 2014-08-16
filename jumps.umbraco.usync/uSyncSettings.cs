@@ -309,6 +309,12 @@ namespace jumps.umbraco.usync
             get { return (String)this["ContentPreValueAliases"]; }
         }
 
+        [ConfigurationProperty("StyleSheetAliases", DefaultValue = "editor", IsRequired=false)]
+        public String StyleSheetAliases
+        {
+            get { return (String)this["StyleSheetAliases"]; }
+        }
+
         [ConfigurationProperty("WaitAndSave", DefaultValue = true, IsRequired = false)]
         public Boolean WaitAndSave
         {

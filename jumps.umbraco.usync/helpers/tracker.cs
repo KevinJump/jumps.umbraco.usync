@@ -33,6 +33,8 @@ namespace jumps.umbraco.usync.helpers
         private static IContentTypeService _contentService;
         private static IPackagingService _packagingService;
         private static IDataTypeService _dataTypeService;
+
+        private static Dictionary<Guid, IDataTypeDefinition> _dataTypes;
         
         static Tracker()
         {
@@ -54,6 +56,7 @@ namespace jumps.umbraco.usync.helpers
             
             //var _contentService = ApplicationContext.Current.Services.ContentTypeService;
             var item = _contentService.GetContentType(aliasElement.Value);
+
             if (item == null) // import because it's new. 
                 return true; 
 
@@ -76,14 +79,29 @@ namespace jumps.umbraco.usync.helpers
             XAttribute defId = node.Attribute("Definition");
             if (defId == null)
                 return true;
-            
+            /*
             //var _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
             var item = _dataTypeService.GetDataTypeDefinitionById(new Guid(defId.Value));
-            if (item == null)
+            */
+            if ( _dataTypes == null )
+            {
+                // speed test, calling data types seems slow, 
+                // so we load all them at once, then refrence this when doing the compares.
+                // this is a little bit faster than calling each one as we go through...            
+                _dataTypes = new Dictionary<Guid, IDataTypeDefinition>();
+                foreach (IDataTypeDefinition dtype in _dataTypeService.GetAllDataTypeDefinitions())
+                {
+                    _dataTypes.Add(dtype.Key, dtype);
+                }
+
+            }
+
+            Guid defGuid = new Guid(defId.Value);
+            if (!_dataTypes.ContainsKey(defGuid) )
                 return true;
 
             //var packagingService = ApplicationContext.Current.Services.PackagingService;
-            XElement export = _packagingService.Export(item, false);
+            XElement export = _packagingService.Export(_dataTypes[defGuid], false);
             string dbMD5 = XmlDoc.CalculateMD5Hash(export, true);
 
             // LogHelper.Info<uSync>("XML File (we just got to hash from) {0}", () => export.ToString());
