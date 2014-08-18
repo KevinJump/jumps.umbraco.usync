@@ -35,12 +35,12 @@ namespace jumps.umbraco.usync.helpers
         private string GetContentPath(IContent content)
         {
             var path = content.Name;
-            if ( content.ParentId != -1 )
+            if (content.ParentId != -1)
             {
-                path = GetContentPath(content.Parent()) + "\\" + path ;
+                path = GetContentPath(content.Parent()) + "\\" + path;
             }
 
-            return path ; 
+            return path;
 
         }
 
@@ -52,17 +52,17 @@ namespace jumps.umbraco.usync.helpers
 
             if (!string.IsNullOrWhiteSpace(path))
             {
-                var bits = path.Split('\\');                
+                var bits = path.Split('\\');
                 var rootName = bits[0];
 
                 var root = _contentService.GetByLevel(1).Where(x => x.Name == rootName).FirstOrDefault();
-                if ( root != null )
+                if (root != null)
                 {
                     // recurse into the rest of it...
                     return GetLastId(_contentService, root.Id, bits, 2);
                 }
             }
-            return -1; 
+            return -1;
 
         }
 
@@ -81,19 +81,19 @@ namespace jumps.umbraco.usync.helpers
                 }
                 else if (bits.Length > level)
                 {
-                    return GetLastId(_service, here.Id, bits, level+1);
+                    return GetLastId(_service, here.Id, bits, level + 1);
                 }
                 else
                 {
                     // we've gone to far if we get here...
-                    LogHelper.Debug<ContentWalker>("Somethings gone wrong, we've gone to far...."); 
+                    LogHelper.Debug<ContentWalker>("Somethings gone wrong, we've gone to far....");
                     return -1;
                 }
             }
             else
             {
                 LogHelper.Debug<ContentWalker>("Couldn't find {0}", () => bits[level - 1]);
-                return -1; 
+                return -1;
             }
         }
     }
@@ -183,6 +183,8 @@ namespace jumps.umbraco.usync.helpers
         }
 
     }
+
+
 }
 
 

@@ -280,14 +280,11 @@ namespace jumps.umbraco.usync
                 {
                     if (!((string)preValue.Attribute("Alias")).IsNullOrWhiteSpace())
                     {
-
                         // look for an alias name that contains a content node
                         if ( uSyncSettings.dataTypeSettings.ContentPreValueAliases.Contains((string)preValue.Attribute("Alias")) )
                         {
                             LogHelper.Info<SyncDataType>("Mapping Content Ids in PreValue {0}", () => preValue.Attribute("Alias"));
-
                             var propVal = (string)preValue.Attribute("Value");
-
                             if ( !String.IsNullOrWhiteSpace(propVal)) 
                             {
                                 foreach(Match m in Regex.Matches(propVal, @"\d{1,9}"))
@@ -302,9 +299,9 @@ namespace jumps.umbraco.usync
                                         helpers.ContentWalker cw = new ContentWalker();
                                         string nodePath = cw.GetPathFromID(id);
 
-                                        if ( string.IsNullOrWhiteSpace(nodePath) )
+                                        // Didn't find the content id try media ...
+                                        if (string.IsNullOrWhiteSpace(nodePath))                                             
                                         {
-                                            // Didn't find the content id try media ...
                                             type = "media";
                                             helpers.MediaWalker mw = new MediaWalker();
                                             nodePath = mw.GetPathFromID(id);
@@ -312,7 +309,6 @@ namespace jumps.umbraco.usync
 
                                         if (!string.IsNullOrWhiteSpace(nodePath))
                                         {
-
                                             // attach the node tree to the XElement
                                             if (nodepaths == null)
                                             {
@@ -372,7 +368,13 @@ namespace jumps.umbraco.usync
                                         int id = -1;
                                         
                                         var nodeType = (string)nodepath.Attribute("Type");
-                                        if ( nodeType == "media" )
+                                        if (nodeType == "stylesheet")
+                                        {
+                                            // it's a stylesheet id - quick swapsy ...
+                                            // the core api - doesn't do getStyleSheetByID... so we're not doing this just yet
+                                            // 
+                                        }
+                                        else if ( nodeType == "media" )
                                         {
                                             LogHelper.Debug<SyncDataType>("searching for a media node");
                                             MediaWalker mw = new MediaWalker();
@@ -380,6 +382,7 @@ namespace jumps.umbraco.usync
                                         }
                                         else
                                         {
+                                            // content
                                             LogHelper.Debug<SyncDataType>("searching for a content node");
                                             ContentWalker cw = new ContentWalker();
                                             id = cw.GetIdFromPath(nodeidPath);
@@ -416,8 +419,6 @@ namespace jumps.umbraco.usync
 
             return node;
         }
-
-
 
         #endregion
 
