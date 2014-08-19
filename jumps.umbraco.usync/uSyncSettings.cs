@@ -112,6 +112,18 @@ namespace jumps.umbraco.usync
             }
         }
 
+        [ConfigurationProperty("maxVersions", DefaultValue=0, IsRequired = false)]
+        public int MaxVersions {
+            get 
+            { 
+                return (int)this["maxVersions"];
+            }
+            set 
+            {
+                this["maxVersions"] = value;
+            }
+        }
+
         [ConfigurationProperty("preserve", DefaultValue = "true", IsRequired = false)]
         public Boolean Preserve
         {
@@ -388,6 +400,10 @@ namespace jumps.umbraco.usync
 
         public static bool Versions {
             get { return _settings.Versions; }
+        }
+
+        public static int MaxVersions {
+            get { return _settings.MaxVersions; }
         }
 
         public static bool Write

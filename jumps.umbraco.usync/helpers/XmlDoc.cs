@@ -206,6 +206,12 @@ namespace jumps.umbraco.usync.helpers
                     OnDeleted(new XmlDocFileEventArgs(currentFile));
 
                     LogHelper.Info<XmlDoc>("Archived [{0}] to [{1}]", ()=> currentFile, ()=> archiveFile); 
+
+                    // latest n? - only keep last n in the folder?
+                    if (uSyncSettings.MaxVersions > 0)
+                    {
+                        ClenseArchiveFolder(Path.GetDirectoryName(archiveFile), uSyncSettings.MaxVersions);
+                    }
                 }
             }
             catch(Exception ex)
@@ -218,6 +224,27 @@ namespace jumps.umbraco.usync.helpers
             }
 
         }
+        
+        private static void ClenseArchiveFolder(string folder, int versions)
+        {
+            LogHelper.Info<XmlDoc>("Keeping Archive versions in {0} at {1} versions", () => folder, () => versions);
+            if ( Directory.Exists(folder))
+            {
+                DirectoryInfo dir = new DirectoryInfo(folder);
+                FileInfo[] FileList = dir.GetFiles("*.*");
+                var files = FileList.OrderByDescending(file => file.CreationTime);
+                var i = 0;
+                foreach(var file in files)
+                {
+                    i++;
+                    if (i > versions)
+                    {
+                        file.Delete();
+                    }
+                }
+            }
+        }
+         
 
         public static void DeleteuSyncFile(string type, string path, string name)
         {
