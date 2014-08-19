@@ -190,11 +190,22 @@ namespace jumps.umbraco.usync
             global::umbraco.cms.businesslogic.template.Template.AfterDelete += Template_AfterDelete;
             global::umbraco.cms.businesslogic.template.Template.AfterSave += Template_AfterSave;
 
+            global::umbraco.cms.businesslogic.template.Template.New +=Template_New;;
+
             /*
             FileService.SavedTemplate += FileService_SavedTemplate;
             FileService.DeletedTemplate += FileService_DeletedTemplate;
              */
 
+        }
+
+        static void Template_New(global::umbraco.cms.businesslogic.template.Template sender, global::umbraco.cms.businesslogic.NewEventArgs e)
+        {
+            if ( !uSync.EventsPaused)
+            {
+                LogHelper.Info<uSync>("Template New");
+                SaveToDisk(ApplicationContext.Current.Services.FileService.GetTemplate(sender.Alias));
+            }
         }
 
         static void Template_AfterSave(global::umbraco.cms.businesslogic.template.Template sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
