@@ -25,6 +25,7 @@ using umbraco.BusinessLogic;
 using Umbraco.Web;
 
 using System.Diagnostics;
+using System.Reflection;
 
 
 namespace jumps.umbraco.usync
@@ -306,6 +307,39 @@ namespace jumps.umbraco.usync
                     throw ex; 
             }
 
+        }
+
+        /// <summary>
+        ///  cleans the uSync folder...
+        /// </summary>
+        public void CleanDirectory()
+        {
+            var uSyncRoot = IOHelper.MapPath(helpers.uSyncIO.RootFolder);
+
+            var folders = new string[] {
+                "DataTypeDefinition", 
+                "Dictionary", 
+                "DocumentType",
+                "Language",
+                "Macro",
+                "MediaType",
+                "Stylesheet",
+                "Template"
+            };
+
+            foreach(var folder in folders)
+            {
+                if (Directory.Exists(uSyncRoot + "\\" + folder))
+                {
+                    Directory.Delete(uSyncRoot + "\\" + folder, true);
+                }
+            }
+
+        }
+
+        public string GetVersion()
+        {
+            return typeof(jumps.umbraco.usync.uSync).Assembly.GetName().Version.ToString();
         }
 
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)

@@ -25,6 +25,9 @@ namespace jumoo.usync.ui
             chkRead.Checked = uSyncSettings.Read;
             chkWrite.Checked = uSyncSettings.Write;
             chkWatch.Checked = uSyncSettings.WatchFolder;
+
+            uSync u = new uSync();
+            uSyncVersionNumber.Text = "version: " + u.GetVersion();
         }
 
         protected void btnSave_Click(object sender, EventArgs e)
@@ -55,7 +58,9 @@ namespace jumoo.usync.ui
 
         protected void btnExport_Click(object sender, EventArgs e)
         {
+            // clean the uSync folder out and save everything...
             uSync u = new uSync();
+            u.CleanDirectory();
             u.SaveAllToDisk();
 
             pnUpdate.Visible = true;

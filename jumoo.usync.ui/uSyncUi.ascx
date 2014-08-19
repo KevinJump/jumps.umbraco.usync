@@ -21,13 +21,15 @@
                 Out-the-box usync does everything automagically, if you want to
                 have more control of what usync does, you can use this dashboard
             </p>
-            <h3>uSync Settings:</h3>
+            <h3>uSync Settings:
+                <small><asp:Label ID="uSyncVersionNumber" runat="server"></asp:Label></small>
+            </h3>
             <p>untick all of these and usync will stop writing things to disk
                 unless you tell it to. (the default is read and write on saves)
             </p>
             <ul class="unstyled">
-                <li><asp:CheckBox ID="chkRead" runat="server" Text="Read on Startup" CssClass="setting-checkbox"/></li>
-                <li><asp:CheckBox ID="chkWrite" runat="server" Text="Write on startup" CssClass="setting-checkbox" /></li>            
+                <li><asp:CheckBox ID="chkRead" runat="server" Text="Import (Read) on Startup" CssClass="setting-checkbox"/></li>
+                <li><asp:CheckBox ID="chkWrite" runat="server" Text="Export (Write) on startup" CssClass="setting-checkbox" /></li>            
                 <li><asp:CheckBox ID="chkAttatch" runat="server" Text="Write on Saves" CssClass="setting-checkbox" /></li>
                 <li><asp:CheckBox ID="chkWatch" runat="server" Text="Watch the usync folder for changes and import them immediately" CssClass="setting-checkbox" /></li>
             </ul>
@@ -44,7 +46,7 @@
             <div class="span6">
                 <h3>uSync Export</h3>
                 <p>
-                    Write everything in this site into the usync folder, this will overwrite anything already there.
+                    Write everything in this site into the usync folder. <strong>This will delete the existing folders and write new settings for everything</strong>.
                 </p>
                 <asp:Button ID="btnExport" runat="server" Text="Export" class="btn btn-warning btn-lg" OnClick="btnExport_Click"/>
             </div>
