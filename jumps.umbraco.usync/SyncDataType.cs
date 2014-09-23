@@ -17,6 +17,8 @@ using umbraco;
 
 using Umbraco.Core.Logging;
 
+using System.Timers;
+
 //  Check list
 // ====================
 //  SaveOne         X
@@ -308,6 +310,11 @@ namespace jumps.umbraco.usync
             return PreValues.GetPreValues(dataType.Id).Values.OfType<PreValue>().OrderBy(p => p.SortOrder).ThenBy(p => p.Id).ToList();
         }
 
+        // timer work.
+        private static Timer _saveTimer;
+        private static Queue<Guid> _saveQueue = new Queue<Guid>();
+        private static object _saveLock = new object();
+
         public static void AttachEvents()
         {
             // this only fires in 4.11.5 + 
@@ -316,27 +323,46 @@ namespace jumps.umbraco.usync
 
             // but this is 
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
+
+            // delay trigger - saving means we can sometimes miss
+            // pre-value saving things - so we do a little wait
+            // after we get the saving event before we jump in
+            // and do the save - gets over this.
+            _saveTimer = new Timer(8128);
+            _saveTimer.Elapsed += _saveTimer_Elapsed;
+        }
+
+        static void _saveTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            lock ( _saveLock )
+            {
+                while ( _saveQueue.Count > 0 )
+                {
+                    LogHelper.Debug<SyncDataType>("DataType Saving (Saving)");
+                    // do the save.
+                    Guid typeID = _saveQueue.Dequeue();
+
+                    var dt = DataTypeDefinition.GetByDataTypeId(typeID);
+                    if (dt != null)
+                        SaveToDisk(dt);
+
+                    LogHelper.Debug<SyncDataType>("DataType Saved (Saving-complete)");
+                }
+            }
         }
 
         // after save doesn't fire on DataTypes (it still uses saving)
-        /*
-        static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
-        {
-            helpers.uSyncLog.DebugLog("DataType After Save (not checked)"); 
-            if (typeof(DataTypeDefinition) == sender.GetType())
-            {
-                helpers.uSyncLog.DebugLog("DataType Saving (OnSave)");
-                SaveToDisk((DataTypeDefinition)sender);
-                helpers.uSyncLog.DebugLog("DataType Saved (OnSave-Complete)");
-            }
-        }
-        */ 
-
+ 
         public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
         {
-            LogHelper.Debug<SyncDataType>("DataType Saving (Saving)");
+            lock ( _saveLock )
+            {
+                _saveTimer.Stop();
+                _saveTimer.Start();
+                _saveQueue.Enqueue(sender.UniqueId);
+
+            }
             SaveToDisk((DataTypeDefinition)sender);
-            LogHelper.Debug<SyncDataType>("DataType Saved (Saving-complete)");
         }
 
         //
