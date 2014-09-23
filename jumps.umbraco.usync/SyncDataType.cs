@@ -312,7 +312,7 @@ namespace jumps.umbraco.usync
 
         // timer work.
         private static Timer _saveTimer;
-        private static Queue<Guid> _saveQueue = new Queue<Guid>();
+        private static Queue<int> _saveQueue = new Queue<int>();
         private static object _saveLock = new object();
 
         public static void AttachEvents()
@@ -328,7 +328,7 @@ namespace jumps.umbraco.usync
             // pre-value saving things - so we do a little wait
             // after we get the saving event before we jump in
             // and do the save - gets over this.
-            _saveTimer = new Timer(8128);
+            _saveTimer = new Timer(4064);
             _saveTimer.Elapsed += _saveTimer_Elapsed;
         }
 
@@ -338,15 +338,14 @@ namespace jumps.umbraco.usync
             {
                 while ( _saveQueue.Count > 0 )
                 {
-                    LogHelper.Debug<SyncDataType>("DataType Saving (Saving)");
+                    LogHelper.Info<SyncDataType>("DataType Saving (Saving)");
                     // do the save.
-                    Guid typeID = _saveQueue.Dequeue();
-
-                    var dt = DataTypeDefinition.GetByDataTypeId(typeID);
+                    int typeID = _saveQueue.Dequeue();
+                    var dt = DataTypeDefinition.GetDataTypeDefinition(typeID);
                     if (dt != null)
                         SaveToDisk(dt);
 
-                    LogHelper.Debug<SyncDataType>("DataType Saved (Saving-complete)");
+                    LogHelper.Info<SyncDataType>("DataType Saved (Saving-complete)");
                 }
             }
         }
@@ -359,10 +358,13 @@ namespace jumps.umbraco.usync
             {
                 _saveTimer.Stop();
                 _saveTimer.Start();
-                _saveQueue.Enqueue(sender.UniqueId);
+
+                LogHelper.Info<SyncDataType>("Queuing {0}", () => sender.Id);
+
+                _saveQueue.Enqueue(sender.Id);
 
             }
-            SaveToDisk((DataTypeDefinition)sender);
+            // SaveToDisk((DataTypeDefinition)sender);
         }
 
         //
