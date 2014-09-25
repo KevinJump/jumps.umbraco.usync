@@ -17,6 +17,8 @@ using umbraco;
 
 using Umbraco.Core.Logging;
 
+using jumps.umbraco.usync.helpers;
+
 using System.Timers;
 
 //  Check list
@@ -180,6 +182,37 @@ namespace jumps.umbraco.usync
                     // going to do this for now...
                     //
 
+                    //
+                    // MAPPING PREVALUES 
+                    // 
+                    // When an Export has detected possible mapped ids it creates a nodes element
+                    // with a load of node child elements - so if this is there, we need to 
+                    // check each preValue to see if it contains an ID from these nodes
+                    // 
+                    // when we find a match we swap the ID from the prevalue with the one
+                    // the mapper function has returned to us.
+                    //
+
+                    List<string> mapIds = new List<string>();
+
+                    if ( xmlData.SelectSingleNode("nodes") != null )
+                    {
+                        foreach(XmlNode mapNode in xmlData.SelectNodes("nodes/node"))
+                        {
+                            XmlAttribute mapId = mapNode.Attributes["id"];
+                            XmlAttribute mapVal = mapNode.Attributes["value"];
+                            XmlAttribute mapType = mapNode.Attributes["type"];
+
+                            if (mapId != null && mapVal != null && mapType != null)
+                            { 
+                                // we only add the id to our string if we know we have all the stuff we will
+                                // need should we match this.
+                                mapIds.Add(mapId.Value);
+                            }
+                        }
+                    }
+                    
+
                     System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
                     Hashtable oldvals = new Hashtable();
                     foreach (DictionaryEntry v in prevals)
@@ -198,16 +231,46 @@ namespace jumps.umbraco.usync
 
                         if (val != null)
                         {
+                            // here we need to transpose any mapped ids we might have ...
+                            var propValue = val.Value; 
+                            if (mapIds.Count() > 0) {
+                                foreach (var id in mapIds)
+                                {
+                                    if ( propValue.Contains(id) )
+                                    {
+                                        // we need to map this back then...
+                                        LogHelper.Debug<SyncDataType>("Found ID we need to map");
+
+                                        var mapNode = xmlData.SelectSingleNode( string.Format("//nodes/node[@id='{0}']", id));
+
+                                        if ( mapNode != null ) {
+                                            var type = mapNode.Attributes["type"].Value;
+                                            var value = mapNode.Attributes["value"].Value;
+
+                                            LogHelper.Info<SyncDataType>("GetMappedID(\"{0}\", \"{1}\", \"{2}\");"
+                                                , ()=> id, ()=> value, ()=> type);
+
+                                            string targetId = PreValMapper.GetMappedId(id, value, type);
+                                            LogHelper.Info<SyncDataType>("[MAPPING] Mapping ID {0} {1}", () => id, () => targetId);
+
+                                            // replace.
+                                            propValue = propValue.Replace(id, targetId);
+                                            LogHelper.Debug<SyncDataType>("New PropVal {0}", () => propValue);
+                                        }
+                                    }
+                                }
+                            }
+
                             // add new values only - because if we mess with old ones. it all goes pete tong..
-                            if ((val.Value != null) && (!oldvals.ContainsValue(val.Value)))
+                            if ((propValue != null) && (!oldvals.ContainsValue(propValue)))
                             {
-                                LogHelper.Debug<SyncDataType>("Adding Prevalue [{0}]", ()=> val.Value);
-                                PreValue p = new PreValue(0, 0, val.Value);
+                                LogHelper.Debug<SyncDataType>("Adding Prevalue [{0}]", () => propValue);
+                                PreValue p = new PreValue(0, 0, propValue);
                                 p.DataTypeId = dtd.Id;
                                 p.Save();
                             }
 
-                            newvals.Add(xmlPv.Attributes["Id"], val.Value);
+                            newvals.Add(xmlPv.Attributes["Id"], propValue);
                         }
                     }
 
@@ -280,6 +343,15 @@ namespace jumps.umbraco.usync
         /// <returns>the xmlelement representation of the type</returns>
         public static XmlElement DataTypeToXml(DataTypeDefinition dataType, XmlDocument xd)
         {
+            // id mapping
+            var _id = dataType.DataType.Id.ToString();
+            
+            var mappings = String.Empty;
+            if (uSyncSettings.MappedDataTypes.GetAll().Contains(_id)) {
+                mappings = uSyncSettings.MappedDataTypes[_id].Mapping;
+            }
+
+
             LogHelper.Debug<SyncDataType>("DataType To XML"); 
 
             XmlElement dt = xd.CreateElement("DataType");
@@ -287,12 +359,23 @@ namespace jumps.umbraco.usync
             dt.Attributes.Append(xmlHelper.addAttribute(xd, "Id", dataType.DataType.Id.ToString()));
             dt.Attributes.Append(xmlHelper.addAttribute(xd, "Definition", dataType.UniqueId.ToString()));
 
+
+
             // templates
             XmlElement prevalues = xd.CreateElement("PreValues");
             foreach (PreValue item in GetPreValues(dataType))
             {
+                var preValueValue = item.Value;
+                if ( !string.IsNullOrEmpty(mappings) )
+                {
+                    MapPreValue(preValueValue, mappings, xd, dt);
+                }
                 
                 XmlElement prevalue = xd.CreateElement("PreValue");
+                //
+                // prevalue.Attributes.Append(xmlHelper.addAttribute(xd, "Alias", item.GetAlias()));
+                // alias is often blank :( 
+                //
                 prevalue.Attributes.Append(xmlHelper.addAttribute(xd, "Id", item.Id.ToString()));
                 prevalue.Attributes.Append(xmlHelper.addAttribute(xd, "Value", item.Value));
 
@@ -303,6 +386,27 @@ namespace jumps.umbraco.usync
 
             return dt;
         }
+
+        private static string MapPreValue(string preVal, string mappingTypes, XmlDocument xd, XmlElement dt)
+        {
+            if ( mappingTypes.Contains("content"))
+            {
+                preVal = PreValMapper.MapContent(preVal, xd, dt);
+            }
+
+            if (mappingTypes.Contains("stylesheet"))
+            {
+                preVal = PreValMapper.MapStylesheets(preVal, xd, dt);
+            }
+
+            if (mappingTypes.Contains("tab"))
+            {
+                preVal = PreValMapper.MapTabs(preVal, xd, dt);
+            }
+
+            return preVal;
+        }
+
 
         private static List<PreValue> GetPreValues(DataTypeDefinition dataType)
         {

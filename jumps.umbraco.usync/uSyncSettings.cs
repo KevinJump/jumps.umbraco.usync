@@ -137,6 +137,12 @@ namespace jumps.umbraco.usync
             get { return (uSyncPreservedPreValues)this["MatchedPreValues"]; }
         }
 
+        [ConfigurationProperty("MappedDataTypes")]
+        public uSyncMappedDataTypes MappedDataTypes
+        {
+            get { return (uSyncMappedDataTypes)this["MappedDataTypes"]; }
+        }
+
         [ConfigurationProperty("Elements", IsRequired=false)]
         public uSyncElements Elements
         {
@@ -214,6 +220,60 @@ namespace jumps.umbraco.usync
         }
 
     }
+
+    /* mapping types - DataTypes */
+    public class MappedDataType : ConfigurationElement
+    {
+        [ConfigurationProperty("key", IsRequired = true )]
+        public string Key
+        {
+            get { return (string)base["key"]; }
+        }
+
+        [ConfigurationProperty("value", IsRequired=true)]
+        public string Mapping 
+        {
+            get { return (string)base["value"]; }
+        }
+    }
+
+    [ConfigurationCollection(typeof(MappedDataType), AddItemName = "add", CollectionType = ConfigurationElementCollectionType.BasicMap)]
+    public class uSyncMappedDataTypes : ConfigurationElementCollection
+    {
+        protected override ConfigurationElement CreateNewElement()
+        {
+            return new MappedDataType();
+        }
+
+        protected override object GetElementKey(ConfigurationElement element)
+        {
+            return ((MappedDataType)element).Key;
+        }
+
+        public int IndexOf(MappedDataType element)
+        {
+            return BaseIndexOf(element);
+        }
+
+        public MappedDataType this[int index]
+        {
+            get { return (MappedDataType)BaseGet(index); }
+        }
+
+        public MappedDataType this[string key]
+        {
+            get { return (MappedDataType)BaseGet(key); }
+        }
+
+        public string[] GetAll()
+        {
+
+            return BaseGetAllKeys().Cast<string>().ToArray();
+        }
+
+    }
+
+
 
     public class uSyncElements : ConfigurationElement
     {
@@ -358,6 +418,11 @@ namespace jumps.umbraco.usync
         public static string[] MatchedPreValueDataTypes
         {
             get { return _settings.MatchPreValues.GetAll(); }
+        }
+
+        public static uSyncMappedDataTypes MappedDataTypes
+        {
+            get { return _settings.MappedDataTypes;  }
         }
         
         public static uSyncElements Elements
