@@ -20,7 +20,32 @@ namespace jumps.umbraco.usync.helpers
 #region Export Mappings 
         public static string MapContent(string val, XmlDocument xmlDoc, XmlElement node)
         {
-            LogHelper.Info<PreValMapper>("Mapping Content in {0}", () => val);
+            LogHelper.Info<PreValMapper>("lookiing for a likely id in {0}", () => val);
+            foreach (Match m in Regex.Matches(val, @"\d{4,9}"))
+            {
+                int id;
+                if (int.TryParse(m.Value, out id))
+                {
+                    LogHelper.Info<PreValMapper>("Mapping the Content ID {0} to something", () => id);
+
+                    string type = "content";
+                    helpers.ContentWalker cw = new ContentWalker();
+                    string nodePath = cw.GetPathFromID(id);
+
+                    // Didn't find the content id try media ...
+                    if (string.IsNullOrWhiteSpace(nodePath))
+                    {
+                        type = "media";
+                        helpers.MediaWalker mw = new MediaWalker();
+                        nodePath = mw.GetPathFromID(id);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(nodePath))
+                    {
+                        AddToNode(id, nodePath, type, xmlDoc, node);
+                    }
+                }
+            }
             return val;
         }
 
@@ -94,11 +119,17 @@ namespace jumps.umbraco.usync.helpers
 #region Import Mapping 
         public static string GetMappedId(string id, string val, string type)
         {
-            if ( type == "stylesheet")
-            {
-                return GetMappedStylesheetID( id,  val);
+            switch (type) {
+                case "stylesheet":
+                    return GetMappedStylesheetID(id, val);
+                case "content":
+                    return GetMappedContentID(id, val);
+                case "media":
+                    return GetMappedMediaID(id, val);
+                case "tab":
+                    return id;
             }
-            
+
             return id; 
         }
 
@@ -110,6 +141,29 @@ namespace jumps.umbraco.usync.helpers
                 return stylesheet.Id.ToString();
 
             return id; 
+        }
+
+        private static string GetMappedContentID(string id, string val)
+        {
+            ContentWalker cw = new ContentWalker();
+            var targetId = cw.GetIdFromPath(val);
+
+            if (targetId != -1)
+                return targetId.ToString();
+
+            return id;
+        }
+
+        private static string GetMappedMediaID(string id, string val)
+        {
+            LogHelper.Debug<PreValMapper>("searching for a media node");
+            MediaWalker mw = new MediaWalker();
+            var targetId = mw.GetIdFromPath(val);
+
+            if (targetId != -1)
+                return targetId.ToString();
+
+            return id;
         }
 #endregion
     }

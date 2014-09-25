@@ -193,25 +193,7 @@ namespace jumps.umbraco.usync
                     // the mapper function has returned to us.
                     //
 
-                    List<string> mapIds = new List<string>();
-
-                    if ( xmlData.SelectSingleNode("nodes") != null )
-                    {
-                        foreach(XmlNode mapNode in xmlData.SelectNodes("nodes/node"))
-                        {
-                            XmlAttribute mapId = mapNode.Attributes["id"];
-                            XmlAttribute mapVal = mapNode.Attributes["value"];
-                            XmlAttribute mapType = mapNode.Attributes["type"];
-
-                            if (mapId != null && mapVal != null && mapType != null)
-                            { 
-                                // we only add the id to our string if we know we have all the stuff we will
-                                // need should we match this.
-                                mapIds.Add(mapId.Value);
-                            }
-                        }
-                    }
-                    
+                    List<string> mapIds = GetMappingList(xmlData);
 
                     System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
                     Hashtable oldvals = new Hashtable();
@@ -238,25 +220,8 @@ namespace jumps.umbraco.usync
                                 {
                                     if ( propValue.Contains(id) )
                                     {
-                                        // we need to map this back then...
-                                        LogHelper.Debug<SyncDataType>("Found ID we need to map");
-
-                                        var mapNode = xmlData.SelectSingleNode( string.Format("//nodes/node[@id='{0}']", id));
-
-                                        if ( mapNode != null ) {
-                                            var type = mapNode.Attributes["type"].Value;
-                                            var value = mapNode.Attributes["value"].Value;
-
-                                            LogHelper.Info<SyncDataType>("GetMappedID(\"{0}\", \"{1}\", \"{2}\");"
-                                                , ()=> id, ()=> value, ()=> type);
-
-                                            string targetId = PreValMapper.GetMappedId(id, value, type);
-                                            LogHelper.Info<SyncDataType>("[MAPPING] Mapping ID {0} {1}", () => id, () => targetId);
-
-                                            // replace.
-                                            propValue = propValue.Replace(id, targetId);
-                                            LogHelper.Debug<SyncDataType>("New PropVal {0}", () => propValue);
-                                        }
+                                        propValue = RemapId(id, propValue, xmlData);
+                                       
                                     }
                                 }
                             }
@@ -314,17 +279,36 @@ namespace jumps.umbraco.usync
             XmlNodeList target = xmlData.SelectNodes("PreValues/PreValue");
 
             LogHelper.Debug<SyncDataType>("uSync - Match Import: Counts [{0} Existing] [{1} New]", 
-                ()=> current.Count, ()=> target.Count); 
+                ()=> current.Count, ()=> target.Count);
+
+            List<string> mapIds = GetMappingList(xmlData);
 
             for(int n = 0; n < current.Count(); n++)
             {
                 XmlAttribute val = target[n].Attributes["Value"];
-                if (current[n].Value != val.Value)
+
+                if (val != null)
                 {
-                    LogHelper.Debug<SyncDataType>("uSync - Match Import: Overwrite {0} with {1}", 
-                        ()=> current[n].Value, ()=> val.Value);
-                    current[n].Value = val.Value; 
-                    current[n].Save(); 
+                    // here we need to transpose any mapped ids we might have ...
+                    var propValue = val.Value;
+                    if (mapIds.Count() > 0)
+                    {
+                        foreach (var id in mapIds)
+                        {
+                            if (propValue.Contains(id))
+                            {
+                                propValue = RemapId(id, propValue, xmlData);
+                            }
+                        }
+                    }
+
+                    if (current[n].Value != propValue)
+                    {
+                        LogHelper.Debug<SyncDataType>("uSync - Match Import: Overwrite {0} with {1}",
+                            () => current[n].Value, () => propValue);
+                        current[n].Value = propValue;
+                        current[n].Save();
+                    }
                 }
             }
 
@@ -407,6 +391,56 @@ namespace jumps.umbraco.usync
             return preVal;
         }
 
+
+        private static List<string> GetMappingList(XmlNode xmlData)
+        {
+            List<string> mapIds = new List<string>();
+
+            if (xmlData.SelectSingleNode("nodes") != null)
+            {
+                foreach (XmlNode mapNode in xmlData.SelectNodes("nodes/node"))
+                {
+                    XmlAttribute mapId = mapNode.Attributes["id"];
+                    XmlAttribute mapVal = mapNode.Attributes["value"];
+                    XmlAttribute mapType = mapNode.Attributes["type"];
+
+                    if (mapId != null && mapVal != null && mapType != null)
+                    {
+                        // we only add the id to our string if we know we have all the stuff we will
+                        // need should we match this.
+                        mapIds.Add(mapId.Value);
+                    }
+                }
+            }
+
+            return mapIds;
+        }
+
+         // we need to map this back then...
+        private static string RemapId(string id, string propValue, XmlNode xmlData)
+        {
+            LogHelper.Debug<SyncDataType>("Found ID we need to map");
+
+            var mapNode = xmlData.SelectSingleNode(string.Format("//nodes/node[@id='{0}']", id));
+
+            if (mapNode != null)
+            {
+                var type = mapNode.Attributes["type"].Value;
+                var value = mapNode.Attributes["value"].Value;
+
+                LogHelper.Info<SyncDataType>("GetMappedID(\"{0}\", \"{1}\", \"{2}\");"
+                    , () => id, () => value, () => type);
+
+                string targetId = PreValMapper.GetMappedId(id, value, type);
+                LogHelper.Info<SyncDataType>("[MAPPING] Mapping ID {0} {1}", () => id, () => targetId);
+
+                // replace.
+                propValue = propValue.Replace(id, targetId);
+                LogHelper.Debug<SyncDataType>("New PropVal {0}", () => propValue);
+            }
+
+            return propValue;
+        }
 
         private static List<PreValue> GetPreValues(DataTypeDefinition dataType)
         {
