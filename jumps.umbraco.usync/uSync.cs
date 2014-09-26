@@ -140,55 +140,64 @@ namespace jumps.umbraco.usync
             {
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
+                var last = 0.0;
                 LogHelper.Debug<uSync>("Reading from Disk - starting");
 
                 if (uSyncSettings.Elements.Templates)
                 {
                     SyncTemplate.ReadAllFromDisk();
-                    LogHelper.Info<uSync>("Imported Templates ({0} ms)", () => sw.ElapsedMilliseconds);
+                    LogHelper.Info<uSync>("Imported Templates ({0} ms)", () => sw.ElapsedMilliseconds - last);
+                    last = sw.ElapsedMilliseconds;
                 }
 
                 if (uSyncSettings.Elements.Stylesheets)
                 {
                     SyncStylesheet.ReadAllFromDisk();
-                    LogHelper.Info<uSync>("Imported Stylesheets ({0} ms)", () => sw.ElapsedMilliseconds);
+                    LogHelper.Info<uSync>("Imported Stylesheets ({0} ms)", () => sw.ElapsedMilliseconds - last);
+                    last = sw.ElapsedMilliseconds;
                 }
 
                 if (uSyncSettings.Elements.DataTypes)
                 {
                     SyncDataType.ReadAllFromDisk();
-                    LogHelper.Info<uSync>("Imported DataTypes ({0} ms)", () => sw.ElapsedMilliseconds);
+                    LogHelper.Info<uSync>("Imported DataTypes ({0} ms)", () => sw.ElapsedMilliseconds - last);
+                    last = sw.ElapsedMilliseconds;
                 }
 
                 if (uSyncSettings.Elements.DocumentTypes)
                 {
                     SyncDocType.ReadAllFromDisk();
-                    LogHelper.Info<uSync>("Imported Document Types ({0} ms)", () => sw.ElapsedMilliseconds);
+                    LogHelper.Info<uSync>("Imported Document Types ({0} ms)", () => sw.ElapsedMilliseconds - last);
+                    last = sw.ElapsedMilliseconds;
                 }
 
                 if (uSyncSettings.Elements.Macros)
                 {
                     SyncMacro.ReadAllFromDisk();
-                    LogHelper.Info<uSync>("Imported Macros ({0} ms)", () => sw.ElapsedMilliseconds);
+                    LogHelper.Info<uSync>("Imported Macros ({0} ms)", () => sw.ElapsedMilliseconds - last);
+                    last = sw.ElapsedMilliseconds;
                 }
 
                 if (uSyncSettings.Elements.MediaTypes)
                 {
                     SyncMediaTypes.ReadAllFromDisk();
-                    LogHelper.Info<uSync>("Imported MediaTypes ({0} ms)", () => sw.ElapsedMilliseconds);
+                    LogHelper.Info<uSync>("Imported MediaTypes ({0} ms)", () => sw.ElapsedMilliseconds - last);
+                    last = sw.ElapsedMilliseconds;
                 }
+
                 if (uSyncSettings.Elements.Dictionary) 
                 {
                     SyncLanguage.ReadAllFromDisk();
                     SyncDictionary.ReadAllFromDisk();
-                    LogHelper.Info<uSync>("Imported Language Stuff ({0} ms)", () => sw.ElapsedMilliseconds);
+                    LogHelper.Info<uSync>("Imported Language Stuff ({0} ms)", () => sw.ElapsedMilliseconds - last);
+                    last = sw.ElapsedMilliseconds;
                 }
 
                 // double datatype pass - because when mapping it becomes dependent on doctypes
                 if (uSyncSettings.Elements.DataTypes)
                 {
                     SyncDataType.ReadAllFromDisk();
-                    LogHelper.Info<uSync>("Imported DataTypes - Again ({0} ms)", () => sw.ElapsedMilliseconds);
+                    LogHelper.Info<uSync>("Imported DataTypes - Again ({0} ms)", () => sw.ElapsedMilliseconds - last);
                 }
 
                 LogHelper.Debug<uSync>("Reading from Disk - End");

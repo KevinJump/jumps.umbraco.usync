@@ -214,11 +214,11 @@ namespace jumps.umbraco.usync.helpers
 
                 var subValueString = GetPreValueMatchSubString(propValue, settings);
 
-                LogHelper.Debug<SyncDataType>("GetMappedID(\"{0}\", \"{1}\", \"{2}\");"
+                LogHelper.Debug<PreValMapper>("GetMappedID(\"{0}\", \"{1}\", \"{2}\");"
                     , () => id, () => value, () => type);
 
                 string targetId = PreValMapper.GetMappedId(id, value, type);
-                LogHelper.Info<SyncDataType>("[MAPPING] Mapping ID {0} {1}", () => id, () => targetId);
+                LogHelper.Debug<PreValMapper>("[MAPPING] Mapping ID {0} {1}", () => id, () => targetId);
 
                 //
                 // replace - first just the little bit we're looking at 
