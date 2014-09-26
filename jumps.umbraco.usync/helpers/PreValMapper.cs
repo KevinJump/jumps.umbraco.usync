@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using System.Xml; 
+using System.Xml;
 
+
+using Umbraco.Core.Services;
 using Umbraco.Core.Logging;
 
 using umbraco;
@@ -12,88 +14,155 @@ using umbraco.cms.businesslogic.web;
 
 using System.Text.RegularExpressions;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Umbraco.Core;
+using Umbraco.Core.Models;
+
 namespace jumps.umbraco.usync.helpers
 {
+ 
     public class PreValMapper
     {
-
-#region Export Mappings 
-        public static string MapContent(string val, XmlDocument xmlDoc, XmlElement node)
+        #region Export Mappings
+        
+        
+        public static string MapPreValId(string val, XmlDocument xmlDoc, XmlElement node, MappedDataTypeSettings settings)
         {
-            LogHelper.Info<PreValMapper>("lookiing for a likely id in {0}", () => val);
-            foreach (Match m in Regex.Matches(val, @"\d{4,9}"))
+            LogHelper.Debug<PreValMapper>("Mapping PreValues {0}", () => val);
+
+            var idVals = GetPreValueMatchSubString(val, settings);
+
+            LogHelper.Debug<PreValMapper>("Looking for Ids in {0}", () => idVals);
+
+            foreach (Match m in Regex.Matches(idVals, settings.IdRegEx))
             {
                 int id;
+                string type = settings.IdObjectType.ToLower();
+
                 if (int.TryParse(m.Value, out id))
                 {
-                    LogHelper.Info<PreValMapper>("Mapping the Content ID {0} to something", () => id);
+                    string mappedVal = string.Empty;
 
-                    string type = "content";
-                    helpers.ContentWalker cw = new ContentWalker();
-                    string nodePath = cw.GetPathFromID(id);
-
-                    // Didn't find the content id try media ...
-                    if (string.IsNullOrWhiteSpace(nodePath))
+                    switch (type)
                     {
-                        type = "media";
-                        helpers.MediaWalker mw = new MediaWalker();
-                        nodePath = mw.GetPathFromID(id);
+                        case "stylesheet":
+                            mappedVal = MapStylesheetId(id);
+                            break;
+                        case "content":
+                            mappedVal = MapContentId(id);
+                            if ( string.IsNullOrEmpty(mappedVal))
+                            {
+                                type = "media";
+                                mappedVal = MapMediaId(id);
+                            }
+                            break;
+                        case "tab":
+                            mappedVal = MapTabId(id);
+                            break;
                     }
 
-                    if (!string.IsNullOrWhiteSpace(nodePath))
+                    if ( !string.IsNullOrEmpty(mappedVal))
                     {
-                        AddToNode(id, nodePath, type, xmlDoc, node);
+                        // add it to the nodes thingy 
+                        AddToNode(id, mappedVal, type, xmlDoc, node);
                     }
                 }
             }
+
             return val;
         }
 
-        public static string MapStylesheets(string val, XmlDocument xmlDoc, XmlElement node)
+
+        /// <summary>
+        ///  Gets the Sub portion of the preValue string that we think contains the IDs we want to match
+        ///  - we do this on import and export - because if we can it reduces the risk of us finding 
+        ///  a false posistive in the string.
+        ///  
+        /// if we can't get a better match we just return the full string.
+        /// </summary>
+        private static string GetPreValueMatchSubString(string val, MappedDataTypeSettings settings)
         {
-            LogHelper.Info<PreValMapper>("Mapping Stylesheets in {0}", () => val);
-            
-            // need to get these via config ?
-            char split = '|';
-            int splitCount = 6;
-            
             var idVals = val;
 
-            // we try to be clever, if we can
-            if (val.Contains(split))
+            switch (settings.PreValueType.ToLower())
             {
-                var elements = val.Split(split);
-
-                if (elements.Count() >= splitCount)
-                {
-                    idVals = elements[splitCount-1];
-                }
-            }
-
-            LogHelper.Info<PreValMapper>("We thing this has stylesheet IDs in it [{0}]", ()=> idVals);
-
-            foreach (Match m in Regex.Matches(idVals, @"\d{1,9}"))
-            {
-                int id;
-                if (int.TryParse(m.Value, out id))
-                {
-                    LogHelper.Info<PreValMapper>("Mapping the Stylesheet ID {0} to something", ()=> id);
-                    var stylesheet = StyleSheet.GetStyleSheet(id, false, false);
-                    if ( stylesheet != null )
+                case "json":
+                    // if it's json we load the json, then look fro the named value and set that. 
+                    if (!string.IsNullOrEmpty(settings.PropName) && IsJson(val))
                     {
-                        LogHelper.Info<PreValMapper>("Mapping {0} to {1}", () => id, () => stylesheet.Text);
-                        AddToNode(id, stylesheet.Text, "stylesheet", xmlDoc, node);
+                        JObject jObject = JObject.Parse(val);
+                        LogHelper.Debug<PreValMapper>("JSON: {0}", () => jObject.ToString());
+
+                        var propertyValue = jObject.SelectToken(settings.PropName);
+                        if (propertyValue != null)
+                        {
+                            LogHelper.Debug<PreValMapper>("Prop: {0}", () => propertyValue.ToString());
+                        }
                     }
 
-                }
+                    break;
+                case "number":
+                    // we just assume that the preValue is the ID so return it ?
+                    break;
+                case "text":
+                    // it's stored in text - we can either just search for the ID or 
+                    // if the right values are set we can have a go at getting the right bit
+                    if (settings.PropSplit != '\0' && settings.PropPos > 0)
+                    {
+                        if (val.Contains(settings.PropSplit))
+                        {
+                            var properties = val.Split(settings.PropSplit);
+
+                            if (properties.Count() >= settings.PropPos)
+                            {
+                                idVals = properties[settings.PropPos - 1];
+                            }
+                        }
+                    }
+                    break;
             }
-            return val;
+
+            return idVals;
         }
 
-        public static string MapTabs(string val, XmlDocument xmlDoc, XmlElement node)
+        public static string MapStylesheetId(int id)
         {
-            LogHelper.Info<PreValMapper>("Mapping Tabs in {0}", () => val);
-            return val;
+            var stylesheet = StyleSheet.GetStyleSheet(id, false, false);
+            if (stylesheet != null)
+            {
+                return stylesheet.Text;
+            }
+
+            return string.Empty;
+        }
+
+        public static string MapContentId(int id)
+        {
+            helpers.ContentWalker cw = new ContentWalker();
+            return cw.GetPathFromID(id);
+        }
+
+        public static string MapMediaId(int id)
+        {
+            helpers.MediaWalker mw = new MediaWalker();
+            return mw.GetPathFromID(id);
+        }
+
+        public static string MapTabId(int id)
+        {
+            // use API to get all tabs (alias, id)
+            foreach (IContentType contentType in ApplicationContext.Current.Services.ContentTypeService.GetAllContentTypes())
+            {
+                foreach (PropertyGroup propertyGroup in contentType.PropertyGroups)
+                {
+                    if ( propertyGroup.Id == id ) {
+                        return contentType.Name + "|" + propertyGroup.Name ;
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         private static void AddToNode(int id, string val, string type,  XmlDocument xmlDoc, XmlElement node)
@@ -114,9 +183,84 @@ namespace jumps.umbraco.usync.helpers
             nodes.AppendChild(mapNode);
 
         }
+
+
+        private static bool IsJson(string input)
+        {
+            input = input.Trim();
+            return (input.StartsWith("{") && input.EndsWith("}"))
+                || (input.StartsWith("[") && input.EndsWith("]"));
+        }
 #endregion
 
 #region Import Mapping 
+
+        /// <summary>
+        ///  Replaces IDs in a string with local versions
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="propValue"></param>
+        /// <param name="xmlData"></param>
+        /// <returns></returns>
+        public static string MapIDtoLocal(string id, string propValue, XmlNode xmlData, MappedDataTypeSettings settings)
+        {
+            LogHelper.Debug<SyncDataType>("Found ID we need to map");
+            var mapNode = xmlData.SelectSingleNode(string.Format("//nodes/node[@id='{0}']", id));
+
+            if (mapNode != null)
+            {
+                var type = mapNode.Attributes["type"].Value;
+                var value = mapNode.Attributes["value"].Value;
+
+                var subValueString = GetPreValueMatchSubString(propValue, settings);
+
+                LogHelper.Debug<SyncDataType>("GetMappedID(\"{0}\", \"{1}\", \"{2}\");"
+                    , () => id, () => value, () => type);
+
+                string targetId = PreValMapper.GetMappedId(id, value, type);
+                LogHelper.Info<SyncDataType>("[MAPPING] Mapping ID {0} {1}", () => id, () => targetId);
+
+                //
+                // replace - first just the little bit we're looking at 
+                // then the new replaced bit in the larger string.
+                //
+                var targetSubString = subValueString.Replace(id, targetId);
+                propValue = propValue.Replace(subValueString, targetSubString);
+                LogHelper.Debug<SyncDataType>("New PropVal {0}", () => propValue);
+            }
+
+            return propValue;
+        }
+
+        /// <summary>
+        ///  goes into the xml and gets the list of nodes that need mapping inside this prevalue
+        /// </summary>
+        /// <param name="xmlData"></param>
+        /// <returns></returns>
+        public static List<string> GetMapIdList(XmlNode xmlData)
+        {
+            List<string> mapIds = new List<string>();
+
+            if (xmlData.SelectSingleNode("nodes") != null)
+            {
+                foreach (XmlNode mapNode in xmlData.SelectNodes("nodes/node"))
+                {
+                    XmlAttribute mapId = mapNode.Attributes["id"];
+                    XmlAttribute mapVal = mapNode.Attributes["value"];
+                    XmlAttribute mapType = mapNode.Attributes["type"];
+
+                    if (mapId != null && mapVal != null && mapType != null)
+                    {
+                        // we only add the id to our string if we know we have all the stuff we will
+                        // need should we match this.
+                        mapIds.Add(mapId.Value);
+                    }
+                }
+            }
+
+            return mapIds;
+        }
+
         public static string GetMappedId(string id, string val, string type)
         {
             switch (type) {
@@ -127,7 +271,7 @@ namespace jumps.umbraco.usync.helpers
                 case "media":
                     return GetMappedMediaID(id, val);
                 case "tab":
-                    return id;
+                    return GetMappedTabId(id, val);
             }
 
             return id; 
@@ -162,6 +306,31 @@ namespace jumps.umbraco.usync.helpers
 
             if (targetId != -1)
                 return targetId.ToString();
+
+            return id;
+        }
+
+        private static string GetMappedTabId(string id, string val)
+        {
+            if ( val.Contains('|') && val.Split('|').Count() == 2 )
+            {
+                var bits = val.Split('|');
+
+                var contentType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(bits[0]);
+                if ( contentType != null )
+                {
+                    LogHelper.Debug<PreValMapper>("Found Content Type for Tab: {0}", () => contentType.Name);
+                    foreach(var tab in contentType.PropertyGroups)
+                    {
+                        if ( tab.Name == bits[1])
+                        {
+                            LogHelper.Debug<PreValMapper>("Found Tab Name {0} - {1}", () => tab.Name, () => tab.Id);
+                            // this is the one
+                            return tab.Id.ToString();
+                        }
+                    }
+                }
+            }
 
             return id;
         }

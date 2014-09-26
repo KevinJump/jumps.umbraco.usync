@@ -222,7 +222,7 @@ namespace jumps.umbraco.usync
     }
 
     /* mapping types - DataTypes */
-    public class MappedDataType : ConfigurationElement
+    public class MappedDataTypeSettings : ConfigurationElement
     {
         [ConfigurationProperty("key", IsRequired = true )]
         public string Key
@@ -231,38 +231,69 @@ namespace jumps.umbraco.usync
         }
 
         [ConfigurationProperty("value", IsRequired=true)]
-        public string Mapping 
+        public string IdObjectType 
         {
             get { return (string)base["value"]; }
         }
+
+        [ConfigurationProperty("preValueType", IsRequired = false, DefaultValue = "text")]
+        public string PreValueType
+        {
+            get { return (string)base["preValueType"]; }
+        }
+
+        [ConfigurationProperty("propertyName", IsRequired = false)]
+        public string PropName
+        {
+            get { return (string)base["propertyName"]; }
+        }
+
+        [ConfigurationProperty("propertyPosition", IsRequired = false, DefaultValue = 0)]
+        public int PropPos
+        {
+            get { return (int)base["propertyPosition"]; }
+        }
+
+        [ConfigurationProperty("propertySplitChar", IsRequired = false, DefaultValue = '\0')]
+        public char PropSplit
+        {
+            get { return (char)base["propertySplitChar"]; }
+        }
+
+        [ConfigurationProperty("idRegEx", IsRequired=false, DefaultValue = @"\d{4,9}")]
+        public string IdRegEx
+        {
+            get { return (string)base["idRegEx"]; }
+        }
+    
     }
 
-    [ConfigurationCollection(typeof(MappedDataType), AddItemName = "add", CollectionType = ConfigurationElementCollectionType.BasicMap)]
+    [ConfigurationCollection(typeof(MappedDataTypeSettings), AddItemName = "add", CollectionType = ConfigurationElementCollectionType.BasicMap)]
     public class uSyncMappedDataTypes : ConfigurationElementCollection
     {
         protected override ConfigurationElement CreateNewElement()
         {
-            return new MappedDataType();
+            return new MappedDataTypeSettings();
         }
 
         protected override object GetElementKey(ConfigurationElement element)
         {
-            return ((MappedDataType)element).Key;
+            return ((MappedDataTypeSettings)element).Key;
         }
 
-        public int IndexOf(MappedDataType element)
+        public int IndexOf(MappedDataTypeSettings element)
         {
             return BaseIndexOf(element);
         }
 
-        public MappedDataType this[int index]
+        public MappedDataTypeSettings this[int index]
         {
-            get { return (MappedDataType)BaseGet(index); }
+            get { return (MappedDataTypeSettings)BaseGet(index); }
         }
 
-        public MappedDataType this[string key]
+        public MappedDataTypeSettings this[string key]
         {
-            get { return (MappedDataType)BaseGet(key); }
+            get { return (MappedDataTypeSettings)BaseGet(key); }
         }
 
         public string[] GetAll()

@@ -192,8 +192,14 @@ namespace jumps.umbraco.usync
                     // when we find a match we swap the ID from the prevalue with the one
                     // the mapper function has returned to us.
                     //
+                    var ddid = dtd.DataType.Id.ToString();
+                    MappedDataTypeSettings mappedSettings = null;
+                    if (uSyncSettings.MappedDataTypes.GetAll().Contains(ddid))
+                    {
+                        mappedSettings = uSyncSettings.MappedDataTypes[ddid];
+                    }
 
-                    List<string> mapIds = GetMappingList(xmlData);
+                    List<string> mapIds = PreValMapper.GetMapIdList(xmlData);
 
                     System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
                     Hashtable oldvals = new Hashtable();
@@ -220,7 +226,7 @@ namespace jumps.umbraco.usync
                                 {
                                     if ( propValue.Contains(id) )
                                     {
-                                        propValue = RemapId(id, propValue, xmlData);
+                                        propValue = PreValMapper.MapIDtoLocal(id, propValue, xmlData, mappedSettings);
                                        
                                     }
                                 }
@@ -281,7 +287,14 @@ namespace jumps.umbraco.usync
             LogHelper.Debug<SyncDataType>("uSync - Match Import: Counts [{0} Existing] [{1} New]", 
                 ()=> current.Count, ()=> target.Count);
 
-            List<string> mapIds = GetMappingList(xmlData);
+            var ddid = dtd.DataType.Id.ToString();
+            MappedDataTypeSettings mappedSettings = null;
+            if (uSyncSettings.MappedDataTypes.GetAll().Contains(ddid))
+            {
+                mappedSettings = uSyncSettings.MappedDataTypes[ddid];
+            }
+
+            List<string> mapIds = PreValMapper.GetMapIdList(xmlData);
 
             for(int n = 0; n < current.Count(); n++)
             {
@@ -297,7 +310,7 @@ namespace jumps.umbraco.usync
                         {
                             if (propValue.Contains(id))
                             {
-                                propValue = RemapId(id, propValue, xmlData);
+                                propValue = PreValMapper.MapIDtoLocal(id, propValue, xmlData, mappedSettings);
                             }
                         }
                     }
@@ -330,9 +343,11 @@ namespace jumps.umbraco.usync
             // id mapping
             var _id = dataType.DataType.Id.ToString();
             
-            var mappings = String.Empty;
+
+            MappedDataTypeSettings mappedSettings = null;
+
             if (uSyncSettings.MappedDataTypes.GetAll().Contains(_id)) {
-                mappings = uSyncSettings.MappedDataTypes[_id].Mapping;
+                mappedSettings = uSyncSettings.MappedDataTypes[_id];
             }
 
 
@@ -349,10 +364,13 @@ namespace jumps.umbraco.usync
             XmlElement prevalues = xd.CreateElement("PreValues");
             foreach (PreValue item in GetPreValues(dataType))
             {
+                /// pre-value mapping 
+                /// - go off and try to get any id' mapped to something
+                /// - more portable.
+                /// 
                 var preValueValue = item.Value;
-                if ( !string.IsNullOrEmpty(mappings) )
-                {
-                    MapPreValue(preValueValue, mappings, xd, dt);
+                if ( mappedSettings != null ) {
+                    PreValMapper.MapPreValId(preValueValue, xd,dt, mappedSettings);
                 }
                 
                 XmlElement prevalue = xd.CreateElement("PreValue");
@@ -371,76 +389,8 @@ namespace jumps.umbraco.usync
             return dt;
         }
 
-        private static string MapPreValue(string preVal, string mappingTypes, XmlDocument xd, XmlElement dt)
-        {
-            if ( mappingTypes.Contains("content"))
-            {
-                preVal = PreValMapper.MapContent(preVal, xd, dt);
-            }
-
-            if (mappingTypes.Contains("stylesheet"))
-            {
-                preVal = PreValMapper.MapStylesheets(preVal, xd, dt);
-            }
-
-            if (mappingTypes.Contains("tab"))
-            {
-                preVal = PreValMapper.MapTabs(preVal, xd, dt);
-            }
-
-            return preVal;
-        }
-
-
-        private static List<string> GetMappingList(XmlNode xmlData)
-        {
-            List<string> mapIds = new List<string>();
-
-            if (xmlData.SelectSingleNode("nodes") != null)
-            {
-                foreach (XmlNode mapNode in xmlData.SelectNodes("nodes/node"))
-                {
-                    XmlAttribute mapId = mapNode.Attributes["id"];
-                    XmlAttribute mapVal = mapNode.Attributes["value"];
-                    XmlAttribute mapType = mapNode.Attributes["type"];
-
-                    if (mapId != null && mapVal != null && mapType != null)
-                    {
-                        // we only add the id to our string if we know we have all the stuff we will
-                        // need should we match this.
-                        mapIds.Add(mapId.Value);
-                    }
-                }
-            }
-
-            return mapIds;
-        }
 
          // we need to map this back then...
-        private static string RemapId(string id, string propValue, XmlNode xmlData)
-        {
-            LogHelper.Debug<SyncDataType>("Found ID we need to map");
-
-            var mapNode = xmlData.SelectSingleNode(string.Format("//nodes/node[@id='{0}']", id));
-
-            if (mapNode != null)
-            {
-                var type = mapNode.Attributes["type"].Value;
-                var value = mapNode.Attributes["value"].Value;
-
-                LogHelper.Info<SyncDataType>("GetMappedID(\"{0}\", \"{1}\", \"{2}\");"
-                    , () => id, () => value, () => type);
-
-                string targetId = PreValMapper.GetMappedId(id, value, type);
-                LogHelper.Info<SyncDataType>("[MAPPING] Mapping ID {0} {1}", () => id, () => targetId);
-
-                // replace.
-                propValue = propValue.Replace(id, targetId);
-                LogHelper.Debug<SyncDataType>("New PropVal {0}", () => propValue);
-            }
-
-            return propValue;
-        }
 
         private static List<PreValue> GetPreValues(DataTypeDefinition dataType)
         {
