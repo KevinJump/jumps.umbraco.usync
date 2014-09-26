@@ -111,6 +111,8 @@ namespace jumps.umbraco.usync
                     {
                         if (Tracker.DataTypeChanged(element))
                         {
+                            LogHelper.Debug<SyncDataType>("Syncing {0}", () => file);
+
                             var name = element.Name.LocalName;
                             var dataTypeElements = name.Equals("DataTypes")
                                            ? (from doc in element.Elements("DataType") select doc).ToList()
@@ -130,6 +132,8 @@ namespace jumps.umbraco.usync
                                     {
                                         var cNode = HuntContentNodes(node);
                                         UpdatePreValues(definition, cNode);
+
+                                        dataTypeService.Save(definition);
                                     }
                                 }
                             } /* end for each */
@@ -141,6 +145,8 @@ namespace jumps.umbraco.usync
 
         private static void UpdatePreValues(IDataTypeDefinition dataType, XElement node)
         {
+            LogHelper.Debug<SyncDataType>("Pre-Values");
+
             var preValues = node.Element("PreValues");
             var dataTypeSerivce = ApplicationContext.Current.Services.DataTypeService;
 
@@ -154,7 +160,7 @@ namespace jumps.umbraco.usync
                                                      .Where(x => ((string)x.Attribute("Alias")).IsNullOrWhiteSpace() == false)
                                                      .ToDictionary(key => (string)key.Attribute("Alias"), val => new PreValue((string)val.Attribute("Value")));
 
-                dataTypeSerivce.SavePreValues(dataType.Id, valuesWithKeys);
+                dataTypeSerivce.SavePreValues(dataType, valuesWithKeys);
                 dataTypeSerivce.SavePreValues(dataType.Id, valuesWithoutKeys);
             }
         }
