@@ -24,6 +24,7 @@ using umbraco.businesslogic;
 using umbraco.BusinessLogic;
 using Umbraco.Web;
 
+using System.Diagnostics;
 
 namespace jumps.umbraco.usync
 {
@@ -137,31 +138,57 @@ namespace jumps.umbraco.usync
         {
             if (!File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop")))
             {
-
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 LogHelper.Debug<uSync>("Reading from Disk - starting");
 
                 if (uSyncSettings.Elements.Templates)
+                {
                     SyncTemplate.ReadAllFromDisk();
+                    LogHelper.Info<uSync>("Imported Templates ({0} ms)", () => sw.ElapsedMilliseconds);
+                }
 
                 if (uSyncSettings.Elements.Stylesheets)
+                {
                     SyncStylesheet.ReadAllFromDisk();
+                    LogHelper.Info<uSync>("Imported Stylesheets ({0} ms)", () => sw.ElapsedMilliseconds);
+                }
 
                 if (uSyncSettings.Elements.DataTypes)
+                {
                     SyncDataType.ReadAllFromDisk();
+                    LogHelper.Info<uSync>("Imported DataTypes ({0} ms)", () => sw.ElapsedMilliseconds);
+                }
 
                 if (uSyncSettings.Elements.DocumentTypes)
+                {
                     SyncDocType.ReadAllFromDisk();
+                    LogHelper.Info<uSync>("Imported Document Types ({0} ms)", () => sw.ElapsedMilliseconds);
+                }
 
                 if (uSyncSettings.Elements.Macros)
+                {
                     SyncMacro.ReadAllFromDisk();
+                    LogHelper.Info<uSync>("Imported Macros ({0} ms)", () => sw.ElapsedMilliseconds);
+                }
 
                 if (uSyncSettings.Elements.MediaTypes)
+                {
                     SyncMediaTypes.ReadAllFromDisk();
-
-                if (uSyncSettings.Elements.Dictionary)
+                    LogHelper.Info<uSync>("Imported MediaTypes ({0} ms)", () => sw.ElapsedMilliseconds);
+                }
+                if (uSyncSettings.Elements.Dictionary) 
                 {
                     SyncLanguage.ReadAllFromDisk();
                     SyncDictionary.ReadAllFromDisk();
+                    LogHelper.Info<uSync>("Imported Language Stuff ({0} ms)", () => sw.ElapsedMilliseconds);
+                }
+
+                // double datatype pass - because when mapping it becomes dependent on doctypes
+                if (uSyncSettings.Elements.DataTypes)
+                {
+                    SyncDataType.ReadAllFromDisk();
+                    LogHelper.Info<uSync>("Imported DataTypes - Again ({0} ms)", () => sw.ElapsedMilliseconds);
                 }
 
                 LogHelper.Debug<uSync>("Reading from Disk - End");
@@ -174,6 +201,9 @@ namespace jumps.umbraco.usync
                         Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
                     LogHelper.Debug<uSync>("Once renamed to stop");
                 }
+
+                sw.Stop();
+                LogHelper.Info<uSync>("Imported From Disk {0}ms", () => sw.ElapsedMilliseconds);
             }
             else
             {
@@ -230,6 +260,9 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
 
             if (!ApplicationContext.Current.IsConfigured)
@@ -266,7 +299,8 @@ namespace jumps.umbraco.usync
 
             WatchFolder();
 
-            LogHelper.Info<uSync>("uSync Initilized");
+            sw.Stop();
+            LogHelper.Info<uSync>("uSync Initilized ({0} ms)", ()=> sw.ElapsedMilliseconds);
             OnComplete(new uSyncEventArgs(_read, _write, _attach));
 
         }
