@@ -224,12 +224,38 @@ namespace jumps.umbraco.usync.helpers
                 // replace - first just the little bit we're looking at 
                 // then the new replaced bit in the larger string.
                 //
+
+                // multi type work around 
+                //
+                // it's possible to have the new ID be the same as something that is yet to be mapped
+                // (rare but possible) so if the string already contains our targetID, we add some rouge
+                // charecters to the tartget ID so next pass it won't match 
+                //
+                // then at the very end (in the datatype functions) we remove the rouges. 
+                // 
+                if ( subValueString.Contains(targetId)) 
+                {
+                    // we replace the number with "number:zzusync" 
+                    // at the other end we remove the quotes and the zzusync
+                    //
+                    Regex rgx = new Regex(@"\d{1}");
+                    targetId = "\"" + rgx.Replace(targetId, "$0:zzusync") + "\""; 
+
+                    LogHelper.Debug<PreValMapper>("Possible Clash: {0}", () => targetId);
+                }
+
                 var targetSubString = subValueString.Replace(id, targetId);
                 propValue = propValue.Replace(subValueString, targetSubString);
                 LogHelper.Debug<SyncDataType>("New PropVal {0}", () => propValue);
             }
 
             return propValue;
+        }
+
+        public static string StripMarkers(string val)
+        {
+            Regex rgx = new Regex("(\")(\\d{1,4})(:zzusync)(\")");
+            return rgx.Replace(val, "$2");
         }
 
         /// <summary>

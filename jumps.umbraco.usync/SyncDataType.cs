@@ -131,10 +131,12 @@ namespace jumps.umbraco.usync
             if (xmlData != null)
             {
                 string _name = xmlData.Attributes["Name"].Value;
+                LogHelper.Debug<SyncDataType>("Importing: {0}", ()=> _name);
+
                 string _id = xmlData.Attributes["Id"].Value;
                 string _def = xmlData.Attributes["Definition"].Value;
 
-                bool isNew = false; 
+                bool isNew = false;
 
                 DataTypeDefinition dtd;
 
@@ -153,7 +155,7 @@ namespace jumps.umbraco.usync
 
                     dtd = DataTypeDefinition.MakeNew(u, _name, new Guid(_def));
                     var dataType = f.DataType(new Guid(_id));
-                    if (dataType == null)
+                    if (dataType == null && dataType.Id != null)
                         throw new NullReferenceException("Could not resolve a data type with id " + _id);
 
 
@@ -162,7 +164,11 @@ namespace jumps.umbraco.usync
                     dtd.Save();
                 }
 
-
+                if ( dtd == null || dtd.DataType == null)
+                {
+                    LogHelper.Info<SyncDataType>("Import Failed for [{0}] .uSync Could not find the underling type", () => _name);
+                    return null;
+                }
 
                 if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
                 {
@@ -192,13 +198,13 @@ namespace jumps.umbraco.usync
                     // when we find a match we swap the ID from the prevalue with the one
                     // the mapper function has returned to us.
                     //
+
                     var ddid = dtd.DataType.Id.ToString();
                     MappedDataTypeSettings mappedSettings = null;
                     if (uSyncSettings.MappedDataTypes.GetAll().Contains(ddid))
                     {
                         mappedSettings = uSyncSettings.MappedDataTypes[ddid];
                     }
-
                     List<string> mapIds = PreValMapper.GetMapIdList(xmlData);
 
                     System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
@@ -226,11 +232,19 @@ namespace jumps.umbraco.usync
                                 {
                                     if ( propValue.Contains(id) )
                                     {
+                                        // this property has the ID in it - so it 'might' be one we want 
+                                        // to map - the MapIDtoLocal function can work that bit out and
+                                        // map it if we need it to. 
                                         propValue = PreValMapper.MapIDtoLocal(id, propValue, xmlData, mappedSettings);
                                        
                                     }
                                 }
                             }
+
+                            // take any placeholders out of the number.
+
+                            propValue = PreValMapper.StripMarkers(propValue);
+                            LogHelper.Debug<SyncDataType>("Cleaned PropValue: {0}", () => propValue);
 
                             // add new values only - because if we mess with old ones. it all goes pete tong..
                             if ((propValue != null) && (!oldvals.ContainsValue(propValue)))
@@ -262,6 +276,7 @@ namespace jumps.umbraco.usync
                     }
                     return dtd;
                 }
+                LogHelper.Debug<SyncDataType>("Finished Import: {0}", () => _name);
             }
             return null;
         }
@@ -314,6 +329,8 @@ namespace jumps.umbraco.usync
                             }
                         }
                     }
+
+                    propValue = PreValMapper.StripMarkers(propValue);
 
                     if (current[n].Value != propValue)
                     {
