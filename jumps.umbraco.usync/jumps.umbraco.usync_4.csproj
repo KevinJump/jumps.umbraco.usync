@@ -76,15 +76,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChangeItem.cs" />
     <Compile Include="helpers\ContentWalker.cs" />
     <Compile Include="helpers\PreValMapper.cs" />
+    <Compile Include="helpers\tracker.cs" />
     <Compile Include="helpers\uSyncIO.cs" />
+    <Compile Include="helpers\XElementExtensions.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="helpers\XmlDocFileEventArgs.cs" />
     <Compile Include="SyncDataType.cs" />
     <Compile Include="SyncDictionary.cs" />
     <Compile Include="SyncDocType.cs" />
     <Compile Include="SyncFileWatcher.cs" />
+    <Compile Include="SyncItemBase.cs" />
     <Compile Include="SyncLanguage.cs" />
     <Compile Include="SyncMacro.cs" />
     <Compile Include="SyncMediaTypes.cs" />

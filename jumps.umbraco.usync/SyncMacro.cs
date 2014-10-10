@@ -15,6 +15,8 @@ using umbraco.BusinessLogic;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
+using jumps.umbraco.usync.helpers;
+
 
 namespace jumps.umbraco.usync
 {
@@ -28,9 +30,15 @@ namespace jumps.umbraco.usync
     /// SyncMacro uses the package API to read write the xml
     /// files for macros. no structure in macros.
     /// </summary>
-    public class SyncMacro
+    public class SyncMacro : SyncItemBase
     {
-        public static void SaveToDisk(Macro item)
+        public SyncMacro() :
+            base(uSyncSettings.Folder) { }
+
+        public SyncMacro(string folder) :
+            base (folder) {}
+
+        public void SaveToDisk(Macro item)
         {
             if (item != null)
             {
@@ -38,7 +46,8 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc);
+                    xmlDoc.AddMD5Hash();
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc, this._savePath);
                 }
                 catch (Exception ex)
                 {
@@ -47,7 +56,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void SaveAllToDisk()
+        public void SaveAllToDisk()
         {
             try
             {
@@ -62,17 +71,17 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void ReadAllFromDisk()
+        public void ReadAllFromDisk()
         {
             string path = IOHelper.MapPath(string.Format("{0}{1}",
-                helpers.uSyncIO.RootFolder,
+                this._savePath,
                 "Macro"));
 
             ReadFromDisk(path); 
 
         }
 
-        public static void ReadFromDisk(string path)
+        public void ReadFromDisk(string path)
         {
             if ( Directory.Exists(path) )
             {
@@ -85,15 +94,37 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        Macro m = Macro.Import(node);
-                        m.Save();
+                        if (tracker.MacroChanged(xmlDoc))
+                        {
+                            this._changeCount++;
+                            Macro m = Macro.Import(node);
+                            m.Save();
+                            _changes.Add(new ChangeItem
+                                {
+                                    changeType = ChangeType.Success,
+                                    itemType = ItemType.Macro,
+                                    name = m.Name
+                                });
+                        }
+                        else
+                        {
+                            _changes.Add(new ChangeItem
+                                {
+                                    changeType = ChangeType.NoChange,
+                                    itemType = ItemType.Macro,
+                                    name = Path.GetFileNameWithoutExtension(file)
+                                });
+                        }
                     }
                 }
             }
         }
 
-        public static void AttachEvents()
+        static string _eventFolder = "";
+
+        public static void AttachEvents(string folder)
         {
+            _eventFolder = folder;
             Macro.AfterSave += Macro_AfterSave;
             Macro.AfterDelete += Macro_AfterDelete;
         }
@@ -107,7 +138,8 @@ namespace jumps.umbraco.usync
 
         static void Macro_AfterSave(Macro sender, SaveEventArgs e)
         {
-            SaveToDisk(sender); 
+            SyncMacro m = new SyncMacro();
+            m.SaveToDisk(sender); 
         }
     }
 }

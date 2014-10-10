@@ -12,21 +12,30 @@ using System.IO;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
+using jumps.umbraco.usync.helpers;
+
 namespace jumps.umbraco.usync
 {
-    public class SyncLanguage
+    public class SyncLanguage : SyncItemBase
     {
-        public static void SaveToDisk(Language item)
+        public SyncLanguage() :
+            base(uSyncSettings.Folder) { }
+
+        public SyncLanguage(string folder) :
+            base(folder) { }
+
+        public void SaveToDisk(Language item)
         {
             if (item != null)
             {
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc(); 
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.CultureAlias, xmlDoc) ; 
+
+                helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.CultureAlias, xmlDoc, _savePath) ; 
             }
         }
 
-        public static void SaveAllToDisk()
+        public void SaveAllToDisk()
         {
             LogHelper.Debug<SyncLanguage>(">>>> Language save all to disk");
             foreach (Language item in Language.GetAllAsList())
@@ -36,7 +45,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void ReadAllFromDisk()
+        public void ReadAllFromDisk()
         {
             string path = IOHelper.MapPath(String.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
@@ -45,7 +54,7 @@ namespace jumps.umbraco.usync
             ReadFromDisk(path);
         }
 
-        public static void ReadFromDisk(string path)
+        public void ReadFromDisk(string path)
         {
             LogHelper.Debug<SyncLanguage>("Reading from disk {0}", ()=> path); 
             if (Directory.Exists(path))
@@ -65,12 +74,15 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        LogHelper.Debug<SyncLanguage>("About to Load Language {0}", ()=> node.OuterXml); 
-                        Language l = Language.Import(node);
-
-                        if (l != null)
+                        if (tracker.LanguageChanged(xmlDoc))
                         {
-                            l.Save();
+                            LogHelper.Debug<SyncLanguage>("About to Load Language {0}", () => node.OuterXml);
+                            Language l = Language.Import(node);
+
+                            if (l != null)
+                            {
+                                l.Save();
+                            }
                         }
                     }
                     LogHelper.Debug<SyncLanguage>("Language done"); 
@@ -78,8 +90,11 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void AttachEvents()
+        static string _eventFolder = "";
+
+        public static void AttachEvents(string folder)
         {
+            _eventFolder = folder;
             Language.New += Language_New;
             Language.AfterSave += Language_AfterSave;
             Language.AfterDelete += Language_AfterDelete;
@@ -87,7 +102,8 @@ namespace jumps.umbraco.usync
 
         static void Language_New(Language sender, global::umbraco.cms.businesslogic.NewEventArgs e)
         {
-            SaveToDisk(sender); 
+            var langSync = new SyncLanguage(_eventFolder);
+            langSync.SaveToDisk(sender); 
         }
 
         static void Language_AfterDelete(Language sender, global::umbraco.cms.businesslogic.DeleteEventArgs e)
@@ -98,7 +114,8 @@ namespace jumps.umbraco.usync
 
         static void Language_AfterSave(Language sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
         {
-            SaveToDisk(sender); 
+            var langSync = new SyncLanguage(_eventFolder);
+            langSync.SaveToDisk(sender);
         }
     }
 }

@@ -21,22 +21,20 @@ using jumps.umbraco.usync.helpers;
 
 using System.Timers;
 
-//  Check list
-// ====================
-//  SaveOne         X
-//  SaveAll         X
-//  OnSave          (Works in 4.11.5)
-//  OnDelete        X
-//  ReadFromDisk    X
-
 namespace jumps.umbraco.usync
 {
     /// <summary>
     /// syncs the data types.
     /// </summary>
-    public class SyncDataType
+    public class SyncDataType : SyncItemBase 
     {
-        public static void SaveToDisk(DataTypeDefinition item)
+        public SyncDataType() :
+            base(uSyncSettings.Folder) { }
+
+        public SyncDataType(string folder) :
+            base(folder) { }
+
+        public void SaveToDisk(DataTypeDefinition item)
         {
             if (item != null)
             {
@@ -44,7 +42,9 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(DataTypeToXml(item, xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
+                    xmlDoc.AddMD5Hash(true);
+
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, this._savePath);
                 }
                 catch (Exception ex)
                 {
@@ -57,7 +57,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void SaveAllToDisk()
+        public void SaveAllToDisk()
         {
             try
             {
@@ -76,16 +76,16 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void ReadAllFromDisk()
+        public void ReadAllFromDisk()
         {
             string path = IOHelper.MapPath(string.Format("{0}{1}",
-                helpers.uSyncIO.RootFolder,
+                this._savePath,
                 "DataTypeDefinition"));
 
             ReadFromDisk(path); 
         }
 
-        public static void ReadFromDisk(string path)
+        public void ReadFromDisk(string path)
         {
             if (Directory.Exists(path))
             {
@@ -102,15 +102,20 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        DataTypeDefinition d = Import(node, u);
-                        if (d != null)
+                        if (tracker.DataTypeChanged(xmlDoc, this))
                         {
-                            d.Save();
-                        }
+                            this._changeCount++;
 
-                        else
-                        {
-                            LogHelper.Debug<SyncDataType>("NULL NODE FOR {0}", ()=> file);
+                            DataTypeDefinition d = Import(node, u);
+                            if (d != null)
+                            {
+                                d.Save();
+                            }
+
+                            else
+                            {
+                                LogHelper.Debug<SyncDataType>("NULL NODE FOR {0}", () => file);
+                            }
                         }
                     }
                     
@@ -126,7 +131,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         /// <param name="xmlData"></param>
         /// <returns></returns>
-        public static DataTypeDefinition Import(XmlNode xmlData, User u)
+        public DataTypeDefinition Import(XmlNode xmlData, User u)
         {
             if (xmlData != null)
             {
@@ -292,7 +297,7 @@ namespace jumps.umbraco.usync
         /// <param name="xmlData"></param>
         /// <param name="u"></param>
         /// <returns></returns>
-        public static DataTypeDefinition MatchImport(DataTypeDefinition dtd, XmlNode xmlData, User u)
+        public DataTypeDefinition MatchImport(DataTypeDefinition dtd, XmlNode xmlData, User u)
         {
             LogHelper.Debug<SyncDataType>("usync - Match Import: for {0}", ()=> dtd.Text);
 
@@ -355,7 +360,7 @@ namespace jumps.umbraco.usync
         /// <param name="dataType">the datatype to export</param>
         /// <param name="xd">the xmldocument</param>
         /// <returns>the xmlelement representation of the type</returns>
-        public static XmlElement DataTypeToXml(DataTypeDefinition dataType, XmlDocument xd)
+        public XmlElement DataTypeToXml(DataTypeDefinition dataType, XmlDocument xd)
         {
             // id mapping
             var _id = dataType.DataType.Id.ToString();
@@ -420,8 +425,12 @@ namespace jumps.umbraco.usync
         private static Queue<int> _saveQueue = new Queue<int>();
         private static object _saveLock = new object();
 
-        public static void AttachEvents()
+        private static string _eventFolder = "" ;
+
+        public static void AttachEvents(string folder)
         {
+            _eventFolder = folder; 
+
             // this only fires in 4.11.5 + 
             DataTypeDefinition.Saving += new DataTypeDefinition.SaveEventHandler(DataTypeDefinition_Saving);
             // DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
@@ -445,10 +454,14 @@ namespace jumps.umbraco.usync
                 {
                     LogHelper.Info<SyncDataType>("DataType Saving (Saving)");
                     // do the save.
+                    SyncDataType syncDataType = new SyncDataType(_eventFolder);
+
                     int typeID = _saveQueue.Dequeue();
                     var dt = DataTypeDefinition.GetDataTypeDefinition(typeID);
                     if (dt != null)
-                        SaveToDisk(dt);
+                    {
+                        syncDataType.SaveToDisk(dt);
+                    }
 
                     LogHelper.Info<SyncDataType>("DataType Saved (Saving-complete)");
                 }

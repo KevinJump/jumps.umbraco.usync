@@ -13,24 +13,34 @@ using umbraco.cms.businesslogic;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
+using jumps.umbraco.usync.helpers;
+
 namespace jumps.umbraco.usync
 {
-    public class SyncDictionary
+    public class SyncDictionary : SyncItemBase
     {
-        public static void SaveToDisk(Dictionary.DictionaryItem item)
+        public SyncDictionary() :
+            base(uSyncSettings.Folder) { }
+
+        public SyncDictionary(string folder) :
+            base(folder) { }
+
+        public void SaveToDisk(Dictionary.DictionaryItem item)
         {
             if (item != null)
             {
                 Umbraco.Core.Strings.DefaultShortStringHelper _sh = new Umbraco.Core.Strings.DefaultShortStringHelper();
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                helpers.XmlDoc.SaveXmlDoc("Dictionary", 
+                xmlDoc.AddDictionaryHash();
+
+                XmlDoc.SaveXmlDoc("Dictionary", 
                     _sh.Recode(item.key, Umbraco.Core.Strings.CleanStringType.Ascii),
-                    xmlDoc);
+                    xmlDoc, _savePath);
             }
         }
 
-        public static void SaveAllToDisk()
+        public void SaveAllToDisk()
         {
             LogHelper.Debug<SyncDictionary>("Saving Dictionary Types");
 
@@ -43,7 +53,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void ReadAllFromDisk()
+        public void ReadAllFromDisk()
         {
             string path = IOHelper.MapPath(string.Format("{0}{1}",
                 helpers.uSyncIO.RootFolder,
@@ -53,7 +63,7 @@ namespace jumps.umbraco.usync
 
         }
 
-        public static void ReadFromDisk(string path)
+        public void ReadFromDisk(string path)
         {
             if (Directory.Exists(path))
             {
@@ -66,21 +76,26 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        LogHelper.Debug<SyncDictionary>("Node Import: {0} {1}", 
-                            ()=> node.Attributes["Key"].Value, ()=> node.InnerXml);
-
-                        try
+                        if (tracker.DictionaryChanged(xmlDoc))
                         {
+                            _changeCount++;
 
-                            Dictionary.DictionaryItem item = Dictionary.DictionaryItem.Import(node);
+                            LogHelper.Debug<SyncDictionary>("Node Import: {0} {1}",
+                                () => node.Attributes["Key"].Value, () => node.InnerXml);
 
-                            if (item != null)
-                                item.Save();
-                        }
-                        catch (Exception ex)
-                        {
-                            LogHelper.Debug<SyncDictionary>("DictionaryItem.Import Failed {0}: {1}", 
-                                ()=> path, ()=> ex.ToString());
+                            try
+                            {
+
+                                Dictionary.DictionaryItem item = Dictionary.DictionaryItem.Import(node);
+
+                                if (item != null)
+                                    item.Save();
+                            }
+                            catch (Exception ex)
+                            {
+                                LogHelper.Debug<SyncDictionary>("DictionaryItem.Import Failed {0}: {1}",
+                                    () => path, () => ex.ToString());
+                            }
                         }
                     }
                 }
@@ -88,8 +103,11 @@ namespace jumps.umbraco.usync
             
         }
 
-        public static void AttachEvents()
+        static string _eventFolder = "";
+
+        public static void AttachEvents(string folder)
         {
+            _eventFolder = folder;
             Dictionary.DictionaryItem.Saving += DictionaryItem_Saving;
             Dictionary.DictionaryItem.Deleting += DictionaryItem_Deleting;
         }
@@ -132,8 +150,8 @@ namespace jumps.umbraco.usync
                     if (!sender.IsTopMostItem())
                     {
                         // if it's not top most, we save it's parent (that will delete)
-
-                        SaveToDisk(GetTop(sender));
+                        var dicSync = new SyncDictionary(_eventFolder);
+                        dicSync.SaveToDisk(GetTop(sender));
                     }
                     else
                     {
@@ -151,7 +169,8 @@ namespace jumps.umbraco.usync
 
         static void DictionaryItem_Saving(Dictionary.DictionaryItem sender, EventArgs e)
         {
-            SaveToDisk(GetTop(sender));
+            var dicSync = new SyncDictionary(_eventFolder);
+            dicSync.SaveToDisk(GetTop(sender));
         }
 
         private static Dictionary.DictionaryItem GetTop(Dictionary.DictionaryItem item)

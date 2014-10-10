@@ -23,19 +23,29 @@ using Umbraco.Core.Services;
 using Umbraco.Core.Logging;
 //using Umbraco.Core.Models;
 
+using jumps.umbraco.usync.helpers;
+
 namespace jumps.umbraco.usync
 {
-    public class SyncMediaTypes
+    public class SyncMediaTypes : SyncItemBase 
     {
-        public static void SaveToDisk(MediaType item)
+        public SyncMediaTypes() :
+            base(uSyncSettings.Folder) { }
+
+        public SyncMediaTypes(string folder) :
+            base(folder) { }
+
+        public void SaveToDisk(MediaType item)
         {
             if (item != null)
             {
                 try
                 {
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
+                    XmlDocument xmlDoc = XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetMediaPath(item), "def", xmlDoc);
+                    xmlDoc.AddMD5Hash();
+
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetMediaPath(item), "def", xmlDoc, this._savePath);
                 }
                 catch (Exception ex)
                 {
@@ -45,7 +55,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void SaveAllToDisk()
+        public void SaveAllToDisk()
         {
             try
             {
@@ -62,7 +72,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        private static string GetMediaPath(MediaType item)
+        private string GetMediaPath(MediaType item)
         {
             string path = "";
 
@@ -83,7 +93,7 @@ namespace jumps.umbraco.usync
             return path; 
         }
 
-        public static void ReadAllFromDisk()
+        public void ReadAllFromDisk()
         {
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
@@ -95,7 +105,7 @@ namespace jumps.umbraco.usync
         }
 
         
-        public static void ReadFromDisk(string path, bool structure)
+        public void ReadFromDisk(string path, bool structure)
         {
             try
             {
@@ -111,7 +121,11 @@ namespace jumps.umbraco.usync
 
                         if (node != null)
                         {
-                            MediaTypeHelper.Import(node, structure);
+                            if (tracker.MediaTypeChanged(xmlDoc))
+                            {
+                                this._changeCount++;
+                                MediaTypeHelper.Import(node, structure);
+                            }
                         }
                     }
 
@@ -128,8 +142,11 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void AttachEvents()
+        static string _eventFolder = "";
+
+        public static void AttachEvents(string folder)
         {
+            _eventFolder = folder;
             ContentTypeService.SavedMediaType += ContentTypeService_SavedMediaType;
             ContentTypeService.DeletingMediaType += ContentTypeService_DeletingMediaType;
         }
@@ -137,18 +154,27 @@ namespace jumps.umbraco.usync
         static void ContentTypeService_DeletingMediaType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<Umbraco.Core.Models.IMediaType> e)
         {
             LogHelper.Debug<SyncMediaTypes>("DeletingMediaType for {0} items", ()=> e.DeletedEntities.Count());
-            foreach (var mediaType in e.DeletedEntities)
+            if (e.DeletedEntities.Count() > 0)
             {
-                helpers.XmlDoc.ArchiveFile("MediaType", GetMediaPath(new MediaType(mediaType.Id)), "def");
+                var syncMedia = new SyncMediaTypes(_eventFolder);
+
+                foreach (var mediaType in e.DeletedEntities)
+                {
+                    helpers.XmlDoc.ArchiveFile("MediaType", syncMedia.GetMediaPath(new MediaType(mediaType.Id)), "def");
+                }
             }
         }
 
         static void ContentTypeService_SavedMediaType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<Umbraco.Core.Models.IMediaType> e)
         {
             LogHelper.Debug<SyncMediaTypes>("SaveContent Type Fired for {0} types", ()=> e.SavedEntities.Count());
-            foreach (var mediaType in e.SavedEntities)
+            if (e.SavedEntities.Count() > 0)
             {
-                SaveToDisk(new MediaType(mediaType.Id));
+                var syncMedia = new SyncMediaTypes(_eventFolder);
+                foreach (var mediaType in e.SavedEntities)
+                {
+                    syncMedia.SaveToDisk(new MediaType(mediaType.Id));
+                }
             }
         }
     }

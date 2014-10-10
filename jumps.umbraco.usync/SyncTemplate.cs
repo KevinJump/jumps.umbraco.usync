@@ -18,6 +18,8 @@ using Umbraco.Core.Logging;
 
 using umbraco.businesslogic;
 
+using jumps.umbraco.usync.helpers;
+
 
 namespace jumps.umbraco.usync
 {
@@ -31,9 +33,15 @@ namespace jumps.umbraco.usync
     /// SyncTemplate uses the packaging API to import and
     /// export the templates. 
     /// </summary>
-    public class SyncTemplate
+    public class SyncTemplate : SyncItemBase
     {
-        public static void SaveToDisk(Template item)
+        public SyncTemplate() :
+            base(uSyncSettings.Folder) { }
+
+        public SyncTemplate(string folder) :
+            base(folder) { }
+
+        public void SaveToDisk(Template item)
         {
             if (item != null)
             {
@@ -41,8 +49,9 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    xmlDoc.AddMD5Hash(item.Alias + item.Text);
                     helpers.XmlDoc.SaveXmlDoc(
-                        item.GetType().ToString(), GetDocPath(item) , "def", xmlDoc);
+                        item.GetType().ToString(), GetDocPath(item) , "def", xmlDoc, _savePath);
                 }
                 catch (Exception ex)
                 {
@@ -52,7 +61,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void SaveAllToDisk()
+        public void SaveAllToDisk()
         {
             try
             {
@@ -67,7 +76,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        private static string GetDocPath(Template item)
+        private string GetDocPath(Template item)
         {
             string path = "";
             if (item != null)
@@ -82,7 +91,7 @@ namespace jumps.umbraco.usync
             return path;
         }
 
-        public static void ReadAllFromDisk()
+        public void ReadAllFromDisk()
         {
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
@@ -92,7 +101,7 @@ namespace jumps.umbraco.usync
             ReadFromDisk(path);
         }
 
-        public static void ReadFromDisk(string path)
+        public void ReadFromDisk(string path)
         {
             if (Directory.Exists(path))
             {
@@ -107,23 +116,29 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        LogHelper.Debug<SyncTemplate>("Importing template {0} {1}", 
-                            ()=> path, ()=> node.InnerXml); 
 
-
-                       Template t = Template.Import(node,user);
-
-                        string master = global::umbraco.xmlHelper.GetNodeValue(node.SelectSingleNode("Master"));
-
-                        if (master.Trim() != "")
+                        if (tracker.TemplateChanged(xmlDoc))
                         {
+                            this._changeCount++;
 
-                            Template masterTemplate = Template.GetByAlias(master);
-                            if (masterTemplate != null)
+                            LogHelper.Debug<SyncTemplate>("Importing template {0} {1}",
+                                () => path, () => node.InnerXml);
+
+
+                            Template t = Template.Import(node, user);
+
+                            string master = global::umbraco.xmlHelper.GetNodeValue(node.SelectSingleNode("Master"));
+
+                            if (master.Trim() != "")
                             {
-                                t.MasterTemplate = masterTemplate.Id;
+
+                                Template masterTemplate = Template.GetByAlias(master);
+                                if (masterTemplate != null)
+                                {
+                                    t.MasterTemplate = masterTemplate.Id;
+                                }
+                                t.Save();
                             }
-                            t.Save();
                         }
                     }
                 }
@@ -135,8 +150,11 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void AttachEvents()
+        static string _eventFolder = "";
+
+        public static void AttachEvents(string folder)
         {
+            _eventFolder = folder;
             Template.AfterSave += Template_AfterSave;
             Template.AfterDelete += Template_AfterDelete;
 
@@ -145,7 +163,8 @@ namespace jumps.umbraco.usync
         static void Template_AfterDelete(Template sender, DeleteEventArgs e)
         {
             // helpers.XmlDoc.ArchiveFile( helpers.XmlDoc.GetTypeFolder(sender.GetType().ToString()) + GetDocPath(sender), "def");
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), GetDocPath(sender), "def"); 
+            var tSync = new SyncTemplate(_eventFolder);
+            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), tSync.GetDocPath(sender), "def"); 
 
 
             e.Cancel = false; 
@@ -154,7 +173,8 @@ namespace jumps.umbraco.usync
         static void Template_AfterSave(Template sender, SaveEventArgs e)
         {
             // save
-            SaveToDisk(sender);
+            var tSync = new SyncTemplate(_eventFolder);
+            tSync.SaveToDisk(sender);
         }
         
     }

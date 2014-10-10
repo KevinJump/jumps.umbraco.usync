@@ -18,7 +18,9 @@ using umbraco;
 using Umbraco.Core ; 
 using Umbraco.Core.Services;
 using Umbraco.Core.Models;
-using Umbraco.Core.Logging; 
+using Umbraco.Core.Logging;
+
+using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
@@ -29,8 +31,15 @@ namespace jumps.umbraco.usync
     /// attached to the events, it should just work, and keep everything
     /// in sync.  
     /// </summary>
-    public class SyncDocType
-    {
+    public class SyncDocType : SyncItemBase
+    {        
+        public SyncDocType() :
+            base(uSyncSettings.Folder) { }
+
+        public SyncDocType(string folder) :
+            base(folder) { }        
+
+
         static Dictionary<string, string> updated; 
 
         /// <summary>
@@ -41,16 +50,18 @@ namespace jumps.umbraco.usync
         /// this makes it easier to read them back in
         /// </summary>
         /// <param name="item">DocumentType to save</param>
-        public static void SaveToDisk(DocumentType item)
+        public void SaveToDisk(DocumentType item)
         {
             if (item != null)
             {
                 try
                 {
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
+                    XmlDocument node = helpers.XmlDoc.CreateDoc();
+                    node.AppendChild(item.ToXml(node));
+                    node.AddMD5Hash();
+
                     // add tabs..
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", xmlDoc);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", node, this._savePath);
                 }
                 catch (Exception e)
                 {
@@ -65,7 +76,7 @@ namespace jumps.umbraco.usync
         /// 
         /// enumerates through types and calls <see cref="SaveToDisk"/>
         /// </summary>
-        public static void SaveAllToDisk()
+        public void SaveAllToDisk()
         {
             try
             {
@@ -93,7 +104,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         /// <param name="item">DocType path to find</param>
         /// <returns>folderstucture (relative to uSync folder)</returns>
-        private static string GetDocPath(DocumentType item)
+        private string GetDocPath(DocumentType item)
         {
             string path = "";
 
@@ -119,14 +130,14 @@ namespace jumps.umbraco.usync
         /// Gets all teh documentTypes from the disk, and puts them into
         /// umbraco 
         /// </summary>
-        public static void ReadAllFromDisk()
+        public void ReadAllFromDisk()
         {
             // start the enumberation, get the root
 
             // TODO: nicer way of getting the type string 
             //       (without creating a dummy doctype?)
             string path = IOHelper.MapPath(string.Format("{0}{1}",
-                helpers.uSyncIO.RootFolder,
+                this._savePath,
                 "DocumentType"));
 
             // rest the alias names
@@ -158,7 +169,7 @@ namespace jumps.umbraco.usync
         /// than how the package manager does it with one massive XML file. 
         /// </summary>
         /// <param name="path"></param>
-        private static void ReadFromDisk(string path) 
+        private void ReadFromDisk(string path) 
         {
             if (Directory.Exists(path))
             {
@@ -169,16 +180,45 @@ namespace jumps.umbraco.usync
                     XElement node = XElement.Load(file) ;                                                    
                     if (node != null ) 
                     {
-                        LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value); 
-                        ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
-
-                        if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
+                        // checking - we only change what we need to. 
+                        if (helpers.tracker.DocTypeChanged(node))
                         {
-                            updated.Add(node.Element("Info").Element("Alias").Value, file);
+                            LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
+
+                            ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
+                            this._changeCount++;
+
+                            if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
+                            {
+                                updated.Add(node.Element("Info").Element("Alias").Value, file);
+                                _changes.Add(new ChangeItem
+                                {
+                                    changeType = ChangeType.Success,
+                                    itemType = ItemType.DocumentType,
+                                    name = node.Element("Info").Element("Alias").Value,
+                                });
+                            }
+                            else
+                            {
+                                LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder");
+                                _changes.Add(new ChangeItem
+                                {
+                                    changeType = ChangeType.Fail,
+                                    itemType = ItemType.DocumentType,
+                                    name = Path.GetDirectoryName(file),
+                                    message = "Multiple DocType detected"
+                                });
+                           
+                            }
                         }
                         else
                         {
-                            LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder"); 
+                            LogHelper.Info<SyncDocType>("No DocType Changes detected for {0}", ()=> Path.GetDirectoryName(file));
+                            _changes.Add(new ChangeItem {
+                                changeType = ChangeType.NoChange,
+                                itemType = ItemType.DocumentType,
+                                name = Path.GetDirectoryName(file)
+                            });
                         }
                     }
                 }
@@ -191,7 +231,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        private static void SecondPassFitAndFix()
+        private void SecondPassFitAndFix()
         {
             foreach (KeyValuePair<string, string> update in updated)
             {
@@ -219,7 +259,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        private static void ImportStructure(IContentType docType, XElement node)
+        private void ImportStructure(IContentType docType, XElement node)
         {
             XElement structure = node.Element("Structure");
 
@@ -241,7 +281,7 @@ namespace jumps.umbraco.usync
             docType.AllowedContentTypes = allowed;
         }
 
-        private static void TabSortOrder(IContentType docType, XElement node)
+        private void TabSortOrder(IContentType docType, XElement node)
         {
             XElement tabs = node.Element("tabs");
 
@@ -257,7 +297,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        private static void RemoveMissingProperties(IContentType docType, XElement node)
+        private void RemoveMissingProperties(IContentType docType, XElement node)
         {
             if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
             {
@@ -291,11 +331,15 @@ namespace jumps.umbraco.usync
             }
         }
 
+
+        static string _eventFolder = ""; 
+        
         /// <summary>
         /// attach events, adds the event handlers for this class 
         /// </summary>
-        public static void AttachEvents()
+        public static void AttachEvents(string folder)
         {
+            _eventFolder = folder; 
             ContentTypeService.DeletingContentType += ContentTypeService_DeletingContentType;
             ContentTypeService.SavedContentType += ContentTypeService_SavedContentType;
         }
@@ -305,19 +349,30 @@ namespace jumps.umbraco.usync
         {
             LogHelper.Debug<SyncDocType>("SaveContent Type Fired for {0} types", 
                 ()=> e.SavedEntities.Count());
-            foreach (var docType in e.SavedEntities)
+
+            if (e.SavedEntities.Count() > 0)
             {
-                SaveToDisk(new DocumentType(docType.Id));
+                var docSync = new SyncDocType(_eventFolder);
+
+                foreach (var docType in e.SavedEntities)
+                {
+                    docSync.SaveToDisk(new DocumentType(docType.Id));
+                }
             }
         }
 
         static void ContentTypeService_DeletingContentType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IContentType> e)
         {
-            LogHelper.Debug<SyncDocType>("Deleting Type Fired for {0} types", ()=> e.DeletedEntities.Count());
+            LogHelper.Debug<SyncDocType>("Deleting Type Fired for {0} types", () => e.DeletedEntities.Count());
             // delete things (there can sometimes be more than one??)
-            foreach (var docType in e.DeletedEntities)
+            if (e.DeletedEntities.Count() > 0)
             {
-                helpers.XmlDoc.ArchiveFile("DocumentType", GetDocPath(new DocumentType(docType.Id)), "def") ; 
+                var docSync = new SyncDocType(_eventFolder);
+
+                foreach (var docType in e.DeletedEntities)
+                {
+                    XmlDoc.ArchiveFile("DocumentType", docSync.GetDocPath(new DocumentType(docType.Id)), "def");
+                }
             }
         }
     }

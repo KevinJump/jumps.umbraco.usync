@@ -12,6 +12,11 @@ using umbraco.BusinessLogic ;
 using Umbraco.Core.IO ;
 using Umbraco.Core.Logging;
 
+using System.Xml;
+using System.Xml.Linq;
+using System.Security.Cryptography;
+
+
 using System.Runtime.InteropServices; 
 
 namespace jumps.umbraco.usync.helpers
@@ -54,22 +59,24 @@ namespace jumps.umbraco.usync.helpers
             return doc;
         }
 
-        public static void SaveXmlDoc(string type, string path, string name, XmlDocument doc)
+        public static void SaveXmlDoc(string type, string path, string name, XmlDocument doc,string root = null)
         {
-            string savePath = string.Format("{0}/{1}/{2}.config", GetTypeFolder(type), path, name) ;
-            SaveXmlDoc(savePath, doc); 
+            string savePath = string.Format("{0}\\{1}\\{2}.config", GetTypeFolder(type), path, name) ;
+            SaveXmlDoc(savePath, doc, root); 
         }
 
-        public static void SaveXmlDoc(string type, string name, XmlDocument doc)
+        public static void SaveXmlDoc(string type, string name, XmlDocument doc,string root=null)
         {
-            string savePath = string.Format("{0}/{1}.config", GetTypeFolder(type), ScrubFile(name)) ;
-            SaveXmlDoc(savePath, doc) ;
+            string savePath = string.Format("{0}\\{1}.config", GetTypeFolder(type), ScrubFile(name)) ;
+            SaveXmlDoc(savePath, doc, root) ;
         }
-              
 
-        public static void SaveXmlDoc(string path, XmlDocument doc)
+        public static void SaveXmlDoc(string path, XmlDocument doc, string root = null)
         {
-            string savePath = string.Format("{0}/{1}", IOHelper.MapPath(uSyncIO.RootFolder), path);
+            if ( string.IsNullOrWhiteSpace(root))
+                root = uSyncIO.RootFolder;
+
+            string savePath = string.Format("{0}\\{1}", IOHelper.MapPath(root), path);
             
             //
             // moved because we can attempt to delete it so we need to fire before we start
@@ -93,7 +100,7 @@ namespace jumps.umbraco.usync.helpers
                 }
             }
 
-            LogHelper.Info<XmlDoc>("Saving [{0}]", ()=> savePath); 
+            LogHelper.Debug<XmlDoc>("Saving [{0}]", ()=> savePath); 
             
             doc.Save(savePath) ;
 
@@ -274,5 +281,114 @@ namespace jumps.umbraco.usync.helpers
             SyncFileWatcher.Start();
 
         }
+
+
+        #region Hash values
+
+
+        /// <summary>
+        ///  a slightly more complex one - for data types we take the preVal id fields
+        ///  away - because they are internal and change per install. 
+        /// </summary>
+        /// <returns></returns>
+        public static string CalculateMD5Hash(XElement node, Boolean removePreValIds)
+        {
+            if (removePreValIds)
+            {
+                XElement copy = new XElement(node);
+                var preValueRoot = copy.Element("PreValues");
+                if (preValueRoot.HasElements)
+                {
+                    var preValues = preValueRoot.Elements("PreValue");
+                    foreach (var preValue in preValues)
+                    {
+                        // find pre-vals - blank ids...
+                        preValue.SetAttributeValue("Id", "");
+                    }
+                }
+                return CalculateMD5Hash(copy);
+            }
+            else
+            {
+                return CalculateMD5Hash(node);
+            }
+        }
+
+
+        public static string CalculateDictionaryHash(XmlDocument node)
+        {
+            XElement copy = XElement.Load(new XmlNodeReader(node));
+            foreach(var val in copy.Elements("Values"))
+            {
+                val.SetAttributeValue("Id", "");
+            }
+            return CalculateMD5Hash(copy);
+
+        }
+
+        //
+        // Compute the MD5 of an xml file
+        //
+        public static string CalculateMD5Hash(XElement node)
+        {
+            string md5Hash = "";
+            MemoryStream stream = new MemoryStream();
+            node.Save(stream);
+
+            stream.Position = 0;
+
+            using (var md5 = MD5.Create())
+            {
+                md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
+            }
+
+            stream.Close();
+            return md5Hash;
+        }
+
+        public static string CalculateMD5Hash(XmlDocument node, Boolean removePreValIds = false)
+        {
+            if ( removePreValIds )
+            {
+                XElement elementNode = XElement.Load(new XmlNodeReader(node));
+                return CalculateMD5Hash(elementNode, removePreValIds);
+            }
+
+            string md5Hash = "";
+            MemoryStream stream = new MemoryStream();
+            node.Save(stream);
+
+            stream.Position = 0;
+
+            using (var md5 = MD5.Create())
+            {
+                md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
+            }
+
+            stream.Close();
+
+            return md5Hash;
+        }
+
+        public static string CalculateMD5Hash(string input)
+        {
+            string hash = "";
+            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            using (var md5 = MD5.Create())
+            {
+                hash = BitConverter.ToString(md5.ComputeHash(inputBytes)).Replace("-", "").ToLower();
+            }
+            return hash;
+        }
+
+        public static string GetPreCalculatedHash(XElement node)
+        {
+            XElement hashNode = node.Element("Hash");
+            if (hashNode == null)
+                return "";
+
+            return hashNode.Value;
+        }
+        #endregion
     }
 }

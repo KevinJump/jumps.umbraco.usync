@@ -12,7 +12,9 @@ using umbraco.BusinessLogic;
 
 using System.IO ;
 using Umbraco.Core.IO ;
-using Umbraco.Core.Logging; 
+using Umbraco.Core.Logging;
+
+using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
@@ -29,9 +31,15 @@ namespace jumps.umbraco.usync
     /// probibly the simplest sync - no structure, and the
     /// packaging api.
     /// </summary>
-    public class SyncStylesheet
+    public class SyncStylesheet : SyncItemBase
     {
-        public static void SaveToDisk(StyleSheet item)
+        public SyncStylesheet() :
+            base(uSyncSettings.Folder) { }
+
+        public SyncStylesheet(string folder) :
+            base(folder) { }
+
+        public void SaveToDisk(StyleSheet item)
         {
             if (item != null)
             {
@@ -39,7 +47,9 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
+                    xmlDoc.AddMD5Hash();
+
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, _savePath);
                 }
                 catch (Exception ex)
                 {
@@ -49,7 +59,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void SaveAllToDisk()
+        public void SaveAllToDisk()
         {
             try
             {
@@ -64,7 +74,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public static void ReadAllFromDisk()
+        public void ReadAllFromDisk()
         {
 
             string path = IOHelper.MapPath(string.Format("{0}{1}",
@@ -74,7 +84,7 @@ namespace jumps.umbraco.usync
             ReadFromDisk(path); 
         }
 
-        public static void ReadFromDisk(string path)
+        public void ReadFromDisk(string path)
         {
             if (Directory.Exists(path))
             {
@@ -89,9 +99,13 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
-                        LogHelper.Debug<SyncStylesheet>("Stylesheet Install: {0}", ()=> file); 
-                        StyleSheet s = StyleSheet.Import(node, user );
-                        s.Save();
+                        if (tracker.StylesheetChanged(xmlDoc))
+                        {
+                            _changeCount++;
+                            LogHelper.Debug<SyncStylesheet>("Stylesheet Install: {0}", () => file);
+                            StyleSheet s = StyleSheet.Import(node, user);
+                            s.Save();
+                        }
                     }
                 }
             }
@@ -99,8 +113,11 @@ namespace jumps.umbraco.usync
 
         }
 
-        public static void AttachEvents()
+        static string _eventFolder = "";
+
+        public static void AttachEvents(string folder)
         {
+            _eventFolder = folder;
             StyleSheet.AfterSave += StyleSheet_AfterSave;
             StyleSheet.BeforeDelete += StyleSheet_BeforeDelete;
            
@@ -116,7 +133,8 @@ namespace jumps.umbraco.usync
 
         static void StyleSheet_AfterSave(StyleSheet sender, SaveEventArgs e)
         {
-            SaveToDisk(sender); 
+            var styleSync = new SyncStylesheet(_eventFolder);
+            styleSync.SaveToDisk(sender); 
         }
     }
 }
