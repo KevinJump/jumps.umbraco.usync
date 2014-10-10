@@ -25,6 +25,9 @@ namespace jumps.umbraco.usync
         public SyncDictionary(string folder) :
             base(folder) { }
 
+        public SyncDictionary(string folder, string set) :
+            base(folder, set) { }
+
         public void SaveToDisk(Dictionary.DictionaryItem item)
         {
             if (item != null)

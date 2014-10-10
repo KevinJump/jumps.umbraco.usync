@@ -24,14 +24,20 @@ namespace jumps.umbraco.usync
         public SyncLanguage(string folder) :
             base(folder) { }
 
-        public void SaveToDisk(Language item)
+        public SyncLanguage(string folder, string set) :
+            base(folder, set) { }
+
+        public void SaveToDisk(Language item, string path = null)
         {
             if (item != null)
             {
+                if (path == null)
+                    path = _savePath;
+
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc(); 
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
 
-                helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.CultureAlias, xmlDoc, _savePath) ; 
+                helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.CultureAlias, xmlDoc, path) ; 
             }
         }
 
@@ -76,6 +82,9 @@ namespace jumps.umbraco.usync
                     {
                         if (tracker.LanguageChanged(xmlDoc))
                         {
+                            _changeCount++;
+                            PreChangeBackup(node);
+
                             LogHelper.Debug<SyncLanguage>("About to Load Language {0}", () => node.OuterXml);
                             Language l = Language.Import(node);
 
@@ -88,6 +97,18 @@ namespace jumps.umbraco.usync
                     LogHelper.Debug<SyncLanguage>("Language done"); 
                 }
             }
+        }
+
+        private void PreChangeBackup(XmlNode node)
+        {
+            if (string.IsNullOrEmpty(_backupPath))
+                return;
+
+            var culture = node.Attributes["CultureAlias"].Value;
+            
+            var lang = Language.GetByCultureCode(culture);
+            if ( lang != null )
+                SaveToDisk(lang, _backupPath);
         }
 
         static string _eventFolder = "";

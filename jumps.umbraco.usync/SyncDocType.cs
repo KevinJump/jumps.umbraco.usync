@@ -33,12 +33,11 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncDocType : SyncItemBase
     {        
-        public SyncDocType() :
-            base(uSyncSettings.Folder) { }
-
         public SyncDocType(string folder) :
-            base(folder) { }        
+            base(folder) { }
 
+        public SyncDocType(string folder, string set) :
+            base(folder, set) { }        
 
         static Dictionary<string, string> updated; 
 
@@ -50,7 +49,7 @@ namespace jumps.umbraco.usync
         /// this makes it easier to read them back in
         /// </summary>
         /// <param name="item">DocumentType to save</param>
-        public void SaveToDisk(DocumentType item)
+        public void SaveToDisk(DocumentType item, string path = null)
         {
             if (item != null)
             {
@@ -60,8 +59,11 @@ namespace jumps.umbraco.usync
                     node.AppendChild(item.ToXml(node));
                     node.AddMD5Hash();
 
+                    if (string.IsNullOrEmpty(path))
+                        path = this._savePath;
+
                     // add tabs..
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", node, this._savePath);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", node, path);
                 }
                 catch (Exception e)
                 {
@@ -153,8 +155,6 @@ namespace jumps.umbraco.usync
             // need to update
             // 
             SecondPassFitAndFix(); 
-
-
         }
 
         /// <summary>
@@ -181,10 +181,11 @@ namespace jumps.umbraco.usync
                     if (node != null ) 
                     {
                         // checking - we only change what we need to. 
-                        if (helpers.tracker.DocTypeChanged(node))
+                        if (tracker.DocTypeChanged(node))
                         {
                             LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
-
+                            PreChangeBackup(node);
+                            
                             ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
                             this._changeCount++;
 
@@ -213,7 +214,7 @@ namespace jumps.umbraco.usync
                         }
                         else
                         {
-                            LogHelper.Info<SyncDocType>("No DocType Changes detected for {0}", ()=> Path.GetDirectoryName(file));
+                            LogHelper.Debug<SyncDocType>("No DocType Changes detected for {0}", ()=> Path.GetDirectoryName(file));
                             _changes.Add(new ChangeItem {
                                 changeType = ChangeType.NoChange,
                                 itemType = ItemType.DocumentType,
@@ -329,6 +330,22 @@ namespace jumps.umbraco.usync
             {
                 docType.RemovePropertyType(alias);
             }
+        }
+
+        private void PreChangeBackup(XElement node)
+        {
+            if (string.IsNullOrEmpty(_backupPath))
+                return;
+
+            var name = node.Element("Info").Element("Alias").Value;
+
+            var contentService = ApplicationContext.Current.Services.ContentTypeService;
+            var item = DocumentType.GetByAlias(name);
+
+            if (item == null)
+                return;
+
+            SaveToDisk(item, _backupPath);
         }
 
 

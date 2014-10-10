@@ -173,10 +173,6 @@ namespace jumps.umbraco.usync.helpers
         {
             XElement node = XElement.Load(new XmlNodeReader(xDoc));
 
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
-            if (string.IsNullOrEmpty(filehash))
-                return true;
-
             var name = node.Attribute("CultureAlias");
             if (name == null)
                 return true;
@@ -188,8 +184,8 @@ namespace jumps.umbraco.usync.helpers
             var friendlyName = node.Attribute("FriendlyName");
             if (friendlyName == null)
                 return true;
-            
-            return lang.FriendlyName == friendlyName.Value;
+
+            return (!lang.FriendlyName.Equals(friendlyName.Value));
         }
 
         static Dictionary<string, Dictionary.DictionaryItem> dictionaryItems = null;

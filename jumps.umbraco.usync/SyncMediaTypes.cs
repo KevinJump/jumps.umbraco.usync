@@ -35,17 +35,24 @@ namespace jumps.umbraco.usync
         public SyncMediaTypes(string folder) :
             base(folder) { }
 
-        public void SaveToDisk(MediaType item)
+        public SyncMediaTypes(string folder, string set) :
+            base(folder, set) { }
+
+
+        public void SaveToDisk(MediaType item, string path = null)
         {
             if (item != null)
             {
+                if (string.IsNullOrEmpty(path))
+                    path = _savePath;
+
                 try
                 {
                     XmlDocument xmlDoc = XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
                     xmlDoc.AddMD5Hash();
 
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetMediaPath(item), "def", xmlDoc, this._savePath);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetMediaPath(item), "def", xmlDoc, path);
                 }
                 catch (Exception ex)
                 {
@@ -59,8 +66,6 @@ namespace jumps.umbraco.usync
         {
             try
             {
-
-
                 foreach (MediaType item in MediaType.GetAllAsList())
                 {
                     SaveToDisk(item);
@@ -124,6 +129,7 @@ namespace jumps.umbraco.usync
                             if (tracker.MediaTypeChanged(xmlDoc))
                             {
                                 this._changeCount++;
+                                PreChangeBackup(node);
                                 MediaTypeHelper.Import(node, structure);
                             }
                         }
@@ -140,6 +146,28 @@ namespace jumps.umbraco.usync
                 LogHelper.Info<SyncMediaTypes>("Read MediaType Failed {0}", ()=> ex.ToString());
                 throw new SystemException(String.Format("Read MediaType failed {0}", ex.ToString()));
             }
+        }
+
+        public void PreChangeBackup(XmlNode node)
+        {
+            string alias = xmlHelper.GetNodeValue(node.SelectSingleNode("Info/Alias"));
+            if (String.IsNullOrEmpty(alias))
+                return;
+
+            try
+            {
+                var mt = MediaType.GetByAlias(alias);
+                if (mt == null)
+                    return;
+
+                SaveToDisk(mt, _backupPath);
+
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", () => ex.ToString());
+            }
+
         }
 
         static string _eventFolder = "";

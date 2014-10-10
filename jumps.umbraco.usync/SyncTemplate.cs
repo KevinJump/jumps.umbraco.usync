@@ -16,6 +16,7 @@ using Umbraco.Core.IO;
 using Umbraco.Core;
 using Umbraco.Core.Logging;
 
+using umbraco;
 using umbraco.businesslogic;
 
 using jumps.umbraco.usync.helpers;
@@ -41,17 +42,23 @@ namespace jumps.umbraco.usync
         public SyncTemplate(string folder) :
             base(folder) { }
 
-        public void SaveToDisk(Template item)
+        public SyncTemplate(string folder, string set) :
+            base(folder, set) { }
+
+        public void SaveToDisk(Template item, string path = null)
         {
             if (item != null)
             {
                 try
                 {
+                    if (string.IsNullOrEmpty(path))
+                        path = _savePath;
+
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
                     xmlDoc.AddMD5Hash(item.Alias + item.Text);
                     helpers.XmlDoc.SaveXmlDoc(
-                        item.GetType().ToString(), GetDocPath(item) , "def", xmlDoc, _savePath);
+                        item.GetType().ToString(), GetDocPath(item) , "def", xmlDoc, path);
                 }
                 catch (Exception ex)
                 {
@@ -120,6 +127,7 @@ namespace jumps.umbraco.usync
                         if (tracker.TemplateChanged(xmlDoc))
                         {
                             this._changeCount++;
+                            PreChangeBackup(node);
 
                             LogHelper.Debug<SyncTemplate>("Importing template {0} {1}",
                                 () => path, () => node.InnerXml);
@@ -148,6 +156,21 @@ namespace jumps.umbraco.usync
                     ReadFromDisk(folder);
                 }
             }
+        }
+
+        private void PreChangeBackup(XmlNode node)
+        {
+            string alias = xmlHelper.GetNodeValue(node.SelectSingleNode("Alias"));
+            if (string.IsNullOrEmpty(alias))
+                return;
+
+            var template = Template.GetByAlias(alias);
+            if (template == null)
+                return;
+
+            SaveToDisk(template, _backupPath);
+                
+
         }
 
         static string _eventFolder = "";

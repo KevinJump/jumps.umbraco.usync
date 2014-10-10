@@ -12,6 +12,7 @@ namespace jumps.umbraco.usync
     public class SyncItemBase: IDisposable
     {
         internal string _savePath;
+        internal string _backupPath;
         internal int _changeCount;
         internal List<ChangeItem> _changes;
 
@@ -30,8 +31,19 @@ namespace jumps.umbraco.usync
             _savePath = root;
             _changeCount = 0;
             _changes = new List<ChangeItem>();
+
         }
 
+        public SyncItemBase(string root, string set)
+        {
+            _savePath = root;
+            _changeCount = 0;
+            if (!string.IsNullOrEmpty(set))
+            {
+                _backupPath = string.Format("~\\uSync.Backup\\{0}", set);
+            }
+            _changes = new List<ChangeItem>();
+        }
 
         public void Dispose()
         {

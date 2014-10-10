@@ -14,6 +14,7 @@ using umbraco.BusinessLogic;
 
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
+using Umbraco.Core;
 
 using jumps.umbraco.usync.helpers;
 
@@ -38,16 +39,22 @@ namespace jumps.umbraco.usync
         public SyncMacro(string folder) :
             base (folder) {}
 
-        public void SaveToDisk(Macro item)
+        public SyncMacro(string folder, string set) :
+            base(folder, set) { }
+
+        public void SaveToDisk(Macro item, string path = null)
         {
             if (item != null)
             {
                 try
                 {
+                    if (string.IsNullOrEmpty(path))
+                        path = _savePath;
+
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
                     xmlDoc.AddMD5Hash();
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc, this._savePath);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc, path);
                 }
                 catch (Exception ex)
                 {
@@ -97,14 +104,36 @@ namespace jumps.umbraco.usync
                         if (tracker.MacroChanged(xmlDoc))
                         {
                             this._changeCount++;
+                            PreChangeBackup(node);
+
                             Macro m = Macro.Import(node);
                             m.Save();
-                            _changes.Add(new ChangeItem
+
+                            if ( tracker.MacroChanged(xmlDoc))
+                            {
+                                // assume the save now didn't work?
+                                LogHelper.Info<SyncMacro>("Macro doesn't match - rollback?");
+                                
+                                _changes.Add(new ChangeItem
+                                {
+                                    changeType = ChangeType.Fail,
+                                    itemType = ItemType.Macro,
+                                    name = m.Name,
+                                    message = "post import mis-matched - rolling back"
+                                });
+
+                                // here we would rollback ? 
+
+                            }
+                            else
+                            {
+                                _changes.Add(new ChangeItem
                                 {
                                     changeType = ChangeType.Success,
                                     itemType = ItemType.Macro,
                                     name = m.Name
-                                });
+                                });    
+                            }
                         }
                         else
                         {
@@ -119,6 +148,20 @@ namespace jumps.umbraco.usync
                 }
             }
         }
+
+        private void PreChangeBackup(XmlNode node)
+        {
+            string alias = XmlHelper.GetNodeValue(node.SelectSingleNode("alias"));
+            if (string.IsNullOrEmpty(alias))
+                return;
+
+            var macro = Macro.GetByAlias(alias);
+            if (macro == null)
+                return;
+
+            SaveToDisk(macro, _backupPath);
+        }
+
 
         static string _eventFolder = "";
 

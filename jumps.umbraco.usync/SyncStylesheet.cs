@@ -11,6 +11,8 @@ using umbraco.cms.businesslogic.web;
 using umbraco.BusinessLogic; 
 
 using System.IO ;
+using umbraco; 
+
 using Umbraco.Core.IO ;
 using Umbraco.Core.Logging;
 
@@ -39,17 +41,23 @@ namespace jumps.umbraco.usync
         public SyncStylesheet(string folder) :
             base(folder) { }
 
-        public void SaveToDisk(StyleSheet item)
+        public SyncStylesheet(string folder, string set) :
+            base(folder, set) { }
+
+        public void SaveToDisk(StyleSheet item, string path = null)
         {
             if (item != null)
             {
                 try
                 {
+                    if (string.IsNullOrEmpty(path))
+                        path = _savePath;
+
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
                     xmlDoc.AddMD5Hash();
 
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, _savePath);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, path);
                 }
                 catch (Exception ex)
                 {
@@ -102,6 +110,8 @@ namespace jumps.umbraco.usync
                         if (tracker.StylesheetChanged(xmlDoc))
                         {
                             _changeCount++;
+                            PreChangeBackup(node);
+
                             LogHelper.Debug<SyncStylesheet>("Stylesheet Install: {0}", () => file);
                             StyleSheet s = StyleSheet.Import(node, user);
                             s.Save();
@@ -109,8 +119,20 @@ namespace jumps.umbraco.usync
                     }
                 }
             }
+        }
 
+        public void PreChangeBackup(XmlNode node)
+        {
+            string name = xmlHelper.GetNodeValue(node.SelectSingleNode("Name"));
+            if (string.IsNullOrEmpty(name))
+                return;
 
+            var sheet = StyleSheet.GetByName(name);
+            if (sheet == null)
+                return;
+
+            SaveToDisk(sheet, _backupPath);
+                
         }
 
         static string _eventFolder = "";

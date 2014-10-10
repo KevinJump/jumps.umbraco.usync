@@ -34,17 +34,23 @@ namespace jumps.umbraco.usync
         public SyncDataType(string folder) :
             base(folder) { }
 
-        public void SaveToDisk(DataTypeDefinition item)
+        public SyncDataType(string folder, string set) :
+            base(folder, set) { }
+
+        public void SaveToDisk(DataTypeDefinition item, string path = null)
         {
             if (item != null)
             {
                 try
                 {
+                    if (string.IsNullOrEmpty(path))
+                        path = this._savePath;
+
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(DataTypeToXml(item, xmlDoc));
                     xmlDoc.AddMD5Hash(true);
 
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, this._savePath);
+                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, path);
                 }
                 catch (Exception ex)
                 {
@@ -105,6 +111,7 @@ namespace jumps.umbraco.usync
                         if (tracker.DataTypeChanged(xmlDoc, this))
                         {
                             this._changeCount++;
+                            PreChangeBackup(node);
 
                             DataTypeDefinition d = Import(node, u);
                             if (d != null)
@@ -119,6 +126,24 @@ namespace jumps.umbraco.usync
                         }
                     }
                     
+                }
+            }
+        }
+
+        private void PreChangeBackup(XmlNode node)
+        {
+            if (string.IsNullOrEmpty(_backupPath))
+                return;
+
+            var _def = node.Attributes["Definition"].Value;
+
+            if (CMSNode.IsNode(new Guid(_def)))
+            {
+                var dtd = DataTypeDefinition.GetDataTypeDefinition(new Guid(_def));
+
+                if ( dtd != null )
+                {
+                    SaveToDisk(dtd, _backupPath);
                 }
             }
         }
