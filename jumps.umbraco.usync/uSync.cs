@@ -183,11 +183,13 @@ namespace jumps.umbraco.usync
 
                 }
                 */
+                var changes = new List<ChangeItem>();
 
                 if (uSyncSettings.Elements.Templates)
                 {
                     var tSync = new SyncTemplate(folder, backupSet);
                     tSync.ReadAllFromDisk();
+                    changes.AddRange(tSync.ChangeList);
                     LogHelper.Info<uSync>("Imported Templates {0} - changes ({1} ms)", ()=> tSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
@@ -196,6 +198,8 @@ namespace jumps.umbraco.usync
                 {
                     var styleSync = new SyncStylesheet(folder, backupSet);
                     styleSync.ReadAllFromDisk();
+                    changes.AddRange(styleSync.ChangeList);
+
                     LogHelper.Info<uSync>("Imported Stylesheets {0} - changes ({1} ms)", ()=> styleSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
@@ -204,6 +208,8 @@ namespace jumps.umbraco.usync
                 {
                     var dataTypeSync = new SyncDataType(folder, backupSet);
                     dataTypeSync.ReadAllFromDisk();
+                    changes.AddRange(dataTypeSync.ChangeList);
+
                     LogHelper.Info<uSync>("Imported DataTypes {0} changes - ({1} ms)", ()=> dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
@@ -212,6 +218,8 @@ namespace jumps.umbraco.usync
                 {
                     var docSync = new SyncDocType(folder, backupSet);
                     docSync.ReadAllFromDisk();
+                    changes.AddRange(docSync.ChangeList);
+
                     LogHelper.Info<uSync>("Document Types imported - {0} changes ({1}ms)", () => docSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
@@ -220,6 +228,8 @@ namespace jumps.umbraco.usync
                 {
                     var macroSync = new SyncMacro(folder, backupSet);
                     macroSync.ReadAllFromDisk();
+                    changes.AddRange(macroSync.ChangeList);
+
                     LogHelper.Info<uSync>("Imported Macros - {0} changes ({1}ms)", ()=> macroSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
@@ -228,6 +238,8 @@ namespace jumps.umbraco.usync
                 {
                     var mediaSync = new SyncMediaTypes(folder, backupSet);
                     mediaSync.ReadAllFromDisk();
+                    changes.AddRange(mediaSync.ChangeList);
+
                     LogHelper.Info<uSync>("Imported MediaTypes - {0} changes ({1} ms)", ()=> mediaSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
@@ -236,11 +248,15 @@ namespace jumps.umbraco.usync
                 {
                     var langSync = new SyncLanguage(folder, backupSet);
                     langSync.ReadAllFromDisk();
+                    changes.AddRange(langSync.ChangeList);
+
                     LogHelper.Info<uSync>("Imported Languages {0} - changes ({1}ms)", () => langSync.ChangeCount, ()=> sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
 
                     var dicSync = new SyncDictionary(folder, backupSet);
                     dicSync.ReadAllFromDisk();
+                    changes.AddRange(dicSync.ChangeList);
+
                     LogHelper.Info<uSync>("Imported Dictionary Items {0} - changes ({1} ms)", ()=>  dicSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
@@ -266,6 +282,9 @@ namespace jumps.umbraco.usync
 
                 sw.Stop();
                 LogHelper.Info<uSync>("Imported From Disk {0}ms", () => sw.ElapsedMilliseconds);
+
+                var report = new uSyncReporter();
+                report.ReportChanges(changes);
             }
             else
             {

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using System.Xml;
+using System.Xml.Linq;
 using System.IO;
 
 using umbraco.BusinessLogic;
@@ -12,6 +13,7 @@ using umbraco.cms.businesslogic;
 
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
+using Umbraco.Core;
 
 using jumps.umbraco.usync.helpers;
 
@@ -81,7 +83,12 @@ namespace jumps.umbraco.usync
                     {
                         if (tracker.DictionaryChanged(xmlDoc))
                         {
-                            _changeCount++;
+                            var change = new ChangeItem
+                            {
+                                changeType = ChangeType.Success,
+                                itemType = ItemType.Dictionary,
+                                file = file
+                            };
 
                             LogHelper.Debug<SyncDictionary>("Node Import: {0} {1}",
                                 () => node.Attributes["Key"].Value, () => node.InnerXml);
@@ -90,9 +97,16 @@ namespace jumps.umbraco.usync
                             {
 
                                 Dictionary.DictionaryItem item = Dictionary.DictionaryItem.Import(node);
-
                                 if (item != null)
+                                {
                                     item.Save();
+                                    change.id = item.id;
+                                    change.name = item.key;
+                                }
+
+                                AddChange(change);
+
+
                             }
                             catch (Exception ex)
                             {
@@ -100,10 +114,18 @@ namespace jumps.umbraco.usync
                                     () => path, () => ex.ToString());
                             }
                         }
+                        else
+                        {
+                            AddNoChange(ItemType.Dictionary, file);
+                        }
                     }
                 }
-            }
-            
+            }            
+        }
+
+        private void PreChangeBackup(XmlNode xDoc)
+        {
+           XElement node = XElement.Load(new XmlNodeReader(xDoc));
         }
 
         static string _eventFolder = "";

@@ -81,17 +81,31 @@ namespace jumps.umbraco.usync
                     if (node != null)
                     {
                         if (tracker.LanguageChanged(xmlDoc))
-                        {
-                            _changeCount++;
+                        {                            
                             PreChangeBackup(node);
+                            var change = new ChangeItem
+                            {
+                                itemType = ItemType.Languages,
+                                file = file,
+                                changeType = ChangeType.Success
+                            };
 
                             LogHelper.Debug<SyncLanguage>("About to Load Language {0}", () => node.OuterXml);
                             Language l = Language.Import(node);
 
                             if (l != null)
                             {
+                                change.id = l.id;
+                                change.name = l.CultureAlias;
                                 l.Save();
                             }
+
+                            // need to do a post import check? 
+                            AddChange(change);
+                        }
+                        else
+                        {
+                            AddNoChange(ItemType.Languages, file);
                         }
                     }
                     LogHelper.Debug<SyncLanguage>("Language done"); 

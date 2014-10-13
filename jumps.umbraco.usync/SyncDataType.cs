@@ -48,7 +48,6 @@ namespace jumps.umbraco.usync
 
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(DataTypeToXml(item, xmlDoc));
-                    xmlDoc.AddMD5Hash(true);
 
                     helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, path);
                 }
@@ -110,19 +109,48 @@ namespace jumps.umbraco.usync
                     {
                         if (tracker.DataTypeChanged(xmlDoc, this))
                         {
-                            this._changeCount++;
+                            var change = new ChangeItem
+                            {
+                                itemType = ItemType.DataType,
+                                changeType = ChangeType.Success,
+                                file = file
+                            };
+
                             PreChangeBackup(node);
 
                             DataTypeDefinition d = Import(node, u);
                             if (d != null)
                             {
                                 d.Save();
-                            }
 
+                                change.id = d.Id;
+                                change.name = d.Text;
+
+                                // do a match test ? 
+                                if (tracker.DataTypeChanged(xmlDoc, this))
+                                {
+                                    // assume the save didn't work
+                                    LogHelper.Info<SyncDataType>("Imported Datatype mismatch");
+
+                                    change.changeType = ChangeType.Mismatch;
+                                    change.message = "Import doesn't match final values";
+                                }
+                            }
                             else
                             {
                                 LogHelper.Debug<SyncDataType>("NULL NODE FOR {0}", () => file);
+
+                                change.changeType = ChangeType.ImportFail ;
+                                change.name =  Path.GetFileNameWithoutExtension(file);
+                                change.message = "Import returned null nodes";
                             }
+                            
+                            AddChange(change) ;
+                            
+                        }
+                        else
+                        {
+                            AddNoChange(ItemType.DataType, file);
                         }
                     }
                     

@@ -126,7 +126,13 @@ namespace jumps.umbraco.usync
 
                         if (tracker.TemplateChanged(xmlDoc))
                         {
-                            this._changeCount++;
+                            var change = new ChangeItem
+                            {
+                                file = file,
+                                itemType = ItemType.Template,
+                                changeType = ChangeType.Success
+                            };
+
                             PreChangeBackup(node);
 
                             LogHelper.Debug<SyncTemplate>("Importing template {0} {1}",
@@ -135,18 +141,34 @@ namespace jumps.umbraco.usync
 
                             Template t = Template.Import(node, user);
 
-                            string master = global::umbraco.xmlHelper.GetNodeValue(node.SelectSingleNode("Master"));
-
-                            if (master.Trim() != "")
+                            if (t != null)
                             {
+                                change.id = t.Id;
+                                change.name = t.Text;
+                                
+                                string master = XmlHelper.GetNodeValue(node.SelectSingleNode("Master"));
 
-                                Template masterTemplate = Template.GetByAlias(master);
-                                if (masterTemplate != null)
+                                if (master.Trim() != "")
                                 {
-                                    t.MasterTemplate = masterTemplate.Id;
+                                    Template masterTemplate = Template.GetByAlias(master);
+                                    if (masterTemplate != null)
+                                    {
+                                        t.MasterTemplate = masterTemplate.Id;
+                                    }
+                                    t.Save();
                                 }
-                                t.Save();
                             }
+                            else
+                            {
+                                // need to check if we get null on success.
+                                LogHelper.Info<SyncTemplate>("Null templated returned? this might be ok");
+                            }
+
+                            AddChange(change);
+                        }
+                        else
+                        {
+                            AddNoChange(ItemType.Template, file);
                         }
                     }
                 }

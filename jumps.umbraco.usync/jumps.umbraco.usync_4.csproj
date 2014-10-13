@@ -96,6 +96,7 @@
     <Compile Include="SyncTemplate.cs" />
     <Compile Include="uSync.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="uSyncReporter.cs" />
     <Compile Include="uSyncSettings.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -103,6 +104,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="package.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Migrations\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

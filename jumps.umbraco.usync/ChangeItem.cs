@@ -8,6 +8,8 @@ namespace jumps.umbraco.usync
     public class ChangeItem
     {
         public string name;
+        public int id;
+        public string file; 
         public ItemType itemType;
         public ChangeType changeType;
         public string message; 
@@ -27,10 +29,13 @@ namespace jumps.umbraco.usync
         Languages
     }
 
+    // status - > 10 is an error.
     public enum ChangeType
     {
-        Success,
-        Fail,
-        NoChange
+        Success = 0,
+        NoChange,
+        Fail = 11,
+        ImportFail,
+        Mismatch
     }
 }

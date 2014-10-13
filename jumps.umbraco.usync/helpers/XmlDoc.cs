@@ -100,8 +100,7 @@ namespace jumps.umbraco.usync.helpers
                 }
             }
 
-            LogHelper.Debug<XmlDoc>("Saving [{0}]", ()=> savePath); 
-            
+            LogHelper.Info<XmlDoc>("##SAVE## {0}", () => savePath);
             doc.Save(savePath) ;
 
             OnSaved(new XmlDocFileEventArgs(savePath)); 
@@ -348,26 +347,8 @@ namespace jumps.umbraco.usync.helpers
 
         public static string CalculateMD5Hash(XmlDocument node, Boolean removePreValIds = false)
         {
-            if ( removePreValIds )
-            {
-                XElement elementNode = XElement.Load(new XmlNodeReader(node));
-                return CalculateMD5Hash(elementNode, removePreValIds);
-            }
-
-            string md5Hash = "";
-            MemoryStream stream = new MemoryStream();
-            node.Save(stream);
-
-            stream.Position = 0;
-
-            using (var md5 = MD5.Create())
-            {
-                md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
-            }
-
-            stream.Close();
-
-            return md5Hash;
+            XElement elementNode = XElement.Load(new XmlNodeReader(node));
+            return CalculateMD5Hash(elementNode, removePreValIds);
         }
 
         public static string CalculateMD5Hash(string input)
@@ -388,6 +369,16 @@ namespace jumps.umbraco.usync.helpers
                 return "";
 
             return hashNode.Value;
+        }
+
+        public static string ReCalculateHash(XElement node, bool removePreVals = false)
+        {
+            XElement copy = new XElement(node);
+            if ( copy.Element("Hash") != null)
+                copy.Element("Hash").Remove();
+
+            return CalculateMD5Hash(copy, removePreVals);
+
         }
         #endregion
     }

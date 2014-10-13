@@ -57,7 +57,6 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument node = helpers.XmlDoc.CreateDoc();
                     node.AppendChild(item.ToXml(node));
-                    node.AddMD5Hash();
 
                     if (string.IsNullOrEmpty(path))
                         path = this._savePath;
@@ -184,42 +183,37 @@ namespace jumps.umbraco.usync
                         if (tracker.DocTypeChanged(node))
                         {
                             LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
+
+                            var change = new ChangeItem
+                            {
+                                itemType = ItemType.DocumentType,
+                                changeType = ChangeType.Success,
+                                file = file
+                            };
+
                             PreChangeBackup(node);
                             
                             ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
-                            this._changeCount++;
 
                             if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
                             {
-                                updated.Add(node.Element("Info").Element("Alias").Value, file);
-                                _changes.Add(new ChangeItem
-                                {
-                                    changeType = ChangeType.Success,
-                                    itemType = ItemType.DocumentType,
-                                    name = node.Element("Info").Element("Alias").Value,
-                                });
+                                var alias = node.Element("Info").Element("Alias").Value;
+                                updated.Add(alias, file);
+                                change.name = alias;
+                                AddChange(change);
                             }
                             else
                             {
                                 LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder");
-                                _changes.Add(new ChangeItem
-                                {
-                                    changeType = ChangeType.Fail,
-                                    itemType = ItemType.DocumentType,
-                                    name = Path.GetDirectoryName(file),
-                                    message = "Multiple DocType detected"
-                                });
-                           
+                                change.changeType = ChangeType.ImportFail;
+                                change.message = "Multiple doctypes detected";
+                                AddChange(change);                           
                             }
                         }
                         else
                         {
                             LogHelper.Debug<SyncDocType>("No DocType Changes detected for {0}", ()=> Path.GetDirectoryName(file));
-                            _changes.Add(new ChangeItem {
-                                changeType = ChangeType.NoChange,
-                                itemType = ItemType.DocumentType,
-                                name = Path.GetDirectoryName(file)
-                            });
+                            AddNoChange(ItemType.DocumentType, file);
                         }
                     }
                 }
@@ -251,7 +245,9 @@ namespace jumps.umbraco.usync
                         // TabSortOrder(docType, node); 
 
                         // delete things that are not in our source xml?
-                        RemoveMissingProperties(docType, node); 
+                        RemoveMissingProperties(docType, node);
+
+                        UpdateExistingProperties(docType, node);
                         
                         // save
                         ApplicationContext.Current.Services.ContentTypeService.Save(docType);
@@ -330,6 +326,57 @@ namespace jumps.umbraco.usync
             {
                 docType.RemovePropertyType(alias);
             }
+        }
+
+        private void UpdateExistingProperties(IContentType docType, XElement node)
+        {
+            Dictionary<string, string> tabMoves = new Dictionary<string, string>();
+
+            foreach(var property in docType.PropertyTypes)
+            {
+                XElement propNode = node.Element("GenericProperties")
+                                        .Elements("GenericProperty")
+                                        .Where(x => x.Element("Alias").Value == property.Alias)
+                                        .SingleOrDefault();
+                if ( propNode != null )
+                {
+                    property.Name = propNode.Element("Name").Value;
+                    property.Alias = propNode.Element("Alias").Value;
+                    property.Mandatory = bool.Parse(propNode.Element("Mandatory").Value);
+                    property.ValidationRegExp = propNode.Element("Validation").Value;
+                    property.Description = propNode.Element("Description").Value;
+
+                    // change of type ? 
+                    var defId = Guid.Parse(propNode.Element("Definition").Value);
+                    var dtd = ApplicationContext.Current.Services.DataTypeService.GetDataTypeDefinitionById(defId);
+                    if ( dtd != null && property.DataTypeDefinitionId != dtd.Id)
+                    {
+                        property.DataTypeDefinitionId = dtd.Id;
+                    }
+
+                    var tabName = propNode.Element("Tab").Value;
+                    if ( !string.IsNullOrEmpty(tabName) )
+                    {
+                        if ( docType.PropertyGroups.Contains(tabName))
+                        {
+                            var propGroup = docType.PropertyGroups.First(x => x.Name == tabName);
+                            if (!propGroup.PropertyTypes.Contains(property.Alias))
+                            {
+                                LogHelper.Info<SyncDocType>("Moving between tabs..");
+                                tabMoves.Add(property.Alias, tabName);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // you have to move tabs outside the loop as you are 
+            // chaning the collection. 
+            foreach(var move in tabMoves)
+            {
+                docType.MovePropertyType(move.Key, move.Value);
+            }
+
         }
 
         private void PreChangeBackup(XElement node)

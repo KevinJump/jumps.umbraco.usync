@@ -50,7 +50,6 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
-                    xmlDoc.AddMD5Hash();
 
                     helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetMediaPath(item), "def", xmlDoc, path);
                 }
@@ -128,9 +127,30 @@ namespace jumps.umbraco.usync
                         {
                             if (tracker.MediaTypeChanged(xmlDoc))
                             {
-                                this._changeCount++;
+                                var change = new ChangeItem
+                                {
+                                    itemType = ItemType.MediaItem,
+                                    file = file,
+                                    changeType = ChangeType.Success
+                                };
+
                                 PreChangeBackup(node);
-                                MediaTypeHelper.Import(node, structure);
+                                
+                                try
+                                {
+                                    MediaTypeHelper.Import(node, structure);
+                                    AddChange(change);
+                                }
+                                catch(Exception ex)
+                                {
+                                    change.changeType = ChangeType.ImportFail;
+                                    change.message = ex.Message;
+                                    AddChange(change);
+                                }
+                            }
+                            else
+                            {
+                                AddNoChange(ItemType.MediaItem, file);
                             }
                         }
                     }

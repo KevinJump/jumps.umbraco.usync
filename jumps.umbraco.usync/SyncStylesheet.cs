@@ -109,12 +109,29 @@ namespace jumps.umbraco.usync
                     {
                         if (tracker.StylesheetChanged(xmlDoc))
                         {
-                            _changeCount++;
+                            var change = new ChangeItem
+                            {
+                                itemType = ItemType.Stylesheet,
+                                file = file,
+                                changeType = ChangeType.Success
+                            };
+                            
                             PreChangeBackup(node);
 
                             LogHelper.Debug<SyncStylesheet>("Stylesheet Install: {0}", () => file);
                             StyleSheet s = StyleSheet.Import(node, user);
                             s.Save();
+
+                            change.id = s.Id;
+                            change.name = s.Text;
+
+                            AddChange(change);                          
+
+                            
+                        }
+                        else
+                        {
+                            AddNoChange(ItemType.Stylesheet, file);
                         }
                     }
                 }

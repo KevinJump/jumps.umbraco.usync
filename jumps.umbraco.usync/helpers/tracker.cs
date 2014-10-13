@@ -25,7 +25,7 @@ namespace jumps.umbraco.usync.helpers
     {
         public static bool DocTypeChanged(XElement node)
         {
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            string filehash = XmlDoc.ReCalculateHash(node);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -42,7 +42,6 @@ namespace jumps.umbraco.usync.helpers
             xmlDoc.AppendChild(docType.ToXml(xmlDoc));
 
             string dbMD5 = helpers.XmlDoc.CalculateMD5Hash(xmlDoc);
-
             return (!filehash.Equals(dbMD5));
         }
 
@@ -50,7 +49,7 @@ namespace jumps.umbraco.usync.helpers
         {
             XElement node = XElement.Load(new XmlNodeReader(xdoc));
 
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            string filehash = XmlDoc.ReCalculateHash(node);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -73,7 +72,7 @@ namespace jumps.umbraco.usync.helpers
         {
             XElement node = XElement.Load(new XmlNodeReader(xDoc));
 
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            string filehash = XmlDoc.ReCalculateHash(node);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -97,7 +96,8 @@ namespace jumps.umbraco.usync.helpers
         {
             XElement node = XElement.Load(new XmlNodeReader(xDoc));
 
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            string filehash = XmlDoc.ReCalculateHash(node, true);
+
             if (string.IsNullOrEmpty(filehash))
                 return true;
 

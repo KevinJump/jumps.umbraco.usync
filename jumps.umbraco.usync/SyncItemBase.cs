@@ -11,12 +11,14 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncItemBase: IDisposable
     {
-        internal string _savePath;
-        internal string _backupPath;
-        internal int _changeCount;
-        internal List<ChangeItem> _changes;
+        protected ChangeType _changeType; 
 
-        public bool Changes
+        protected string _savePath;
+        protected string _backupPath;
+        private int _changeCount;
+        private List<ChangeItem> _changes;
+
+        public bool ChangesMade
         {
             get { return _changeCount > 0; }
         }
@@ -24,6 +26,39 @@ namespace jumps.umbraco.usync
         public int ChangeCount
         {
             get { return _changeCount; }
+        }
+
+        public List<ChangeItem> ChangeList
+        {
+            get { return _changes; }
+        }
+
+        protected void AddChange(   ChangeItem item)
+        {
+            if ( item.changeType == null )
+                item.changeType = _changeType;
+
+            if (item.changeType != ChangeType.NoChange)
+                _changeCount++;
+        
+            _changes.Add(item);
+        }
+
+        protected void AddNoChange(ItemType type, string filename)
+        {
+            var name = System.IO.Path.GetFileNameWithoutExtension(filename);
+
+            if (type == ItemType.DocumentType || type == ItemType.MediaItem)
+                name = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(filename));
+                
+
+            _changes.Add(new ChangeItem
+            {
+                file = filename,
+                name = name,
+                changeType = ChangeType.NoChange,
+                itemType = type
+            });
         }
 
         public SyncItemBase(string root)

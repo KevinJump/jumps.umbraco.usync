@@ -53,7 +53,6 @@ namespace jumps.umbraco.usync
 
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    xmlDoc.AddMD5Hash();
                     helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc, path);
                 }
                 catch (Exception ex)
@@ -103,46 +102,50 @@ namespace jumps.umbraco.usync
                     {
                         if (tracker.MacroChanged(xmlDoc))
                         {
-                            this._changeCount++;
-                            PreChangeBackup(node);
-
-                            Macro m = Macro.Import(node);
-                            m.Save();
-
-                            if ( tracker.MacroChanged(xmlDoc))
+                            var change = new ChangeItem
                             {
-                                // assume the save now didn't work?
-                                LogHelper.Info<SyncMacro>("Macro doesn't match - rollback?");
+                                itemType = ItemType.Macro,
+                                file = file,
+                                changeType = ChangeType.Success
+                            };
+
+                            PreChangeBackup(node);
+                                                        
+                            Macro m = Macro.Import(node);
+
+                            if (m != null)
+                            {
+                                m.Save();
+
+                                change.name = m.Name;
+                                change.id = m.Id;
                                 
-                                _changes.Add(new ChangeItem
+                                if (tracker.MacroChanged(xmlDoc))
                                 {
-                                    changeType = ChangeType.Fail,
-                                    itemType = ItemType.Macro,
-                                    name = m.Name,
-                                    message = "post import mis-matched - rolling back"
-                                });
+                                    // assume the save now didn't work?
+                                    LogHelper.Info<SyncMacro>("Macro doesn't match - rollback?");
 
-                                // here we would rollback ? 
+                                    change.changeType = ChangeType.Mismatch;
+                                    change.message = "Import doesn't match final";
 
+
+                                    AddChange(change);
+                                    // here we would rollback ? 
+
+                                }
+                                else
+                                {
+                                    AddChange(change);
+                                }
                             }
                             else
                             {
-                                _changes.Add(new ChangeItem
-                                {
-                                    changeType = ChangeType.Success,
-                                    itemType = ItemType.Macro,
-                                    name = m.Name
-                                });    
+                                // here? if the import doesn't return and ID is that OK ? 
                             }
                         }
                         else
                         {
-                            _changes.Add(new ChangeItem
-                                {
-                                    changeType = ChangeType.NoChange,
-                                    itemType = ItemType.Macro,
-                                    name = Path.GetFileNameWithoutExtension(file)
-                                });
+                            AddNoChange(ItemType.Macro, file);
                         }
                     }
                 }
@@ -161,8 +164,7 @@ namespace jumps.umbraco.usync
 
             SaveToDisk(macro, _backupPath);
         }
-
-
+     
         static string _eventFolder = "";
 
         public static void AttachEvents(string folder)
