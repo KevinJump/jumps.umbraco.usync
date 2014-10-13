@@ -50,6 +50,49 @@ namespace jumps.umbraco.usync.helpers
             _versions = uSyncSettings.Versions;
         }
 
+        #region New Save Events 
+
+        public static void SaveNode(string folder, string name, XElement node, string type)
+        {
+            string filePath = GetPath(folder, name, type);
+
+            if (File.Exists(filePath))
+            {
+                if ( _versions )
+                    ArchiveFile(filePath);
+
+                File.Delete(filePath);
+            }
+            
+            if (!Directory.Exists(Path.GetDirectoryName(filePath)))
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+
+            node.Save(filePath);
+        }
+
+        public void ArchiveFile(string filePath)
+        {
+            
+        }
+
+        public static string GetPath(string folder, string name, string type)
+        {
+            return IOHelper.MapPath(String.Format("{0}\\{1}\\{2}.config", folder, type, name));
+        }
+
+        public static XElement GetBackupNode(string backup, string name, string type)
+        {
+            string backupPath = GetPath(String.Format("~\\uSync.Backup\\{0}", backup), name, type);
+
+            if ( File.Exists(backupPath))
+            {
+                return XElement.Load(backupPath);
+            }
+
+            return null;
+        }
+        #endregion 
+
         public static XmlDocument CreateDoc()
         {
             XmlDocument doc = new XmlDocument();

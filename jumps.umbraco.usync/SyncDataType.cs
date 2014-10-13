@@ -18,15 +18,17 @@ using umbraco;
 using Umbraco.Core.Logging;
 
 using jumps.umbraco.usync.helpers;
-
+using jumps.umbraco.usync.Models;
 using System.Timers;
+
+using System.Xml.Linq;
 
 namespace jumps.umbraco.usync
 {
     /// <summary>
     /// syncs the data types.
     /// </summary>
-    public class SyncDataType : SyncItemBase 
+    public class SyncDataType : SyncItemBase<DataTypeDefinition> 
     {
         public SyncDataType() :
             base(uSyncSettings.Folder) { }
@@ -37,442 +39,100 @@ namespace jumps.umbraco.usync
         public SyncDataType(string folder, string set) :
             base(folder, set) { }
 
-        public void SaveToDisk(DataTypeDefinition item, string path = null)
-        {
-            if (item != null)
-            {
-                try
-                {
-                    if (string.IsNullOrEmpty(path))
-                        path = this._savePath;
 
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(DataTypeToXml(item, xmlDoc));
-
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, path);
-                }
-                catch (Exception ex)
-                {
-                    LogHelper.Error<SyncDataType>(string.Format("DataType Failed {0}", item.Text), ex);
-                }
-            }
-            else
-            {
-                LogHelper.Debug<SyncDataType>("Null DataType Save attempt - aborted");
-            }
-        }
-
-        public void SaveAllToDisk()
+        public override void ExportAll(string folder)
         {
             try
             {
-              
-                foreach (DataTypeDefinition item in DataTypeDefinition.GetAll())
+                foreach(DataTypeDefinition item in DataTypeDefinition.GetAll())
                 {
                     if (item != null)
-                    {
-                        SaveToDisk(item);
-                    }
+                        ExportToDisk(item, folder);
                 }
             }
             catch (Exception ex)
             {
-                LogHelper.Debug<SyncDataType>("Error saving all DataTypes, {0}", ()=> ex.ToString());
+                LogHelper.Info<SyncDataType>("Error saving all datatypes {0}",
+                    () => ex.ToString());
             }
         }
 
-        public void ReadAllFromDisk()
+        public override void ExportToDisk(DataTypeDefinition item, string folder = null)
         {
-            string path = IOHelper.MapPath(string.Format("{0}{1}",
-                this._savePath,
-                "DataTypeDefinition"));
+            if (item == null)
+                throw new ArgumentNullException("item");
 
-            ReadFromDisk(path); 
+            if (string.IsNullOrEmpty(folder))
+                folder = _savePath;
+
+            XElement node = ((uDataTypeDefinition)item).SyncExport();
+
+            XmlDoc.SaveNode(folder, item.Text, node, Constants.ObjectTypes.DataType );
+            
         }
 
-        public void ReadFromDisk(string path)
+        public override void ImportAll(string folder)
         {
-            if (Directory.Exists(path))
+            string rootFolder = IOHelper.MapPath(String.Format("{0}{1}", folder, Constants.ObjectTypes.DataType));
+            ImportFolder(rootFolder);
+        }
+
+        private void ImportFolder(string folder)
+        {
+            if ( Directory.Exists(folder))
             {
-
-                User u = new User(0) ; 
-
-                foreach (string file in Directory.GetFiles(path, "*.config"))
+                foreach(string file in Directory.GetFiles(folder, Constants.SyncFileMask))
                 {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
-                                      
-
-                    XmlNode node = xmlDoc.SelectSingleNode("//DataType");
-
-                    if (node != null)
-                    {
-                        if (tracker.DataTypeChanged(xmlDoc, this))
-                        {
-                            var change = new ChangeItem
-                            {
-                                itemType = ItemType.DataType,
-                                changeType = ChangeType.Success,
-                                file = file
-                            };
-
-                            PreChangeBackup(node);
-
-                            DataTypeDefinition d = Import(node, u);
-                            if (d != null)
-                            {
-                                d.Save();
-
-                                change.id = d.Id;
-                                change.name = d.Text;
-
-                                // do a match test ? 
-                                if (tracker.DataTypeChanged(xmlDoc, this))
-                                {
-                                    // assume the save didn't work
-                                    LogHelper.Info<SyncDataType>("Imported Datatype mismatch");
-
-                                    change.changeType = ChangeType.Mismatch;
-                                    change.message = "Import doesn't match final values";
-                                }
-                            }
-                            else
-                            {
-                                LogHelper.Debug<SyncDataType>("NULL NODE FOR {0}", () => file);
-
-                                change.changeType = ChangeType.ImportFail ;
-                                change.name =  Path.GetFileNameWithoutExtension(file);
-                                change.message = "Import returned null nodes";
-                            }
-                            
-                            AddChange(change) ;
-                            
-                        }
-                        else
-                        {
-                            AddNoChange(ItemType.DataType, file);
-                        }
-                    }
-                    
+                    Import(file);
                 }
             }
         }
 
-        private void PreChangeBackup(XmlNode node)
+        public override void Import(string filePath)
         {
-            if (string.IsNullOrEmpty(_backupPath))
-                return;
+            if (!File.Exists(filePath))
+                throw new ArgumentNullException("filePath");
 
-            var _def = node.Attributes["Definition"].Value;
+            XElement node = XElement.Load(filePath);
 
-            if (CMSNode.IsNode(new Guid(_def)))
+            if (node.Name.LocalName != "DataType")
+                throw new ArgumentException("Not a DataType File", filePath);
+
+            if (tracker.DataTypeChanged(node))
+                Backup(node);
+
+            ChangeItem change = uDataTypeDefinition.SyncImport(node);
+
+            if ( change.changeType == ChangeType.Mismatch )
             {
-                var dtd = DataTypeDefinition.GetDataTypeDefinition(new Guid(_def));
-
-                if ( dtd != null )
-                {
-                    SaveToDisk(dtd, _backupPath);
-                }
-            }
-        }
-
-        /// <summary>
-        /// DataType Import - taken from the core 
-        /// 
-        /// the core doesn't pass username, so fails on loading
-        /// here we just pass usere User(0) - so we can work)
-        /// </summary>
-        /// <param name="xmlData"></param>
-        /// <returns></returns>
-        public DataTypeDefinition Import(XmlNode xmlData, User u)
-        {
-            if (xmlData != null)
-            {
-                string _name = xmlData.Attributes["Name"].Value;
-                LogHelper.Debug<SyncDataType>("Importing: {0}", ()=> _name);
-
-                string _id = xmlData.Attributes["Id"].Value;
-                string _def = xmlData.Attributes["Definition"].Value;
-
-                bool isNew = false;
-
-                DataTypeDefinition dtd;
-
-                if (CMSNode.IsNode(new Guid(_def)))
-                {
-                    dtd = DataTypeDefinition.GetDataTypeDefinition(new Guid(_def));
-                }
-                else
-                {
-                    isNew = true; 
-
-                    if (u == null)
-                        u = global::umbraco.BusinessLogic.User.GetUser(0);
-
-                    global::umbraco.cms.businesslogic.datatype.controls.Factory f = new global::umbraco.cms.businesslogic.datatype.controls.Factory();
-
-                    dtd = DataTypeDefinition.MakeNew(u, _name, new Guid(_def));
-                    var dataType = f.DataType(new Guid(_id));
-                    if (dataType == null && dataType.Id != null)
-                        throw new NullReferenceException("Could not resolve a data type with id " + _id);
-
-
-
-                    dtd.DataType = dataType;
-                    dtd.Save();
-                }
-
-                if ( dtd == null || dtd.DataType == null)
-                {
-                    LogHelper.Info<SyncDataType>("Import Failed for [{0}] .uSync Could not find the underling type", () => _name);
-                    return null;
-                }
-
-                if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
-                {
-                    // multi-node tree picker! do a match sync...
-                    return MatchImport(dtd, xmlData, u);
-                }
-                else
-                {
-                    //
-                    // PREVALUES - HELL :: num 4532
-                    // 
-                    // Here we are attempting to add new prevalues to a DataType, and remove old ones.
-                    // between umbraco installs the IDs will change. we are not trying to match them,
-                    // we are just trying to match, based on value - problem being, if you change 
-                    // a value's value then this code would think it's a new ID, delete the old one
-                    // and create a new one - as we are syncing from a dev point of view we are
-                    // going to do this for now...
-                    //
-
-                    //
-                    // MAPPING PREVALUES 
-                    // 
-                    // When an Export has detected possible mapped ids it creates a nodes element
-                    // with a load of node child elements - so if this is there, we need to 
-                    // check each preValue to see if it contains an ID from these nodes
-                    // 
-                    // when we find a match we swap the ID from the prevalue with the one
-                    // the mapper function has returned to us.
-                    //
-
-                    var ddid = dtd.DataType.Id.ToString();
-                    MappedDataTypeSettings mappedSettings = null;
-                    if (uSyncSettings.MappedDataTypes.GetAll().Contains(ddid))
-                    {
-                        mappedSettings = uSyncSettings.MappedDataTypes[ddid];
-                    }
-                    List<string> mapIds = PreValMapper.GetMapIdList(xmlData);
-
-                    System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
-                    Hashtable oldvals = new Hashtable();
-                    foreach (DictionaryEntry v in prevals)
-                    {
-                        if ((PreValue)v.Value != null)
-                        // if (!String.IsNullOrEmpty(((PreValue)v.Value).Value.ToString()))
-                        {
-                            oldvals.Add(((PreValue)v.Value).Id, ((PreValue)v.Value).Value.ToString());
-                        }
-                    }
-
-                    Hashtable newvals = new Hashtable();
-                    foreach (XmlNode xmlPv in xmlData.SelectNodes("PreValues/PreValue"))
-                    {
-                        XmlAttribute val = xmlPv.Attributes["Value"];
-
-                        if (val != null)
-                        {
-                            // here we need to transpose any mapped ids we might have ...
-                            var propValue = val.Value; 
-                            if (mapIds.Count() > 0) {
-                                foreach (var id in mapIds)
-                                {
-                                    if ( propValue.Contains(id) )
-                                    {
-                                        // this property has the ID in it - so it 'might' be one we want 
-                                        // to map - the MapIDtoLocal function can work that bit out and
-                                        // map it if we need it to. 
-                                        propValue = PreValMapper.MapIDtoLocal(id, propValue, xmlData, mappedSettings);
-                                       
-                                    }
-                                }
-                            }
-
-                            // take any placeholders out of the number.
-
-                            propValue = PreValMapper.StripMarkers(propValue);
-                            LogHelper.Debug<SyncDataType>("Cleaned PropValue: {0}", () => propValue);
-
-                            // add new values only - because if we mess with old ones. it all goes pete tong..
-                            if ((propValue != null) && (!oldvals.ContainsValue(propValue)))
-                            {
-                                LogHelper.Debug<SyncDataType>("Adding Prevalue [{0}]", () => propValue);
-                                PreValue p = new PreValue(0, 0, propValue);
-                                p.DataTypeId = dtd.Id;
-                                p.Save();
-                            }
-
-                            newvals.Add(xmlPv.Attributes["Id"], propValue);
-                        }
-                    }
-
-
-                    // ok now delete any values that have gone missing between syncs..
-
-                    if (!uSyncSettings.Preserve || !uSyncSettings.PreservedPreValueDataTypes.Contains(_id))
-                    {
-                        foreach (DictionaryEntry oldval in oldvals)
-                        {
-                            if (!newvals.ContainsValue(oldval.Value))
-                            {
-                                PreValue o = new PreValue((int)oldval.Key);
-                                LogHelper.Debug<SyncDataType>("In {0} Deleting prevalue [{1}]", ()=> dtd.Text, ()=> oldval.Value);
-                                o.Delete();
-                            }
-                        }
-                    }
-                    return dtd;
-                }
-                LogHelper.Debug<SyncDataType>("Finished Import: {0}", () => _name);
-            }
-            return null;
-        }
-
-        /// <summary>
-        ///  the more agressive pre-value manager - basically for Multi-Node Tree Pickers
-        ///  
-        /// does a like for like change - so goes through exsting values (in order) and sets
-        /// their values to those in the import file (in same order) 
-        /// 
-        /// if the DataType doesn't maintain order (ie in lists) you would loose values doing this
-        /// </summary>
-        /// <param name="xmlData"></param>
-        /// <param name="u"></param>
-        /// <returns></returns>
-        public DataTypeDefinition MatchImport(DataTypeDefinition dtd, XmlNode xmlData, User u)
-        {
-            LogHelper.Debug<SyncDataType>("usync - Match Import: for {0}", ()=> dtd.Text);
-
-            List<PreValue> current = GetPreValues(dtd);
-            XmlNodeList target = xmlData.SelectNodes("PreValues/PreValue");
-
-            LogHelper.Debug<SyncDataType>("uSync - Match Import: Counts [{0} Existing] [{1} New]", 
-                ()=> current.Count, ()=> target.Count);
-
-            var ddid = dtd.DataType.Id.ToString();
-            MappedDataTypeSettings mappedSettings = null;
-            if (uSyncSettings.MappedDataTypes.GetAll().Contains(ddid))
-            {
-                mappedSettings = uSyncSettings.MappedDataTypes[ddid];
+                Restore(node);
             }
 
-            List<string> mapIds = PreValMapper.GetMapIdList(xmlData);
-
-            for(int n = 0; n < current.Count(); n++)
-            {
-                XmlAttribute val = target[n].Attributes["Value"];
-
-                if (val != null)
-                {
-                    // here we need to transpose any mapped ids we might have ...
-                    var propValue = val.Value;
-                    if (mapIds.Count() > 0)
-                    {
-                        foreach (var id in mapIds)
-                        {
-                            if (propValue.Contains(id))
-                            {
-                                propValue = PreValMapper.MapIDtoLocal(id, propValue, xmlData, mappedSettings);
-                            }
-                        }
-                    }
-
-                    propValue = PreValMapper.StripMarkers(propValue);
-
-                    if (current[n].Value != propValue)
-                    {
-                        LogHelper.Debug<SyncDataType>("uSync - Match Import: Overwrite {0} with {1}",
-                            () => current[n].Value, () => propValue);
-                        current[n].Value = propValue;
-                        current[n].Save();
-                    }
-                }
-            }
-
-            LogHelper.Debug<SyncDataType>("uSync - Match Import: Complete");  
-            return dtd;
-        }
-
-        /// <summary>
-        /// DataType ToXML - taken from the core (must learn to patch sometime)
-        /// 
-        /// fixing basic problem, of prevalues not coming out sorted by id (and sort-order)
-        /// with thanks to Kenn Jacobsen for info on this. 
-        /// </summary>
-        /// <param name="dataType">the datatype to export</param>
-        /// <param name="xd">the xmldocument</param>
-        /// <returns>the xmlelement representation of the type</returns>
-        public XmlElement DataTypeToXml(DataTypeDefinition dataType, XmlDocument xd)
-        {
-            // id mapping
-            var _id = dataType.DataType.Id.ToString();
             
 
-            MappedDataTypeSettings mappedSettings = null;
-
-            if (uSyncSettings.MappedDataTypes.GetAll().Contains(_id)) {
-                mappedSettings = uSyncSettings.MappedDataTypes[_id];
-            }
-
-
-            LogHelper.Debug<SyncDataType>("DataType To XML"); 
-
-            XmlElement dt = xd.CreateElement("DataType");
-            dt.Attributes.Append(xmlHelper.addAttribute(xd, "Name", dataType.Text));
-            dt.Attributes.Append(xmlHelper.addAttribute(xd, "Id", dataType.DataType.Id.ToString()));
-            dt.Attributes.Append(xmlHelper.addAttribute(xd, "Definition", dataType.UniqueId.ToString()));
-
-
-
-            // templates
-            XmlElement prevalues = xd.CreateElement("PreValues");
-            foreach (PreValue item in GetPreValues(dataType))
-            {
-                /// pre-value mapping 
-                /// - go off and try to get any id' mapped to something
-                /// - more portable.
-                /// 
-                var preValueValue = item.Value;
-                if ( mappedSettings != null ) {
-                    PreValMapper.MapPreValId(preValueValue, xd,dt, mappedSettings);
-                }
-                
-                XmlElement prevalue = xd.CreateElement("PreValue");
-                //
-                // prevalue.Attributes.Append(xmlHelper.addAttribute(xd, "Alias", item.GetAlias()));
-                // alias is often blank :( 
-                //
-                prevalue.Attributes.Append(xmlHelper.addAttribute(xd, "Id", item.Id.ToString()));
-                prevalue.Attributes.Append(xmlHelper.addAttribute(xd, "Value", item.Value));
-
-                prevalues.AppendChild(prevalue);
-            }
-
-            dt.AppendChild(prevalues);
-
-            return dt;
         }
 
-
-         // we need to map this back then...
-
-        private static List<PreValue> GetPreValues(DataTypeDefinition dataType)
+        private void Backup(XElement node)
         {
-            LogHelper.Debug<SyncDataType>("Getting Pre-Values"); 
-            return PreValues.GetPreValues(dataType.Id).Values.OfType<PreValue>().OrderBy(p => p.SortOrder).ThenBy(p => p.Id).ToList();
+            var _def = new Guid(node.Attribute("Definition").Value);
+            if ( CMSNode.IsNode(_def))
+            {
+                var dtd = DataTypeDefinition.GetDataTypeDefinition(_def);
+                ExportToDisk(dtd, _backupPath);
+            }
         }
 
+        private void Restore(XElement node)
+        {
+            var name = node.Attribute("Name").Value;
+            XElement backupNode = XmlDoc.GetBackupNode(_backupPath, name, Constants.ObjectTypes.DataType);
+
+            if (backupNode != null)
+                uDataTypeDefinition.SyncImport(backupNode, true, false);
+
+        }
+
+ 
         // timer work.
         private static Timer _saveTimer;
         private static Queue<int> _saveQueue = new Queue<int>();

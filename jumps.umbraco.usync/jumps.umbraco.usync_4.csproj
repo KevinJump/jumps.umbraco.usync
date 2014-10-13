@@ -84,6 +84,7 @@
     <Compile Include="helpers\XElementExtensions.cs" />
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="helpers\XmlDocFileEventArgs.cs" />
+    <Compile Include="Models\uDataTypeDefinition.cs" />
     <Compile Include="SyncDataType.cs" />
     <Compile Include="SyncDictionary.cs" />
     <Compile Include="SyncDocType.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="SyncTemplate.cs" />
     <Compile Include="uSync.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="uSyncConstants.cs" />
     <Compile Include="uSyncReporter.cs" />
     <Compile Include="uSyncSettings.cs" />
   </ItemGroup>

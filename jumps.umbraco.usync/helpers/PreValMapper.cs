@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using System.Xml;
+using System.Xml.Linq;
 
 
 using Umbraco.Core.Services;
@@ -27,7 +28,7 @@ namespace jumps.umbraco.usync.helpers
         #region Export Mappings
         
         
-        public static string MapPreValId(string val, XmlDocument xmlDoc, XmlElement node, MappedDataTypeSettings settings)
+        public static string MapPreValId(string val, XElement node, MappedDataTypeSettings settings)
         {
             LogHelper.Debug<PreValMapper>("Mapping PreValues {0}", () => val);
 
@@ -65,7 +66,7 @@ namespace jumps.umbraco.usync.helpers
                     if ( !string.IsNullOrEmpty(mappedVal))
                     {
                         // add it to the nodes thingy 
-                        AddToNode(id, mappedVal, type, xmlDoc, node);
+                        AddToNode(id, mappedVal, type, node);
                     }
                 }
             }
@@ -165,23 +166,19 @@ namespace jumps.umbraco.usync.helpers
             return string.Empty;
         }
 
-        private static void AddToNode(int id, string val, string type,  XmlDocument xmlDoc, XmlElement node)
+        private static void AddToNode(int id, string val, string type, XElement node)
         {
-            XmlNode nodes = node.SelectSingleNode("//nodes");
-            if ( nodes == null )
+            XElement nodes = node.Element("Nodes");
+            if (nodes == null)
             {
-                nodes = xmlDoc.CreateElement("nodes");
-                node.AppendChild(nodes);
+                nodes = new XElement("Nodes");
+                node.Add(nodes);
             }
 
-            // add a new element to nodes for this mapping ---
-            var mapNode = xmlDoc.CreateElement("node");
-            mapNode.Attributes.Append(xmlHelper.addAttribute(xmlDoc, "id", id.ToString()));
-            mapNode.Attributes.Append(xmlHelper.addAttribute(xmlDoc, "value", val));
-            mapNode.Attributes.Append(xmlHelper.addAttribute(xmlDoc, "type", type));
-
-            nodes.AppendChild(mapNode);
-
+            var mapNode = new XElement("node");
+            mapNode.Add(new XAttribute("id", id.ToString()));
+            mapNode.Add(new XAttribute("value", val));
+            mapNode.Add(new XAttribute("type", type));
         }
 
 
@@ -202,15 +199,16 @@ namespace jumps.umbraco.usync.helpers
         /// <param name="propValue"></param>
         /// <param name="xmlData"></param>
         /// <returns></returns>
-        public static string MapIDtoLocal(string id, string propValue, XmlNode xmlData, MappedDataTypeSettings settings)
+        public static string MapIDtoLocal(string id, string propValue, XElement node, MappedDataTypeSettings settings)
         {
             LogHelper.Debug<SyncDataType>("Found ID we need to map");
-            var mapNode = xmlData.SelectSingleNode(string.Format("//nodes/node[@id='{0}']", id));
+            var mapNode = node.Element("nodes").Descendants().Where(x => x.Attribute("id").Value == id).FirstOrDefault();
+            // var mapNode = xmlData.SelectSingleNode(string.Format("//nodes/node[@id='{0}']", id));
 
             if (mapNode != null)
             {
-                var type = mapNode.Attributes["type"].Value;
-                var value = mapNode.Attributes["value"].Value;
+                var type = mapNode.Attribute("type").Value;
+                var value = mapNode.Attribute("value").Value;
 
                 var subValueString = GetPreValueMatchSubString(propValue, settings);
 
@@ -263,23 +261,21 @@ namespace jumps.umbraco.usync.helpers
         /// </summary>
         /// <param name="xmlData"></param>
         /// <returns></returns>
-        public static List<string> GetMapIdList(XmlNode xmlData)
+        public static List<string> GetMapIdList(XElement node)
         {
             List<string> mapIds = new List<string>();
 
-            if (xmlData.SelectSingleNode("nodes") != null)
+            if (node.Element("nodes") != null )
             {
-                foreach (XmlNode mapNode in xmlData.SelectNodes("nodes/node"))
+                foreach(var mapNode in node.Element("nodes").Elements("node"))
                 {
-                    XmlAttribute mapId = mapNode.Attributes["id"];
-                    XmlAttribute mapVal = mapNode.Attributes["value"];
-                    XmlAttribute mapType = mapNode.Attributes["type"];
+                    var id = mapNode.Attribute("id");
+                    var val = mapNode.Attribute("value");
+                    var type = mapNode.Attribute("type");
 
-                    if (mapId != null && mapVal != null && mapType != null)
+                    if ( id != null && val != null && type != null)
                     {
-                        // we only add the id to our string if we know we have all the stuff we will
-                        // need should we match this.
-                        mapIds.Add(mapId.Value);
+                        mapIds.Add(id.Value);
                     }
                 }
             }

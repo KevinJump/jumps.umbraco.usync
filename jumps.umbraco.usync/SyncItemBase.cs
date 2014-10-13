@@ -9,8 +9,9 @@ namespace jumps.umbraco.usync
     ///  Base of a uync item, stored where we are actually saving stuff
     ///  and change state. 
     /// </summary>
-    public class SyncItemBase: IDisposable
+    public class SyncItemBase<T>: IDisposable
     {
+        
         protected ChangeType _changeType; 
 
         protected string _savePath;
@@ -79,6 +80,11 @@ namespace jumps.umbraco.usync
             }
             _changes = new List<ChangeItem>();
         }
+
+        public abstract void ExportAll(string folder);
+        public abstract void ExportToDisk(T item, string folder = null);
+        public abstract void Import(string filePath);
+        public abstract void ImportAll(string folder);
 
         public void Dispose()
         {

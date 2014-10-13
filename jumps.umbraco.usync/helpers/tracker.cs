@@ -14,6 +14,8 @@ using umbraco.cms.businesslogic.media;
 using umbraco.cms.businesslogic.template;
 using umbraco.cms.businesslogic.language;
 
+using jumps.umbraco.usync.Models;
+
 using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync.helpers
@@ -92,10 +94,8 @@ namespace jumps.umbraco.usync.helpers
 
         }
 
-        public static bool DataTypeChanged(XmlDocument xDoc, SyncDataType syncDt)
+        public static bool DataTypeChanged(XElement node)
         {
-            XElement node = XElement.Load(new XmlNodeReader(xDoc));
-
             string filehash = XmlDoc.ReCalculateHash(node, true);
 
             if (string.IsNullOrEmpty(filehash))
@@ -114,9 +114,8 @@ namespace jumps.umbraco.usync.helpers
             if ( dtd == null )
                 return true;
 
-            XmlDocument doc = XmlDoc.CreateDoc();
-            doc.AppendChild(syncDt.DataTypeToXml(dtd, doc));
-            var dbMD5 = XmlDoc.CalculateMD5Hash(doc, true);
+            XElement dbNode = ((uDataTypeDefinition)dtd).SyncExport();
+            var dbMD5 = XmlDoc.CalculateMD5Hash(dbNode, true);
 
             return (!filehash.Equals(dbMD5));
         }
