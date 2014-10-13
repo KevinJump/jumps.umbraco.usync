@@ -27,7 +27,7 @@ using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
-    public class SyncMediaTypes : SyncItemBase 
+    public class SyncMediaTypes : SyncItemBase<MediaType>
     {
         public SyncMediaTypes() :
             base(uSyncSettings.Folder) { }

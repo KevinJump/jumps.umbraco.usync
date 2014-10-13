@@ -31,7 +31,7 @@ namespace jumps.umbraco.usync
     /// SyncMacro uses the package API to read write the xml
     /// files for macros. no structure in macros.
     /// </summary>
-    public class SyncMacro : SyncItemBase
+    public class SyncMacro : SyncItemBase<Macro>
     {
         public SyncMacro() :
             base(uSyncSettings.Folder) { }

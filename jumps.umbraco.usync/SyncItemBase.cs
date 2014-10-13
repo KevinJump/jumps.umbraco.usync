@@ -9,7 +9,7 @@ namespace jumps.umbraco.usync
     ///  Base of a uync item, stored where we are actually saving stuff
     ///  and change state. 
     /// </summary>
-    public class SyncItemBase<T>: IDisposable
+    public abstract class SyncItemBase<T>: IDisposable
     {
         
         protected ChangeType _changeType; 

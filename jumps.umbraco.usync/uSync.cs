@@ -140,8 +140,8 @@ namespace jumps.umbraco.usync
 
             if (uSyncSettings.Elements.DataTypes)
             {
-                var dataTypeSync = new SyncDataType(folder);
-                dataTypeSync.SaveAllToDisk();
+                var dataTypeSync = new SyncDataType();
+                dataTypeSync.ExportAll(folder);
             }
 
             if (uSyncSettings.Elements.Dictionary)
@@ -150,7 +150,7 @@ namespace jumps.umbraco.usync
                 langSync.SaveAllToDisk();
 
                 var dicSync = new SyncDictionary(folder);
-                dicSync.SaveAllToDisk();
+                dicSync.ExportAll(folder);
             }
 
             LogHelper.Debug<uSync>("Saving to Disk - End"); 
@@ -207,7 +207,7 @@ namespace jumps.umbraco.usync
                 if (uSyncSettings.Elements.DataTypes)
                 {
                     var dataTypeSync = new SyncDataType(folder, backupSet);
-                    dataTypeSync.ReadAllFromDisk();
+                    dataTypeSync.ImportAll(folder);
                     changes.AddRange(dataTypeSync.ChangeList);
 
                     LogHelper.Info<uSync>("Imported DataTypes {0} changes - ({1} ms)", ()=> dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
@@ -254,7 +254,7 @@ namespace jumps.umbraco.usync
                     last = sw.ElapsedMilliseconds;
 
                     var dicSync = new SyncDictionary(folder, backupSet);
-                    dicSync.ReadAllFromDisk();
+                    dicSync.ImportAll(folder);
                     changes.AddRange(dicSync.ChangeList);
 
                     LogHelper.Info<uSync>("Imported Dictionary Items {0} - changes ({1} ms)", ()=>  dicSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
@@ -265,7 +265,7 @@ namespace jumps.umbraco.usync
                 if (uSyncSettings.Elements.DataTypes)
                 {
                     var dataTypeSync = new SyncDataType(folder, backupSet);
-                    dataTypeSync.ReadAllFromDisk();
+                    dataTypeSync.ImportAll(folder);
                     LogHelper.Info<uSync>("Imported DataTypes (again) {0} changes - ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                 }
 

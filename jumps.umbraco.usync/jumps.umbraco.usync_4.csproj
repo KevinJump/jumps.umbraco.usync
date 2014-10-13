@@ -85,6 +85,7 @@
     <Compile Include="helpers\XmlDoc.cs" />
     <Compile Include="helpers\XmlDocFileEventArgs.cs" />
     <Compile Include="Models\uDataTypeDefinition.cs" />
+    <Compile Include="Models\uDictionaryItem.cs" />
     <Compile Include="SyncDataType.cs" />
     <Compile Include="SyncDictionary.cs" />
     <Compile Include="SyncDocType.cs" />

@@ -34,7 +34,7 @@ namespace jumps.umbraco.usync
     /// SyncTemplate uses the packaging API to import and
     /// export the templates. 
     /// </summary>
-    public class SyncTemplate : SyncItemBase
+    public class SyncTemplate : SyncItemBase<Template>
     {
         public SyncTemplate() :
             base(uSyncSettings.Folder) { }

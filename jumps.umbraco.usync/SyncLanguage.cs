@@ -16,7 +16,7 @@ using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync
 {
-    public class SyncLanguage : SyncItemBase
+    public class SyncLanguage : SyncItemBase<Language>
     {
         public SyncLanguage() :
             base(uSyncSettings.Folder) { }

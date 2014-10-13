@@ -12,7 +12,6 @@ using umbraco.BusinessLogic ;
 using Umbraco.Core.IO ;
 using Umbraco.Core.Logging;
 
-using System.Xml;
 using System.Xml.Linq;
 using System.Security.Cryptography;
 

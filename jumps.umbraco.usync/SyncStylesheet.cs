@@ -33,7 +33,7 @@ namespace jumps.umbraco.usync
     /// probibly the simplest sync - no structure, and the
     /// packaging api.
     /// </summary>
-    public class SyncStylesheet : SyncItemBase
+    public class SyncStylesheet : SyncItemBase<StyleSheet>
     {
         public SyncStylesheet() :
             base(uSyncSettings.Folder) { }

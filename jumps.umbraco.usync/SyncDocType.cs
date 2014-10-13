@@ -31,7 +31,7 @@ namespace jumps.umbraco.usync
     /// attached to the events, it should just work, and keep everything
     /// in sync.  
     /// </summary>
-    public class SyncDocType : SyncItemBase
+    public class SyncDocType : SyncItemBase<DocumentType>
     {        
         public SyncDocType(string folder) :
             base(folder) { }

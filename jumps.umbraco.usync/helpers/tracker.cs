@@ -189,10 +189,8 @@ namespace jumps.umbraco.usync.helpers
 
         static Dictionary<string, Dictionary.DictionaryItem> dictionaryItems = null;
 
-        public static bool DictionaryChanged(XmlDocument xDoc)
+        public static bool DictionaryChanged(XElement node)
         {
-            XElement node = XElement.Load(new XmlNodeReader(xDoc));
-
             string filehash = XmlDoc.GetPreCalculatedHash(node);
             if (string.IsNullOrEmpty(filehash))
                 return true;

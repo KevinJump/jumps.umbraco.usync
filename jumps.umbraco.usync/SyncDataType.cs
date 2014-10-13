@@ -95,22 +95,27 @@ namespace jumps.umbraco.usync
 
             XElement node = XElement.Load(filePath);
 
-            if (node.Name.LocalName != "DataType")
+            if (node.Name.LocalName != "DataType")  
                 throw new ArgumentException("Not a DataType File", filePath);
 
             if (tracker.DataTypeChanged(node))
+            {
                 Backup(node);
 
-            ChangeItem change = uDataTypeDefinition.SyncImport(node);
+                ChangeItem change = uDataTypeDefinition.SyncImport(node);
 
-            if ( change.changeType == ChangeType.Mismatch )
-            {
-                Restore(node);
+                if (change.changeType == ChangeType.Mismatch)
+                {
+                    Restore(node);
+                }
+
+                AddChange(change);
             }
-
-            
-
-        }
+            else
+            {
+                AddNoChange(ItemType.DataType, filePath);
+            }
+       }
 
         private void Backup(XElement node)
         {
@@ -128,7 +133,7 @@ namespace jumps.umbraco.usync
             XElement backupNode = XmlDoc.GetBackupNode(_backupPath, name, Constants.ObjectTypes.DataType);
 
             if (backupNode != null)
-                uDataTypeDefinition.SyncImport(backupNode, true, false);
+                uDataTypeDefinition.SyncImport(backupNode, false);
 
         }
 
@@ -173,7 +178,7 @@ namespace jumps.umbraco.usync
                     var dt = DataTypeDefinition.GetDataTypeDefinition(typeID);
                     if (dt != null)
                     {
-                        syncDataType.SaveToDisk(dt);
+                        syncDataType.ExportToDisk(dt);
                     }
 
                     LogHelper.Info<SyncDataType>("DataType Saved (Saving-complete)");

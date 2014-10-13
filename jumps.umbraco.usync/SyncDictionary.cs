@@ -16,10 +16,11 @@ using Umbraco.Core.Logging;
 using Umbraco.Core;
 
 using jumps.umbraco.usync.helpers;
+using jumps.umbraco.usync.Models;
 
 namespace jumps.umbraco.usync
 {
-    public class SyncDictionary : SyncItemBase
+    public class SyncDictionary : SyncItemBase<Dictionary.DictionaryItem>
     {
         public SyncDictionary() :
             base(uSyncSettings.Folder) { }
@@ -30,98 +31,94 @@ namespace jumps.umbraco.usync
         public SyncDictionary(string folder, string set) :
             base(folder, set) { }
 
-        public void SaveToDisk(Dictionary.DictionaryItem item)
-        {
-            if (item != null)
-            {
-                Umbraco.Core.Strings.DefaultShortStringHelper _sh = new Umbraco.Core.Strings.DefaultShortStringHelper();
-                XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                xmlDoc.AddDictionaryHash();
-
-                XmlDoc.SaveXmlDoc("Dictionary", 
-                    _sh.Recode(item.key, Umbraco.Core.Strings.CleanStringType.Ascii),
-                    xmlDoc, _savePath);
-            }
-        }
-
-        public void SaveAllToDisk()
+        public override void ExportAll(string folder)
         {
             LogHelper.Debug<SyncDictionary>("Saving Dictionary Types");
 
             foreach (Dictionary.DictionaryItem item in Dictionary.getTopMostItems)
             {
-                LogHelper.Debug<SyncDictionary>("Dictionary Item {0}", ()=> item.key);
-                SaveToDisk(item);
-
-                
+                LogHelper.Debug<SyncDictionary>("Dictionary Item {0}", () => item.key);
+                ExportToDisk(item, folder);
             }
         }
 
-        public void ReadAllFromDisk()
+        public override void ExportToDisk(Dictionary.DictionaryItem item, string folder = null)
         {
-            string path = IOHelper.MapPath(string.Format("{0}{1}",
-                helpers.uSyncIO.RootFolder,
-                "Dictionary"));
+            if (item == null)
+                throw new ArgumentNullException("item");
 
-            ReadFromDisk(path);
+            if (string.IsNullOrEmpty(folder))
+                folder = _savePath;
 
+            XElement node = ((uDictionaryItem)item).SyncExport();
+
+            XmlDoc.SaveNode(folder, item.key, node, Constants.ObjectTypes.Dictionary);
+        }
+        /*
+                XmlDoc.SaveXmlDoc("Dictionary", 
+                    _sh.Recode(item.key, Umbraco.Core.Strings.CleanStringType.Ascii),
+                    xmlDoc, _savePath);
+        */
+
+        public override void ImportAll(string folder)
+        {
+            string root = IOHelper.MapPath(string.Format("{0}{1}", folder, Constants.ObjectTypes.Dictionary));
+            ImportFolder(root);
         }
 
-        public void ReadFromDisk(string path)
+        private void ImportFolder(string folder)
         {
-            if (Directory.Exists(path))
+            if (Directory.Exists(folder))
             {
-                foreach (string file in Directory.GetFiles(path, "*.config"))
+                foreach (string file in Directory.GetFiles(folder, Constants.SyncFileMask))
                 {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
-
-                    XmlNode node = xmlDoc.SelectSingleNode("./DictionaryItem");
-
-                    if (node != null)
-                    {
-                        if (tracker.DictionaryChanged(xmlDoc))
-                        {
-                            var change = new ChangeItem
-                            {
-                                changeType = ChangeType.Success,
-                                itemType = ItemType.Dictionary,
-                                file = file
-                            };
-
-                            LogHelper.Debug<SyncDictionary>("Node Import: {0} {1}",
-                                () => node.Attributes["Key"].Value, () => node.InnerXml);
-
-                            try
-                            {
-
-                                Dictionary.DictionaryItem item = Dictionary.DictionaryItem.Import(node);
-                                if (item != null)
-                                {
-                                    item.Save();
-                                    change.id = item.id;
-                                    change.name = item.key;
-                                }
-
-                                AddChange(change);
-
-
-                            }
-                            catch (Exception ex)
-                            {
-                                LogHelper.Debug<SyncDictionary>("DictionaryItem.Import Failed {0}: {1}",
-                                    () => path, () => ex.ToString());
-                            }
-                        }
-                        else
-                        {
-                            AddNoChange(ItemType.Dictionary, file);
-                        }
-                    }
+                    Import(file);
                 }
-            }            
+            }
         }
+
+        public override void Import(string filePath)
+        {
+            if ( !File.Exists(filePath))
+                throw new ArgumentNullException("filePath");
+
+            XElement node = XElement.Load(filePath);
+
+            if (node.Name.LocalName != "Dictionary")
+                throw new ArgumentException("Not a dictionart file", filePath);
+
+            if (tracker.DictionaryChanged(node))
+            {
+                Backup(node);
+
+                ChangeItem change = uDictionaryItem.SyncImport(node);
+
+                if (change.changeType == ChangeType.Mismatch)
+                    Restore(node);
+
+                AddChange(change);
+            }
+            else
+                AddNoChange(ItemType.Dictionary, filePath);
+        
+        }
+
+        private void Backup(XElement node) 
+        { 
+            
+        }
+
+        private void Restore(XElement node) {
+
+            var key = node.Attribute("Key").Value;
+            XElement backupNode = XmlDoc.GetBackupNode(_backupPath, key, Constants.ObjectTypes.Dictionary);
+
+            if (backupNode != null)
+                uDictionaryItem.SyncImport(backupNode, false);
+
+        }
+
+
 
         private void PreChangeBackup(XmlNode xDoc)
         {
