@@ -192,7 +192,7 @@ namespace jumps.umbraco.usync
         {
             if (typeof(DataTypeDefinition) == sender.GetType())
             {
-                helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), ((DataTypeDefinition)sender).Text);
+                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.DataType), true);
             }
 
             // no cancel... 

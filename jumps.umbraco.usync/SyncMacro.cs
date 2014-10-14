@@ -137,8 +137,7 @@ namespace jumps.umbraco.usync
 
         static void Macro_AfterDelete(Macro sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Alias);
-
+            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Alias, Constants.ObjectTypes.Macro), true);
             e.Cancel = false;
         }
 

@@ -121,8 +121,7 @@ namespace jumps.umbraco.usync
 
         static void Language_AfterDelete(Language sender, global::umbraco.cms.businesslogic.DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.CultureAlias);
-
+            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.CultureAlias, Constants.ObjectTypes.Language), true);
         }
 
         static void Language_AfterSave(Language sender, global::umbraco.cms.businesslogic.SaveEventArgs e)

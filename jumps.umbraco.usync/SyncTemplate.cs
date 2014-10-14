@@ -171,8 +171,8 @@ namespace jumps.umbraco.usync
         {
             // helpers.XmlDoc.ArchiveFile( helpers.XmlDoc.GetTypeFolder(sender.GetType().ToString()) + GetDocPath(sender), "def");
             var tSync = new SyncTemplate(_eventFolder);
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), tSync.GetDocPath(sender), "def"); 
 
+            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, tSync.GetDocPath(sender), "def", Constants.ObjectTypes.Template), true);
 
             e.Cancel = false; 
         }

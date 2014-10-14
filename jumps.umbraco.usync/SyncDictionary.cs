@@ -170,8 +170,7 @@ namespace jumps.umbraco.usync
                     else
                     {
                         // it's top we need to delete
-                        helpers.XmlDoc.ArchiveFile("Dictionary", sender.key);
-
+                        XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.key, Constants.ObjectTypes.Dictionary), true);
                     }
                 }
             }

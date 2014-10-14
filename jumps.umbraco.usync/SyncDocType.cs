@@ -249,7 +249,8 @@ namespace jumps.umbraco.usync
 
                 foreach (var docType in e.DeletedEntities)
                 {
-                    XmlDoc.ArchiveFile("DocumentType", docSync.GetDocPath(new DocumentType(docType.Id)), "def");
+                    var savePath = docSync.GetDocPath(new DocumentType(docType.Id));
+                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.DocType), true);
                 }
             }
         }

@@ -63,8 +63,10 @@ namespace jumps.umbraco.usync.helpers
             SaveNode(filePath, node);
         }
 
-        public static void SaveNode( string filePath,XElement node)
+        public static void SaveNode(string filePath,XElement node)
         {
+            OnPreSave(new XmlDocFileEventArgs(filePath));
+
             if (File.Exists(filePath))
             {
                 if ( _versions )
@@ -77,12 +79,8 @@ namespace jumps.umbraco.usync.helpers
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath));
 
             node.Save(filePath);
-        }
 
-        public static void ArchiveFile(string filePath)
-        {
-            // get this - basically move it to an archive...
-            LogHelper.Info<XmlDoc>("#### ARCHIVE NOT IMPLIMENTED ####"); 
+            OnSaved(new XmlDocFileEventArgs(filePath));
         }
 
         public static string GetSavePath(string folder, string path, string name, string type)
@@ -108,7 +106,6 @@ namespace jumps.umbraco.usync.helpers
             return GetBackupNode(backupPath);
         }
 
-
         public static XElement GetBackupNode(string backupPath)
         {
             if (!String.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
@@ -121,6 +118,36 @@ namespace jumps.umbraco.usync.helpers
         }
         #endregion 
 
+        public static void ArchiveFile(string filePath, bool delete = false)
+        {
+            // we need to remove the site folder .. and the add then add the archive one
+            // arching only works on the core site files (not backups etc.)
+
+            string liveRoot = IOHelper.MapPath(uSyncIO.RootFolder).TrimEnd('\\');
+            string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder).TrimEnd('\\');
+
+            var fileFolder = Path.GetDirectoryName(filePath);
+            var archiveFolder = fileFolder.Replace(liveRoot, archiveRoot);
+            var archiveFile = string.Format("{0}_{1}.config", Path.GetFileNameWithoutExtension(filePath), DateTime.Now.ToString("ddMMyy_HHmmss"));
+
+            var archivePath = string.Format("{0}\\{1}", archiveFolder, archiveFile);
+
+            if (!Directory.Exists(archiveFolder))
+                Directory.CreateDirectory(archiveFolder);
+
+            if (File.Exists(archivePath))
+                File.Delete(archivePath);
+
+            File.Copy(filePath, archivePath);
+
+            if (delete)
+            {
+                OnPreDelete(new XmlDocFileEventArgs(filePath));
+                File.Delete(filePath);
+                OnDeleted(new XmlDocFileEventArgs(filePath));
+            }
+        }
+
         public static XmlDocument CreateDoc()
         {
             XmlDocument doc = new XmlDocument();
@@ -129,7 +156,7 @@ namespace jumps.umbraco.usync.helpers
 
             return doc;
         }
-
+        /*
         public static void SaveXmlDoc(string type, string path, string name, XmlDocument doc,string root = null)
         {
             string savePath = string.Format("{0}\\{1}\\{2}.config", GetTypeFolder(type), path, name) ;
@@ -176,10 +203,12 @@ namespace jumps.umbraco.usync.helpers
 
             OnSaved(new XmlDocFileEventArgs(savePath)); 
         }
+        */
 
         /// <summary>
         /// Archive a file (and delete the orgininal) called when a file is deleted
         /// </summary>
+        /*
         public static void ArchiveFile(string path, string name)
         {
             ArchiveFile(path, name, true);
@@ -246,6 +275,7 @@ namespace jumps.umbraco.usync.helpers
             }
 
         }
+        */
 
         public static void DeleteuSyncFile(string type, string path, string name)
         {
@@ -287,6 +317,7 @@ namespace jumps.umbraco.usync.helpers
             return sb.ToString() ;
         }
 
+        /*
         public static string GetNodeValue(XmlNode val)
         {
             string value = val.Value;
@@ -296,12 +327,14 @@ namespace jumps.umbraco.usync.helpers
             else
                 return value;
         }
+        */
 
+        
         public static string GetTypeFolder(string type)
         {
             return type.Substring(type.LastIndexOf('.') + 1);
         }
-
+        
         public static void OnPreSave(XmlDocFileEventArgs e)
         {
             SyncFileWatcher.Pause();

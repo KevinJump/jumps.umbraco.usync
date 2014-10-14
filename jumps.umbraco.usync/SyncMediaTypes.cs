@@ -183,7 +183,8 @@ namespace jumps.umbraco.usync
 
                 foreach (var mediaType in e.DeletedEntities)
                 {
-                    helpers.XmlDoc.ArchiveFile("MediaType", syncMedia.GetMediaPath(new MediaType(mediaType.Id)), "def");
+                    var savePath = syncMedia.GetMediaPath(new MediaType(mediaType.Id));
+                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.MediaType), true);
                 }
             }
         }

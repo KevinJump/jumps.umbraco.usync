@@ -139,7 +139,7 @@ namespace jumps.umbraco.usync
 
         static void StyleSheet_BeforeDelete(StyleSheet sender, DeleteEventArgs e)
         {
-            helpers.XmlDoc.ArchiveFile(sender.GetType().ToString(), sender.Text);
+            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.Stylesheet), true);
             e.Cancel = false;
         }
         
