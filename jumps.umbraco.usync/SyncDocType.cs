@@ -43,8 +43,6 @@ namespace jumps.umbraco.usync
         public SyncDocType(string folder, string set) :
             base(folder, set) { }        
 
-        static Dictionary<string, string> updated;
-
         public override void ExportAll(string folder)
         {
             foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())

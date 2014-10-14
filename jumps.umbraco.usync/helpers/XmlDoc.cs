@@ -122,23 +122,28 @@ namespace jumps.umbraco.usync.helpers
         {
             // we need to remove the site folder .. and the add then add the archive one
             // arching only works on the core site files (not backups etc.)
+            if (!File.Exists(filePath))
+                return; 
 
-            string liveRoot = IOHelper.MapPath(uSyncIO.RootFolder).TrimEnd('\\');
-            string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder).TrimEnd('\\');
+            if (_versions)
+            {
+                string liveRoot = IOHelper.MapPath(uSyncIO.RootFolder).TrimEnd('\\');
+                string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder).TrimEnd('\\');
 
-            var fileFolder = Path.GetDirectoryName(filePath);
-            var archiveFolder = fileFolder.Replace(liveRoot, archiveRoot);
-            var archiveFile = string.Format("{0}_{1}.config", Path.GetFileNameWithoutExtension(filePath), DateTime.Now.ToString("ddMMyy_HHmmss"));
+                var fileFolder = Path.GetDirectoryName(filePath);
+                var archiveFolder = fileFolder.Replace(liveRoot, archiveRoot);
+                var archiveFile = string.Format("{0}_{1}.config", Path.GetFileNameWithoutExtension(filePath), DateTime.Now.ToString("ddMMyy_HHmmss"));
 
-            var archivePath = string.Format("{0}\\{1}", archiveFolder, archiveFile);
+                var archivePath = string.Format("{0}\\{1}", archiveFolder, archiveFile);
 
-            if (!Directory.Exists(archiveFolder))
-                Directory.CreateDirectory(archiveFolder);
+                if (!Directory.Exists(archiveFolder))
+                    Directory.CreateDirectory(archiveFolder);
 
-            if (File.Exists(archivePath))
-                File.Delete(archivePath);
+                if (File.Exists(archivePath))
+                    File.Delete(archivePath);
 
-            File.Copy(filePath, archivePath);
+                File.Copy(filePath, archivePath);
+            }
 
             if (delete)
             {
