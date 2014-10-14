@@ -63,7 +63,7 @@ namespace jumps.umbraco.usync
         {
             var name = System.IO.Path.GetFileNameWithoutExtension(filename);
 
-            if (type == ItemType.DocumentType || type == ItemType.MediaItem)
+            if (type == ItemType.DocumentType || type == ItemType.MediaItem || type == ItemType.Template)
                 name = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(filename));
                 
 
