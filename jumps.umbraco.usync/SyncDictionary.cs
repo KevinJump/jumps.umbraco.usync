@@ -50,7 +50,7 @@ namespace jumps.umbraco.usync
             if (string.IsNullOrEmpty(folder))
                 folder = _savePath;
 
-            XElement node = ((uDictionaryItem)item).SyncExport();
+            XElement node = item.SyncExport();
 
             XmlDoc.SaveNode(folder, item.key, node, Constants.ObjectTypes.Dictionary);
         }
@@ -62,19 +62,8 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll(string folder)
         {
-            string root = IOHelper.MapPath(string.Format("{0}{1}", folder, Constants.ObjectTypes.Dictionary));
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Dictionary));
             ImportFolder(root);
-        }
-
-        private void ImportFolder(string folder)
-        {
-            if (Directory.Exists(folder))
-            {
-                foreach (string file in Directory.GetFiles(folder, Constants.SyncFileMask))
-                {
-                    Import(file);
-                }
-            }
         }
 
         public override void Import(string filePath)
@@ -84,17 +73,17 @@ namespace jumps.umbraco.usync
 
             XElement node = XElement.Load(filePath);
 
-            if (node.Name.LocalName != "Dictionary")
-                throw new ArgumentException("Not a dictionart file", filePath);
+            if (node.Name.LocalName != "DictionaryItem")
+                throw new ArgumentException("Not a DictionaryItem file", filePath);
 
             if (tracker.DictionaryChanged(node))
             {
-                Backup(node);
+                var backup = Backup(node);
 
                 ChangeItem change = uDictionaryItem.SyncImport(node);
 
                 if (change.changeType == ChangeType.Mismatch)
-                    Restore(node);
+                    Restore(backup);
 
                 AddChange(change);
             }
@@ -103,26 +92,29 @@ namespace jumps.umbraco.usync
         
         }
 
-        private void Backup(XElement node) 
-        { 
+        protected override string Backup(XElement node) 
+        {
+            var key = node.Attribute("Key").Value;
+            var items = Dictionary.getTopMostItems;
             
+            foreach(var i in items)
+            {
+                if (i.key == key)
+                {
+                    ExportToDisk(i, _backupPath);
+                    return XmlDoc.GetSavePath(_backupPath, key, Constants.ObjectTypes.Dictionary);
+                }
+            }
+
+            return "";
         }
 
-        private void Restore(XElement node) {
-
-            var key = node.Attribute("Key").Value;
-            XElement backupNode = XmlDoc.GetBackupNode(_backupPath, key, Constants.ObjectTypes.Dictionary);
+        protected override void Restore(string backup)
+        {
+            XElement backupNode = XmlDoc.GetBackupNode(backup);
 
             if (backupNode != null)
                 uDictionaryItem.SyncImport(backupNode, false);
-
-        }
-
-
-
-        private void PreChangeBackup(XmlNode xDoc)
-        {
-           XElement node = XElement.Load(new XmlNodeReader(xDoc));
         }
 
         static string _eventFolder = "";
@@ -172,8 +164,8 @@ namespace jumps.umbraco.usync
                     if (!sender.IsTopMostItem())
                     {
                         // if it's not top most, we save it's parent (that will delete)
-                        var dicSync = new SyncDictionary(_eventFolder);
-                        dicSync.SaveToDisk(GetTop(sender));
+                        var dicSync = new SyncDictionary();
+                        dicSync.ExportToDisk(GetTop(sender), _eventFolder);
                     }
                     else
                     {
@@ -191,8 +183,8 @@ namespace jumps.umbraco.usync
 
         static void DictionaryItem_Saving(Dictionary.DictionaryItem sender, EventArgs e)
         {
-            var dicSync = new SyncDictionary(_eventFolder);
-            dicSync.SaveToDisk(GetTop(sender));
+            var dicSync = new SyncDictionary();
+            dicSync.ExportToDisk(GetTop(sender), _eventFolder);
         }
 
         private static Dictionary.DictionaryItem GetTop(Dictionary.DictionaryItem item)

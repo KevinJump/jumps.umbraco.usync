@@ -1,27 +1,18 @@
 ﻿using System;
-using System.Collections; 
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using System.Xml;
-using umbraco.cms.businesslogic;
-using umbraco.cms.businesslogic.datatype ;
-
-using umbraco.BusinessLogic ; 
-
 using System.IO;
-using Umbraco.Core.IO;
-using umbraco;
+using System.Timers;
+using System.Xml.Linq;
 
+using umbraco;
+using umbraco.cms.businesslogic;
+using umbraco.cms.businesslogic.datatype;
+
+using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
 using jumps.umbraco.usync.helpers;
 using jumps.umbraco.usync.Models;
-using System.Timers;
-
-using System.Xml.Linq;
 
 namespace jumps.umbraco.usync
 {
@@ -65,7 +56,7 @@ namespace jumps.umbraco.usync
             if (string.IsNullOrEmpty(folder))
                 folder = _savePath;
 
-            XElement node = ((uDataTypeDefinition)item).SyncExport();
+            XElement node = item.SyncExport();
 
             XmlDoc.SaveNode(folder, item.Text, node, Constants.ObjectTypes.DataType );
             
@@ -73,21 +64,10 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll(string folder)
         {
-            string rootFolder = IOHelper.MapPath(String.Format("{0}{1}", folder, Constants.ObjectTypes.DataType));
-            ImportFolder(rootFolder);
+            string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", folder, Constants.ObjectTypes.DataType));
+            base.ImportFolder(rootFolder);
         }
-
-        private void ImportFolder(string folder)
-        {
-            if ( Directory.Exists(folder))
-            {
-                foreach(string file in Directory.GetFiles(folder, Constants.SyncFileMask))
-                {
-                    Import(file);
-                }
-            }
-        }
-
+        
         public override void Import(string filePath)
         {
             if (!File.Exists(filePath))
@@ -100,13 +80,14 @@ namespace jumps.umbraco.usync
 
             if (tracker.DataTypeChanged(node))
             {
-                Backup(node);
+                LogHelper.Info<SyncDataType>("Updating: {0}", () => Path.GetFileNameWithoutExtension(filePath));
+                var backup = Backup(node);
 
                 ChangeItem change = uDataTypeDefinition.SyncImport(node);
 
                 if (change.changeType == ChangeType.Mismatch)
                 {
-                    Restore(node);
+                    Restore(backup);
                 }
 
                 AddChange(change);
@@ -117,24 +98,24 @@ namespace jumps.umbraco.usync
             }
        }
 
-        private void Backup(XElement node)
+        protected override string Backup(XElement node)
         {
             var _def = new Guid(node.Attribute("Definition").Value);
             if ( CMSNode.IsNode(_def))
             {
                 var dtd = DataTypeDefinition.GetDataTypeDefinition(_def);
                 ExportToDisk(dtd, _backupPath);
+                return XmlDoc.GetSavePath(_backupPath, dtd.Text, Constants.ObjectTypes.DataType);
             }
+            return "";
         }
 
-        private void Restore(XElement node)
+        protected override void Restore(string backup)
         {
-            var name = node.Attribute("Name").Value;
-            XElement backupNode = XmlDoc.GetBackupNode(_backupPath, name, Constants.ObjectTypes.DataType);
+            XElement backupNode = XmlDoc.GetBackupNode(backup);
 
             if (backupNode != null)
                 uDataTypeDefinition.SyncImport(backupNode, false);
-
         }
 
  

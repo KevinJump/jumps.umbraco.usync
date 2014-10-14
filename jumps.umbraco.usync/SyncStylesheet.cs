@@ -17,6 +17,8 @@ using Umbraco.Core.IO ;
 using Umbraco.Core.Logging;
 
 using jumps.umbraco.usync.helpers;
+using jumps.umbraco.usync.Models;
+using System.Xml.Linq;
 
 namespace jumps.umbraco.usync
 {
@@ -44,112 +46,84 @@ namespace jumps.umbraco.usync
         public SyncStylesheet(string folder, string set) :
             base(folder, set) { }
 
-        public void SaveToDisk(StyleSheet item, string path = null)
+        public override void ExportAll(string folder)
         {
-            if (item != null)
+            foreach (StyleSheet item in StyleSheet.GetAll())
             {
-                try
-                {
-                    if (string.IsNullOrEmpty(path))
-                        path = _savePath;
-
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    xmlDoc.AddMD5Hash();
-
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc, path);
-                }
-                catch (Exception ex)
-                {
-                    LogHelper.Info<SyncStylesheet>("uSync: Error Reading Stylesheet {0} - {1}", () => item.Text, () => ex.ToString());
-                    throw new SystemException(string.Format("error saving stylesheet {0}", item.Text), ex); 
-                }
+                ExportToDisk(item, folder);
             }
         }
 
-        public void SaveAllToDisk()
+        public override void ExportToDisk(StyleSheet item, string folder = null)
         {
+            if (item == null)
+                throw new ArgumentNullException("item");
+
+            if (string.IsNullOrEmpty(folder))
+                folder = _savePath;
+
             try
             {
-                foreach (StyleSheet item in StyleSheet.GetAll())
-                {
-                    SaveToDisk(item);
-                }
+                var node = item.SyncExport();
+                XmlDoc.SaveNode(folder, item.Text, node, Constants.ObjectTypes.Stylesheet);
             }
             catch (Exception ex)
             {
-                LogHelper.Info<SyncStylesheet>("uSync: Error Saving all Stylesheets {0}", ()=> ex.ToString());
+                LogHelper.Info<SyncStylesheet>("uSync: Error Reading Stylesheet {0} - {1}", () => item.Text, () => ex.ToString());
             }
         }
 
-        public void ReadAllFromDisk()
+        public override void ImportAll(string folder)
         {
-
-            string path = IOHelper.MapPath(string.Format("{0}{1}",
-                helpers.uSyncIO.RootFolder,
-                "StyleSheet" )) ;
-
-            ReadFromDisk(path); 
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Stylesheet));
+            base.ImportFolder(root);
         }
 
-        public void ReadFromDisk(string path)
+        public override void Import(string filePath)
         {
-            if (Directory.Exists(path))
+            if ( !File.Exists(filePath))            
+                throw new ArgumentNullException("filepPath");
+
+            XElement node = XElement.Load(filePath);
+
+            if ( node.Name.LocalName != "Stylesheet")
+                throw new ArgumentException("Not a stylesheet file", filePath);
+
+            if (tracker.StylesheetChanged(node))
             {
-                User user = new User(0);
+                var backup = Backup(node);
 
-                foreach (string file in Directory.GetFiles(path, "*.config"))
-                {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
+                ChangeItem change = uStylesheet.SyncImport(node);
 
-                    XmlNode node = xmlDoc.SelectSingleNode("//Stylesheet");
+                if (change.changeType == ChangeType.Mismatch)
+                    Restore(backup);
 
-                    if (node != null)
-                    {
-                        if (tracker.StylesheetChanged(xmlDoc))
-                        {
-                            var change = new ChangeItem
-                            {
-                                itemType = ItemType.Stylesheet,
-                                file = file,
-                                changeType = ChangeType.Success
-                            };
-                            
-                            PreChangeBackup(node);
-
-                            LogHelper.Debug<SyncStylesheet>("Stylesheet Install: {0}", () => file);
-                            StyleSheet s = StyleSheet.Import(node, user);
-                            s.Save();
-
-                            change.id = s.Id;
-                            change.name = s.Text;
-
-                            AddChange(change);                          
-
-                            
-                        }
-                        else
-                        {
-                            AddNoChange(ItemType.Stylesheet, file);
-                        }
-                    }
-                }
+                AddChange(change);
             }
+            else
+                AddNoChange(ItemType.Stylesheet, filePath);
         }
 
-        public void PreChangeBackup(XmlNode node)
+        protected override string Backup(XElement node)
         {
-            string name = xmlHelper.GetNodeValue(node.SelectSingleNode("Name"));
-            if (string.IsNullOrEmpty(name))
-                return;
+            var name = node.Element("Name").Value;
+            var stylesheet = StyleSheet.GetByName(name);
 
-            var sheet = StyleSheet.GetByName(name);
-            if (sheet == null)
-                return;
+            if (stylesheet != null)
+            {
+                ExportToDisk(stylesheet, _backupPath);
+                return XmlDoc.GetSavePath(_backupPath, name, Constants.ObjectTypes.Stylesheet);
+            }
 
-            SaveToDisk(sheet, _backupPath);
-                
+            return "" ;
+        }
+
+        protected override void Restore(string backup)
+        {
+            XElement backupNode = XmlDoc.GetBackupNode(backup);
+
+            if (backupNode != null)
+                uStylesheet.SyncImport(backupNode, false);
         }
 
         static string _eventFolder = "";
@@ -172,8 +146,8 @@ namespace jumps.umbraco.usync
 
         static void StyleSheet_AfterSave(StyleSheet sender, SaveEventArgs e)
         {
-            var styleSync = new SyncStylesheet(_eventFolder);
-            styleSync.SaveToDisk(sender); 
+            var styleSync = new SyncStylesheet();
+            styleSync.ExportToDisk(sender,_eventFolder); 
         }
     }
 }

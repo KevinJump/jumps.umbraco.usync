@@ -51,10 +51,20 @@ namespace jumps.umbraco.usync.helpers
 
         #region New Save Events 
 
+        public static void SaveNode(string folder, string path, string name, XElement node, string type)
+        {
+            var fullpath = GetSavePath(folder, path, name, type);
+            SaveNode(fullpath, node);
+        }
+
         public static void SaveNode(string folder, string name, XElement node, string type)
         {
-            string filePath = GetPath(folder, name, type);
+            string filePath = GetSavePath(folder, name, type);
+            SaveNode(filePath, node);
+        }
 
+        public static void SaveNode( string filePath,XElement node)
+        {
             if (File.Exists(filePath))
             {
                 if ( _versions )
@@ -69,26 +79,45 @@ namespace jumps.umbraco.usync.helpers
             node.Save(filePath);
         }
 
-        public void ArchiveFile(string filePath)
+        public static void ArchiveFile(string filePath)
         {
-            
+            // get this - basically move it to an archive...
+            LogHelper.Info<XmlDoc>("#### ARCHIVE NOT IMPLIMENTED ####"); 
         }
 
-        public static string GetPath(string folder, string name, string type)
+        public static string GetSavePath(string folder, string path, string name, string type)
         {
-            return IOHelper.MapPath(String.Format("{0}\\{1}\\{2}.config", folder, type, name));
+            var safeName = ScrubFile(name); 
+            string fullpath = string.Format("{0}\\{1}\\{2}\\{3}.config", 
+                folder.TrimEnd('\\'), 
+                type, 
+                path.Trim('\\'),
+                safeName);
+            return IOHelper.MapPath(fullpath);
+        }
+
+        public static string GetSavePath(string folder, string name, string type)
+        {
+            var safeName = ScrubFile(name);
+            return IOHelper.MapPath(String.Format("{0}\\{1}\\{2}.config", folder, type, safeName));
         }
 
         public static XElement GetBackupNode(string backup, string name, string type)
         {
-            string backupPath = GetPath(String.Format("~\\uSync.Backup\\{0}", backup), name, type);
+            string backupPath = GetSavePath(String.Format("~\\uSync.Backup\\{0}", backup), name, type);
+            return GetBackupNode(backupPath);
+        }
 
-            if ( File.Exists(backupPath))
+
+        public static XElement GetBackupNode(string backupPath)
+        {
+            if (!String.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
             {
                 return XElement.Load(backupPath);
             }
 
             return null;
+
         }
         #endregion 
 
@@ -345,8 +374,16 @@ namespace jumps.umbraco.usync.helpers
                     {
                         // find pre-vals - blank ids...
                         preValue.SetAttributeValue("Id", "");
+
+                        if (preValue.Attribute("mapId") != null)
+                            preValue.Attribute("mapId").Remove();
                     }
                 }
+
+                var nodes = copy.Element("nodes");
+                if (nodes != null)
+                    nodes.Remove();
+
                 return CalculateMD5Hash(copy);
             }
             else
@@ -356,9 +393,9 @@ namespace jumps.umbraco.usync.helpers
         }
 
 
-        public static string CalculateDictionaryHash(XmlDocument node)
+        public static string CalculateDictionaryHash(XElement node)
         {
-            XElement copy = XElement.Load(new XmlNodeReader(node));
+            XElement copy = new XElement(node);
             foreach(var val in copy.Elements("Values"))
             {
                 val.SetAttributeValue("Id", "");
@@ -420,7 +457,19 @@ namespace jumps.umbraco.usync.helpers
                 copy.Element("Hash").Remove();
 
             return CalculateMD5Hash(copy, removePreVals);
+        }
 
+        public static string ReCalculateHash(XElement node, string[] values)
+        {
+            var hashstring = "" ;
+
+            foreach(var val in values)
+            {
+                var i = node.Element(val);
+                if (i != null)
+                    hashstring += i.ToString(SaveOptions.DisableFormatting);
+            }
+            return CalculateMD5Hash(hashstring);
         }
         #endregion
     }

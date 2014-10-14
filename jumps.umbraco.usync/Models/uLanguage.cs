@@ -1,20 +1,21 @@
-﻿using System;
+﻿using jumps.umbraco.usync.helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using umbraco.cms.businesslogic;
+using umbraco.cms.businesslogic.language;
 
 namespace jumps.umbraco.usync.Models
 {
-    public static class uDictionaryItem 
+    public static class uLanguage
     {
-        public static XElement SyncExport(this Dictionary.DictionaryItem item)
+        public static XElement SyncExport(this Language item)
         {
             XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
             xmlDoc.AppendChild(item.ToXml(xmlDoc));
-            
+
             return XElement.Load(new XmlNodeReader(xmlDoc));
         }
 
@@ -22,25 +23,29 @@ namespace jumps.umbraco.usync.Models
         {
             var change = new ChangeItem
             {
+                itemType = ItemType.Languages,
                 changeType = ChangeType.Success,
-                itemType = ItemType.Dictionary,
-                name = node.Attribute("Key").Value
+                name = node.Element("CultureAlias").Value
             };
 
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(node.ToString());
 
-            var xmlNode = xmlDoc.SelectSingleNode("//DictionaryItem");
+            var xmlNode = xmlDoc.SelectSingleNode("//Language");
 
-            Dictionary.DictionaryItem item = Dictionary.DictionaryItem.Import(xmlNode);
-            if (item != null)
+            var l = Language.Import(xmlNode);
+
+            if ( l != null )
             {
-                item.Save();
-                change.id = item.id;
-                change.name = item.key;
+                l.Save();
+
+                if ( postCheck && tracker.LanguageChanged(node))
+                {
+                    change.changeType = ChangeType.Mismatch;
+                }
             }
 
-            return change; 
+            return change;
         }
     }
 }

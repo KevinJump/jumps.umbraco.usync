@@ -61,14 +61,16 @@ namespace jumps.umbraco.usync.helpers
             n.InnerText = md5;
             node.DocumentElement.AppendChild(n);
         }
-
-        public static void AddDictionaryHash(this XmlDocument node)
+        /*
+        public static void AddDictionaryHash(this XmlDocument xmlDoc)
         {
+            XElement node = XElement.Load(new XmlNodeReader(xmlDoc));
             string md5 = XmlDoc.CalculateDictionaryHash(node);
             var n = node.CreateElement("Hash");
             n.InnerText = md5;
             node.DocumentElement.AppendChild(n);
         }
+         */
 
     }
 }

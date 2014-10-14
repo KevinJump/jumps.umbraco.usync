@@ -13,12 +13,12 @@ using umbraco.BusinessLogic;
 
 namespace jumps.umbraco.usync.Models
 {
-    public class uDataTypeDefinition : DataTypeDefinition
+    public static class uDataTypeDefinition
     {
-        public XElement SyncExport()
+        public static XElement SyncExport(this DataTypeDefinition item)
         {
             // id mapping
-            var _id = this.DataType.Id.ToString();
+            var _id = item.DataType.Id.ToString();
 
             MappedDataTypeSettings mappedSettings = null;
 
@@ -31,30 +31,35 @@ namespace jumps.umbraco.usync.Models
 
             XElement node = new XElement("DataType");
 
-            node.Add(new XAttribute("Name", this.Text));
-            node.Add(new XAttribute("Id", this.DataType.Id.ToString()));
-            node.Add(new XAttribute("Definition", this.UniqueId.ToString()));
+            node.Add(new XAttribute("Name", item.Text));
+            node.Add(new XAttribute("Id", item.DataType.Id.ToString()));
+            node.Add(new XAttribute("Definition", item.UniqueId.ToString()));
 
             XElement preVals = new XElement("PreValues");
 
-            List<PreValue> _preVals = PreValues.GetPreValues(this.Id).Values.OfType<PreValue>().OrderBy(p => p.SortOrder).ThenBy(p => p.Id).ToList();
+            List<PreValue> _preVals = GetPreValues(item);
 
-            foreach (PreValue item in _preVals)
+            foreach (PreValue preValItem in _preVals)
             {
                 /// pre-value mapping 
                 /// - go off and try to get any id' mapped to something
                 /// - more portable.
                 /// 
-                var preValueValue = item.Value;
-                if (mappedSettings != null)
-                {
-                    PreValMapper.MapPreValId(preValueValue, node, mappedSettings);
-                }
+                var preValueValue = preValItem.Value;
 
                 XElement preValue = new XElement("PreValue");
+                preValue.Add(new XAttribute("Id", preValItem.Id.ToString()));
+                preValue.Add(new XAttribute("Value", preValItem.Value.ToString()));
 
-                preValue.Add(new XAttribute("Id", item.Id.ToString()));
-                preValue.Add(new XAttribute("Value", item.Value.ToString()));
+                if (mappedSettings != null)
+                {
+                    Guid _specialId = Guid.NewGuid();
+
+                    if ( PreValMapper.MapPreValId(preValueValue, node, _specialId, mappedSettings) )
+                    {
+                        preValue.Add(new XAttribute("mapId", _specialId));
+                    }
+                }
 
                 preVals.Add(preValue);
             }
@@ -93,6 +98,7 @@ namespace jumps.umbraco.usync.Models
 
             return change;
         }
+     
 
         /// <summary>
         /// DataType Import - taken from the core 
@@ -146,7 +152,7 @@ namespace jumps.umbraco.usync.Models
                 if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
                 {
                     // multi-node tree picker! do a match sync...
-                    return MatchImport(dtd, node, u);
+                    return MatchImport(dtd, node);
                 }
                 else
                 {
@@ -198,19 +204,24 @@ namespace jumps.umbraco.usync.Models
 
                         if (val != null)
                         {
-                            // here we need to transpose any mapped ids we might have ...
                             var propValue = val.Value;
-                            if (mapIds.Count() > 0)
-                            {
-                                foreach (var id in mapIds)
-                                {
-                                    if (propValue.Contains(id))
-                                    {
-                                        // this property has the ID in it - so it 'might' be one we want 
-                                        // to map - the MapIDtoLocal function can work that bit out and
-                                        // map it if we need it to. 
-                                        propValue = PreValMapper.MapIDtoLocal(id, propValue, node, mappedSettings);
 
+                            var mapId = xmlPv.Attribute("mapId");
+                            if (mapId != null)
+                            {
+                                // here we need to transpose any mapped ids we might have ...
+                                if (mapIds.Count() > 0)
+                                {
+                                    foreach (var id in mapIds)
+                                    {
+                                        if (propValue.Contains(id))
+                                        {
+                                            // this property has the ID in it - so it 'might' be one we want 
+                                            // to map - the MapIDtoLocal function can work that bit out and
+                                            // map it if we need it to. 
+                                            propValue = PreValMapper.MapIDtoLocal(id, propValue, node, mappedSettings);
+
+                                        }
                                     }
                                 }
                             }
@@ -266,7 +277,7 @@ namespace jumps.umbraco.usync.Models
         /// <param name="xmlData"></param>
         /// <param name="u"></param>
         /// <returns></returns>
-        public DataTypeDefinition MatchImport(DataTypeDefinition dtd, XElement node, User u)
+        private static DataTypeDefinition MatchImport(DataTypeDefinition dtd, XElement node)
         {
             LogHelper.Debug<SyncDataType>("usync - Match Import: for {0}", () => dtd.Text);
 

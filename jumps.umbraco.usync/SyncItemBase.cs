@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 
 namespace jumps.umbraco.usync
 {
@@ -11,30 +13,43 @@ namespace jumps.umbraco.usync
     /// </summary>
     public abstract class SyncItemBase<T>: IDisposable
     {
-        
-        protected ChangeType _changeType; 
+        public SyncItemBase(string root)
+        {
+            _savePath = root;
+            _changeCount = 0;
+            _changes = new List<ChangeItem>();
+        }
 
+        public SyncItemBase(string root, string set)
+        {
+            _savePath = root;
+            _changeCount = 0;
+            if (!string.IsNullOrEmpty(set))
+            {
+                _backupPath = string.Format("~\\uSync.Backup\\{0}", set);
+            }
+            _changes = new List<ChangeItem>();
+        }
+
+        #region ChangeTracking 
+        protected ChangeType _changeType; 
         protected string _savePath;
         protected string _backupPath;
         private int _changeCount;
         private List<ChangeItem> _changes;
-
         public bool ChangesMade
         {
             get { return _changeCount > 0; }
         }
-
         public int ChangeCount
         {
             get { return _changeCount; }
         }
-
         public List<ChangeItem> ChangeList
         {
             get { return _changes; }
         }
-
-        protected void AddChange(   ChangeItem item)
+        protected void AddChange(ChangeItem item)
         {
             if ( item.changeType == null )
                 item.changeType = _changeType;
@@ -44,7 +59,6 @@ namespace jumps.umbraco.usync
         
             _changes.Add(item);
         }
-
         protected void AddNoChange(ItemType type, string filename)
         {
             var name = System.IO.Path.GetFileNameWithoutExtension(filename);
@@ -61,30 +75,33 @@ namespace jumps.umbraco.usync
                 itemType = type
             });
         }
-
-        public SyncItemBase(string root)
-        {
-            _savePath = root;
-            _changeCount = 0;
-            _changes = new List<ChangeItem>();
-
-        }
-
-        public SyncItemBase(string root, string set)
-        {
-            _savePath = root;
-            _changeCount = 0;
-            if (!string.IsNullOrEmpty(set))
-            {
-                _backupPath = string.Format("~\\uSync.Backup\\{0}", set);
-            }
-            _changes = new List<ChangeItem>();
-        }
-
+        #endregion 
+        
+        #region Export and Import
         public abstract void ExportAll(string folder);
         public abstract void ExportToDisk(T item, string folder = null);
         public abstract void Import(string filePath);
         public abstract void ImportAll(string folder);
+
+        protected void ImportFolder(string folder)
+        {
+            if (Directory.Exists(folder))
+            {
+                foreach (string file in Directory.GetFiles(folder, Constants.SyncFileMask))
+                {
+                    Import(file);
+                }
+
+                foreach (string subFolder in Directory.GetDirectories(folder))
+                {
+                    ImportFolder(subFolder);
+                }
+            }
+        }
+
+        protected abstract string Backup(XElement node);
+        protected abstract void Restore(string backup);
+        #endregion 
 
         public void Dispose()
         {

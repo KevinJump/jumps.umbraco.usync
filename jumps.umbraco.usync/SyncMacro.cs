@@ -17,7 +17,8 @@ using Umbraco.Core.Logging;
 using Umbraco.Core;
 
 using jumps.umbraco.usync.helpers;
-
+using jumps.umbraco.usync.Models;
+using System.Xml.Linq;
 
 namespace jumps.umbraco.usync
 {
@@ -30,7 +31,10 @@ namespace jumps.umbraco.usync
     /// 
     /// SyncMacro uses the package API to read write the xml
     /// files for macros. no structure in macros.
+    /// 
     /// </summary>
+    /// 
+    ///
     public class SyncMacro : SyncItemBase<Macro>
     {
         public SyncMacro() :
@@ -42,129 +46,86 @@ namespace jumps.umbraco.usync
         public SyncMacro(string folder, string set) :
             base(folder, set) { }
 
-        public void SaveToDisk(Macro item, string path = null)
+        public override void ExportAll(string folder)
         {
-            if (item != null)
+            foreach(Macro item in Macro.GetAll())
             {
-                try
-                {
-                    if (string.IsNullOrEmpty(path))
-                        path = _savePath;
-
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Alias, xmlDoc, path);
-                }
-                catch (Exception ex)
-                {
-                    LogHelper.Info<SyncMacro>("uSync: Error Saving Macro {0} - {1}", ()=> item.Name, ()=> ex.ToString());
-                }
+                ExportToDisk(item);
             }
         }
 
-        public void SaveAllToDisk()
+        public override void ExportToDisk(Macro item, string folder = null)
         {
+            if (item == null)
+                throw new ArgumentNullException("item");
+
+            if (string.IsNullOrEmpty(folder))
+                folder = _savePath;
+
             try
             {
-                foreach (Macro item in Macro.GetAll())
-                {
-                    SaveToDisk(item);
-                }
+                XElement node = item.SyncExport();
+                XmlDoc.SaveNode(folder, item.Alias, node, Constants.ObjectTypes.Macro);
             }
             catch (Exception ex)
             {
-                LogHelper.Info<SyncMacro>("uSync: Error Saving All Macros {0}", ()=> ex.ToString());
+                LogHelper.Info<SyncMacro>("uSync: Error Saving Macro {0} - {1}", () => item.Name, () => ex.ToString());
             }
         }
 
-        public void ReadAllFromDisk()
+        public override void ImportAll(string folder)
         {
-            string path = IOHelper.MapPath(string.Format("{0}{1}",
-                this._savePath,
-                "Macro"));
-
-            ReadFromDisk(path); 
-
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Macro));
+            base.ImportFolder(root);
         }
 
-        public void ReadFromDisk(string path)
+        public override void Import(string filePath)
         {
-            if ( Directory.Exists(path) )
+            if (!File.Exists(filePath))
+                throw new ArgumentNullException("filePath");
+
+            XElement node = XElement.Load(filePath);
+
+            if (node.Name.LocalName != "macro")
+                throw new ArgumentException("Not a macro file", filePath);
+
+            if (tracker.MacroChanged(node))
             {
-                foreach (string file in Directory.GetFiles(path, "*.config"))
-                {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
+                var backup = Backup(node);
 
-                    XmlNode node = xmlDoc.SelectSingleNode("//macro");
+                ChangeItem change = uMacro.SyncImport(node);
 
-                    if (node != null)
-                    {
-                        if (tracker.MacroChanged(xmlDoc))
-                        {
-                            var change = new ChangeItem
-                            {
-                                itemType = ItemType.Macro,
-                                file = file,
-                                changeType = ChangeType.Success
-                            };
+                if (change.changeType == ChangeType.Mismatch)
+                    Restore(backup);
 
-                            PreChangeBackup(node);
-                                                        
-                            Macro m = Macro.Import(node);
-
-                            if (m != null)
-                            {
-                                m.Save();
-
-                                change.name = m.Name;
-                                change.id = m.Id;
-                                
-                                if (tracker.MacroChanged(xmlDoc))
-                                {
-                                    // assume the save now didn't work?
-                                    LogHelper.Info<SyncMacro>("Macro doesn't match - rollback?");
-
-                                    change.changeType = ChangeType.Mismatch;
-                                    change.message = "Import doesn't match final";
-
-
-                                    AddChange(change);
-                                    // here we would rollback ? 
-
-                                }
-                                else
-                                {
-                                    AddChange(change);
-                                }
-                            }
-                            else
-                            {
-                                // here? if the import doesn't return and ID is that OK ? 
-                            }
-                        }
-                        else
-                        {
-                            AddNoChange(ItemType.Macro, file);
-                        }
-                    }
-                }
+                AddChange(change);
             }
+            else
+                AddNoChange(ItemType.Macro, filePath);
         }
 
-        private void PreChangeBackup(XmlNode node)
+        protected override string Backup(XElement node)
         {
-            string alias = XmlHelper.GetNodeValue(node.SelectSingleNode("alias"));
-            if (string.IsNullOrEmpty(alias))
-                return;
-
+            var alias = node.Element("alias").Value;
             var macro = Macro.GetByAlias(alias);
-            if (macro == null)
-                return;
 
-            SaveToDisk(macro, _backupPath);
+            if ( macro != null )
+            {
+                ExportToDisk(macro, _backupPath);
+                return XmlDoc.GetSavePath(_backupPath, macro.Alias, Constants.ObjectTypes.Macro);
+            }
+
+            return "";
         }
-     
+
+        protected override void Restore(string backup)
+        {
+            XElement backupNode = XmlDoc.GetBackupNode(backup);
+
+            if (backupNode != null)
+                uMacro.SyncImport(backupNode, false);
+        }
+
         static string _eventFolder = "";
 
         public static void AttachEvents(string folder)
@@ -184,7 +145,7 @@ namespace jumps.umbraco.usync
         static void Macro_AfterSave(Macro sender, SaveEventArgs e)
         {
             SyncMacro m = new SyncMacro();
-            m.SaveToDisk(sender); 
+            m.ExportToDisk(sender, _eventFolder); 
         }
     }
 }

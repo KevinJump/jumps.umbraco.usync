@@ -47,10 +47,8 @@ namespace jumps.umbraco.usync.helpers
             return (!filehash.Equals(dbMD5));
         }
 
-        public static bool MediaTypeChanged(XmlDocument xdoc)
+        public static bool MediaTypeChanged(XElement node)
         {
-            XElement node = XElement.Load(new XmlNodeReader(xdoc));
-
             string filehash = XmlDoc.ReCalculateHash(node);
             if (string.IsNullOrEmpty(filehash))
                 return true;
@@ -70,10 +68,8 @@ namespace jumps.umbraco.usync.helpers
             return (!filehash.Equals(dbMD5));
         }
 
-        public static bool MacroChanged(XmlDocument xDoc)
+        public static bool MacroChanged(XElement node)
         {
-            XElement node = XElement.Load(new XmlNodeReader(xDoc));
-
             string filehash = XmlDoc.ReCalculateHash(node);
             if (string.IsNullOrEmpty(filehash))
                 return true;
@@ -114,17 +110,16 @@ namespace jumps.umbraco.usync.helpers
             if ( dtd == null )
                 return true;
 
-            XElement dbNode = ((uDataTypeDefinition)dtd).SyncExport();
+            XElement dbNode = dtd.SyncExport();
             var dbMD5 = XmlDoc.CalculateMD5Hash(dbNode, true);
 
             return (!filehash.Equals(dbMD5));
         }
 
-        public static bool TemplateChanged(XmlDocument xDoc)
+        public static bool TemplateChanged(XElement node)
         {
-            XElement node = XElement.Load(new XmlNodeReader(xDoc));
-
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            var hashProps = new string[] { "Name", "Alias", "Master" };
+            string filehash = XmlDoc.ReCalculateHash(node, hashProps);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -139,17 +134,18 @@ namespace jumps.umbraco.usync.helpers
             // for a template - we never change the contents - lets just md5 the two 
             // properties we care about (and save having to load the thing from disk?
 
-            string values = item.Alias + item.Text;
-            string dbMD5 = XmlDoc.CalculateMD5Hash(values);
+            XmlDocument doc = XmlDoc.CreateDoc();
+            doc.AppendChild(item.ToXml(doc));
+            var dbNode = XElement.Load(new XmlNodeReader(doc));
+            var dbMD5 = XmlDoc.ReCalculateHash(dbNode, hashProps);
 
             return (!filehash.Equals(dbMD5));
         }
 
-        public static bool StylesheetChanged(XmlDocument xDoc)
+        public static bool StylesheetChanged(XElement node)
         {
-            XElement node = XElement.Load(new XmlNodeReader(xDoc));
-
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            var hashProps = new string[] {"Name", "FileName", "Properties"};
+            string filehash = XmlDoc.ReCalculateHash(node, hashProps);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -163,15 +159,14 @@ namespace jumps.umbraco.usync.helpers
 
             XmlDocument doc = XmlDoc.CreateDoc();
             doc.AppendChild(item.ToXml(doc));
-            var dbMD5 = XmlDoc.CalculateMD5Hash(doc);
+            var dbNode = XElement.Load(new XmlNodeReader(doc));
+            var dbMD5 = XmlDoc.ReCalculateHash(dbNode, hashProps) ;
 
             return (!filehash.Equals(dbMD5));
         }
 
-        public static bool LanguageChanged(XmlDocument xDoc)
+        public static bool LanguageChanged(XElement node)
         {
-            XElement node = XElement.Load(new XmlNodeReader(xDoc));
-
             var name = node.Attribute("CultureAlias");
             if (name == null)
                 return true;
@@ -191,7 +186,7 @@ namespace jumps.umbraco.usync.helpers
 
         public static bool DictionaryChanged(XElement node)
         {
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            string filehash = XmlDoc.CalculateDictionaryHash(node);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -215,7 +210,8 @@ namespace jumps.umbraco.usync.helpers
             // here we have the key - so is this the same? 
             XmlDocument doc = XmlDoc.CreateDoc();
             doc.AppendChild(dictionaryItems[key.Value].ToXml(doc));
-            string dbMD5 = XmlDoc.CalculateDictionaryHash(doc);
+            var dbNode = XElement.Load(new XmlNodeReader(doc));
+            string dbMD5 = XmlDoc.CalculateDictionaryHash(dbNode);
             
             return (!filehash.Equals(dbMD5));
         }

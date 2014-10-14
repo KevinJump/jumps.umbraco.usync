@@ -8,7 +8,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq; 
 
-using umbraco.cms.businesslogic;
+// using umbraco.cms.businesslogic;
 using umbraco.cms.businesslogic.web;
 using umbraco.cms.businesslogic.packager;
 using umbraco.BusinessLogic;
@@ -21,6 +21,7 @@ using Umbraco.Core.Models;
 using Umbraco.Core.Logging;
 
 using jumps.umbraco.usync.helpers;
+using jumps.umbraco.usync.Models;
 
 namespace jumps.umbraco.usync
 {
@@ -32,70 +33,153 @@ namespace jumps.umbraco.usync
     /// in sync.  
     /// </summary>
     public class SyncDocType : SyncItemBase<DocumentType>
-    {        
+    {   
+        public SyncDocType() :
+            base(uSyncSettings.Folder) { }
+
         public SyncDocType(string folder) :
             base(folder) { }
 
         public SyncDocType(string folder, string set) :
             base(folder, set) { }        
 
-        static Dictionary<string, string> updated; 
+        static Dictionary<string, string> updated;
 
-        /// <summary>
-        /// save a document type to the disk, the document type will be 
-        /// saved as an xml file, in a folder structure that mimics 
-        /// that of the document type structure in umbraco.
-        ///  
-        /// this makes it easier to read them back in
-        /// </summary>
-        /// <param name="item">DocumentType to save</param>
-        public void SaveToDisk(DocumentType item, string path = null)
+        public override void ExportAll(string folder)
         {
-            if (item != null)
+            foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
             {
-                try
+                if (item != null)
                 {
-                    XmlDocument node = helpers.XmlDoc.CreateDoc();
-                    node.AppendChild(item.ToXml(node));
-
-                    if (string.IsNullOrEmpty(path))
-                        path = this._savePath;
-
-                    // add tabs..
-                    helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), GetDocPath(item), "def", node, path);
-                }
-                catch (Exception e)
-                {
-                    LogHelper.Debug<SyncDocType>("uSync: Error Saving DocumentType {0} - {1}", 
-                        ()=> item.Alias, ()=> e.ToString()); 
+                    ExportToDisk(item);
                 }
             }
         }
 
-        /// <summary>
-        /// Saves all document types in umbraco.
-        /// 
-        /// enumerates through types and calls <see cref="SaveToDisk"/>
-        /// </summary>
-        public void SaveAllToDisk()
+        public override void ExportToDisk(DocumentType item, string folder = null)
         {
+            if (item == null)
+                throw new ArgumentNullException("item");
+
+            if (string.IsNullOrEmpty(folder))
+                folder = _savePath;
+
             try
             {
-                foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
+                XElement node = item.SyncExport();
+                XmlDoc.SaveNode(folder, GetDocPath(item), "def", node, Constants.ObjectTypes.DocType);
+            }
+            catch (Exception e)
+            {
+                LogHelper.Debug<SyncDocType>("uSync: Error Saving DocumentType {0} - {1}",
+                    () => item.Alias, () => e.ToString());
+            }
+        }
+
+        Dictionary<string, Tuple<string, string>> updates;
+
+        public override void ImportAll(string folder)
+        {
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.DocType));
+
+            updates = new Dictionary<string,Tuple<string,string>>();
+            
+            base.ImportFolder(root);
+
+            SecondPassFitAndFix();
+        }
+
+        public override void Import(string filePath)
+        {
+            if (!System.IO.File.Exists(filePath))
+                throw new ArgumentNullException("filePath");
+
+            XElement node = XElement.Load(filePath);
+
+            if (node.Name.LocalName != "DocumentType")
+                throw new ArgumentException("Not a DocumentType file", filePath);
+
+            if (tracker.DocTypeChanged(node))
+            {
+                var backup = Backup(node);
+
+                ChangeItem change = uDocType.SyncImport(node);
+
+                if (change.changeType == ChangeType.Success)
                 {
-                    if (item != null)
+                    var alias = node.Element("Info").Element("Alias").Value;
+
+                    if ( !updates.ContainsKey(alias)) {
+                        updates.Add(alias, new Tuple<string, string>(filePath, backup));
+                    }
+                    else {
+                        // duplicate
+                        change.changeType = ChangeType.ImportFail;
+                        change.message = "Duplicated doctype found";
+                        AddChange(change);
+                    }                   
+                }
+            }
+            else
+                AddNoChange(ItemType.DocumentType, filePath);
+        }
+
+        private void SecondPassFitAndFix()
+        {
+            foreach(var update in updates)
+            {
+                var item = ApplicationContext.Current.Services.ContentTypeService.GetContentType(update.Key);
+                if (item != null)
+                {
+                    if (System.IO.File.Exists(update.Value.Item1))
                     {
-                        SaveToDisk(item);
+                        var node = XElement.Load(update.Value.Item1);
+
+                        if (node != null)
+                        {
+                            var change = uDocType.SyncImportFitAndFix(item, node);
+
+                            if (change.changeType == ChangeType.Mismatch)
+                            {
+                                Restore(update.Value.Item2);
+                            }
+                            AddChange(change);
+                        }
                     }
                 }
             }
-            catch( Exception ex )
+        }
+
+        protected override string Backup(XElement node)
+        {
+            var alias = node.Element("Info").Element("Alias").Value;
+            var docType = DocumentType.GetByAlias(alias);
+
+            if (docType != null)
             {
-                // error saving to disk, can happen if Umbraco has orphaned doctypes & GetAll thows an error! 
-                LogHelper.Debug<SyncDocType>("uSync: Error Writing doctypes to disk {0}", ()=> ex.ToString());
+                ExportToDisk(docType, _backupPath);
+                return XmlDoc.GetSavePath(_backupPath, GetDocPath(docType), "def", Constants.ObjectTypes.DocType);
+            }
+
+            return "";
+        }
+
+        protected override void Restore(string backup)
+        {
+            XElement backupNode = XmlDoc.GetBackupNode(backup);
+            if (backupNode != null)
+            {
+                uDocType.SyncImport(backupNode, false);
+
+                var alias = backupNode.Element("Info").Element("Alias").Value;
+
+                var contentType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
+                if (contentType != null)
+                    uDocType.SyncImportFitAndFix(contentType, backupNode, false);
             }
         }
-        
+
+      
         /// <summary>
         /// works out what the folder stucture for a doctype should be.
         /// 
@@ -122,279 +206,9 @@ namespace jumps.umbraco.usync
                 // a preceeding '/' on the path, which is nice
                 path = string.Format(@"{0}\{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
             }
-         
-            return path; 
+
+            return path;
         }
-
-        
-        /// <summary>
-        /// Gets all teh documentTypes from the disk, and puts them into
-        /// umbraco 
-        /// </summary>
-        public void ReadAllFromDisk()
-        {
-            // start the enumberation, get the root
-
-            // TODO: nicer way of getting the type string 
-            //       (without creating a dummy doctype?)
-            string path = IOHelper.MapPath(string.Format("{0}{1}",
-                this._savePath,
-                "DocumentType"));
-
-            // rest the alias names
-            updated = new Dictionary<string, string>();
-
-            // import stuff
-            ReadFromDisk(path);
-
-            //
-            // Fit and Fix : 
-            // because we have a List of updated nodes and files, this should be quicker
-            // than traversing the tree again. Also we just do the update of the bit we
-            // need to update
-            // 
-            SecondPassFitAndFix(); 
-        }
-
-        /// <summary>
-        ///  reads all documentTypes in a given folder and adds them to umbraco
-        ///  
-        /// it then recurses into any subfolders. this means we can recreate the 
-        /// document types for a umbraco install, making sure we create the parent
-        /// document types first, (in the top folders) that way we get no failures
-        /// based on dependency, 
-        /// 
-        /// because we are doing this with individual xml files, it's simpler code
-        /// than how the package manager does it with one massive XML file. 
-        /// </summary>
-        /// <param name="path"></param>
-        private void ReadFromDisk(string path) 
-        {
-            if (Directory.Exists(path))
-            {
-                // get all the xml files in this folder 
-                // we are sort of assuming they are doctype ones.
-                foreach (string file in Directory.GetFiles(path, "*.config"))
-                {                    
-                    XElement node = XElement.Load(file) ;                                                    
-                    if (node != null ) 
-                    {
-                        // checking - we only change what we need to. 
-                        if (tracker.DocTypeChanged(node))
-                        {
-                            LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
-
-                            var change = new ChangeItem
-                            {
-                                itemType = ItemType.DocumentType,
-                                changeType = ChangeType.Success,
-                                file = file
-                            };
-
-                            PreChangeBackup(node);
-                            
-                            ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
-
-                            if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
-                            {
-                                var alias = node.Element("Info").Element("Alias").Value;
-                                updated.Add(alias, file);
-                                change.name = alias;
-                                AddChange(change);
-                            }
-                            else
-                            {
-                                LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder");
-                                change.changeType = ChangeType.ImportFail;
-                                change.message = "Multiple doctypes detected";
-                                AddChange(change);                           
-                            }
-                        }
-                        else
-                        {
-                            LogHelper.Debug<SyncDocType>("No DocType Changes detected for {0}", ()=> Path.GetDirectoryName(file));
-                            AddNoChange(ItemType.DocumentType, file);
-                        }
-                    }
-                }
-            
-                // now see if there are any folders we should pop into
-                foreach (string folder in Directory.GetDirectories(path))
-                {
-                    ReadFromDisk(folder);
-                }                
-            }
-        }
-
-        private void SecondPassFitAndFix()
-        {
-            foreach (KeyValuePair<string, string> update in updated)
-            {
-                XElement node = XElement.Load(update.Value);
-                if (node != null)
-                {
-                    // load the doctype
-                    IContentType docType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(update.Key);
-
-                    if (docType != null)
-                    {
-                        // import structure
-                        ImportStructure(docType, node); 
-                        
-                        // fix tab order 
-                        // TabSortOrder(docType, node); 
-
-                        // delete things that are not in our source xml?
-                        RemoveMissingProperties(docType, node);
-
-                        UpdateExistingProperties(docType, node);
-                        
-                        // save
-                        ApplicationContext.Current.Services.ContentTypeService.Save(docType);
-                    }
-                }
-            }
-        }
-
-        private void ImportStructure(IContentType docType, XElement node)
-        {
-            XElement structure = node.Element("Structure");
-
-            List<ContentTypeSort> allowed = new List<ContentTypeSort>();
-            int sortOrder = 0;
-
-            foreach (var doc in structure.Elements("DocumentType"))
-            {
-                string alias = doc.Value;
-                IContentType aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
-
-                if (aliasDoc != null)
-                {
-                    allowed.Add(new ContentTypeSort(new Lazy<int>(() => aliasDoc.Id), sortOrder, aliasDoc.Name));
-                    sortOrder++;
-                }
-            }
-
-            docType.AllowedContentTypes = allowed;
-        }
-
-        private void TabSortOrder(IContentType docType, XElement node)
-        {
-            XElement tabs = node.Element("tabs");
-
-            foreach (var tab in tabs.Elements("tab"))
-            {
-                var caption = tab.Element("Caption").Value; 
-
-                if (tab.Element("SortOrder") != null)
-                {
-                    var sortOrder = tab.Element("SortOrder").Value;
-                    docType.PropertyGroups[caption].SortOrder = int.Parse(sortOrder);                     
-                }
-            }
-        }
-
-        private void RemoveMissingProperties(IContentType docType, XElement node)
-        {
-            if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
-            {
-                LogHelper.Debug<SyncDocType>("DeletePropertyValue = false - exiting"); 
-                return;
-            }
-
-            List<string> propertiesToRemove = new List<string>(); 
-
-            foreach (var property in docType.PropertyTypes)
-            {
-                // is this property in our xml ?
-                XElement propertyNode = node.Element("GenericProperties")
-                                            .Elements("GenericProperty")
-                                            .Where(x => x.Element("Alias").Value == property.Alias)
-                                            .SingleOrDefault();
-
-                if (propertyNode == null)
-                {
-                    // delete it from the doctype ? 
-                    propertiesToRemove.Add(property.Alias);
-                    LogHelper.Debug<SyncDocType>("Removing property {0} from {1}", 
-                        ()=> property.Alias, ()=> docType.Name);
-                    
-                }                
-            }
-
-            foreach (string alias in propertiesToRemove)
-            {
-                docType.RemovePropertyType(alias);
-            }
-        }
-
-        private void UpdateExistingProperties(IContentType docType, XElement node)
-        {
-            Dictionary<string, string> tabMoves = new Dictionary<string, string>();
-
-            foreach(var property in docType.PropertyTypes)
-            {
-                XElement propNode = node.Element("GenericProperties")
-                                        .Elements("GenericProperty")
-                                        .Where(x => x.Element("Alias").Value == property.Alias)
-                                        .SingleOrDefault();
-                if ( propNode != null )
-                {
-                    property.Name = propNode.Element("Name").Value;
-                    property.Alias = propNode.Element("Alias").Value;
-                    property.Mandatory = bool.Parse(propNode.Element("Mandatory").Value);
-                    property.ValidationRegExp = propNode.Element("Validation").Value;
-                    property.Description = propNode.Element("Description").Value;
-
-                    // change of type ? 
-                    var defId = Guid.Parse(propNode.Element("Definition").Value);
-                    var dtd = ApplicationContext.Current.Services.DataTypeService.GetDataTypeDefinitionById(defId);
-                    if ( dtd != null && property.DataTypeDefinitionId != dtd.Id)
-                    {
-                        property.DataTypeDefinitionId = dtd.Id;
-                    }
-
-                    var tabName = propNode.Element("Tab").Value;
-                    if ( !string.IsNullOrEmpty(tabName) )
-                    {
-                        if ( docType.PropertyGroups.Contains(tabName))
-                        {
-                            var propGroup = docType.PropertyGroups.First(x => x.Name == tabName);
-                            if (!propGroup.PropertyTypes.Contains(property.Alias))
-                            {
-                                LogHelper.Info<SyncDocType>("Moving between tabs..");
-                                tabMoves.Add(property.Alias, tabName);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // you have to move tabs outside the loop as you are 
-            // chaning the collection. 
-            foreach(var move in tabMoves)
-            {
-                docType.MovePropertyType(move.Key, move.Value);
-            }
-
-        }
-
-        private void PreChangeBackup(XElement node)
-        {
-            if (string.IsNullOrEmpty(_backupPath))
-                return;
-
-            var name = node.Element("Info").Element("Alias").Value;
-
-            var contentService = ApplicationContext.Current.Services.ContentTypeService;
-            var item = DocumentType.GetByAlias(name);
-
-            if (item == null)
-                return;
-
-            SaveToDisk(item, _backupPath);
-        }
-
 
         static string _eventFolder = ""; 
         
@@ -420,7 +234,7 @@ namespace jumps.umbraco.usync
 
                 foreach (var docType in e.SavedEntities)
                 {
-                    docSync.SaveToDisk(new DocumentType(docType.Id));
+                    docSync.ExportToDisk(new DocumentType(docType.Id), _eventFolder);
                 }
             }
         }

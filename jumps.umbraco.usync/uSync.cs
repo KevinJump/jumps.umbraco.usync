@@ -109,33 +109,33 @@ namespace jumps.umbraco.usync
 
             if (uSyncSettings.Elements.DocumentTypes)
             {
-                var docSync = new SyncDocType(folder);
-                docSync.SaveAllToDisk();
+                var docSync = new SyncDocType();
+                docSync.ExportAll(folder);
             }
 
             if (uSyncSettings.Elements.Macros)
             {
-                var macroSync = new SyncMacro(folder);
-                macroSync.SaveAllToDisk();
+                var macroSync = new SyncMacro();
+                macroSync.ExportAll(folder);
             }
 
             if ( uSyncSettings.Elements.MediaTypes )
             {
-                var mediaSync = new SyncMediaTypes(folder);
-                mediaSync.SaveAllToDisk();
+                var mediaSync = new SyncMediaTypes();
+                mediaSync.ExportAll(folder);
             }
 
 
             if (uSyncSettings.Elements.Templates)
             {
-                var tSync = new SyncTemplate(folder);
-                tSync.SaveAllToDisk();
+                var tSync = new SyncTemplate();
+                tSync.ExportAll(folder);
             }
 
             if (uSyncSettings.Elements.Stylesheets)
             {
-                var styleSync = new SyncStylesheet(folder);
-                styleSync.SaveAllToDisk();
+                var styleSync = new SyncStylesheet();
+                styleSync.ExportAll(folder);
             }
 
             if (uSyncSettings.Elements.DataTypes)
@@ -146,10 +146,10 @@ namespace jumps.umbraco.usync
 
             if (uSyncSettings.Elements.Dictionary)
             {
-                var langSync = new SyncLanguage(folder);
-                langSync.SaveAllToDisk();
+                var langSync = new SyncLanguage();
+                langSync.ExportAll(folder);
 
-                var dicSync = new SyncDictionary(folder);
+                var dicSync = new SyncDictionary();
                 dicSync.ExportAll(folder);
             }
 
@@ -188,7 +188,7 @@ namespace jumps.umbraco.usync
                 if (uSyncSettings.Elements.Templates)
                 {
                     var tSync = new SyncTemplate(folder, backupSet);
-                    tSync.ReadAllFromDisk();
+                    tSync.ImportAll(folder);
                     changes.AddRange(tSync.ChangeList);
                     LogHelper.Info<uSync>("Imported Templates {0} - changes ({1} ms)", ()=> tSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
@@ -197,7 +197,7 @@ namespace jumps.umbraco.usync
                 if (uSyncSettings.Elements.Stylesheets)
                 {
                     var styleSync = new SyncStylesheet(folder, backupSet);
-                    styleSync.ReadAllFromDisk();
+                    styleSync.ImportAll(folder);
                     changes.AddRange(styleSync.ChangeList);
 
                     LogHelper.Info<uSync>("Imported Stylesheets {0} - changes ({1} ms)", ()=> styleSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
@@ -217,47 +217,47 @@ namespace jumps.umbraco.usync
                 if (uSyncSettings.Elements.DocumentTypes)
                 {
                     var docSync = new SyncDocType(folder, backupSet);
-                    docSync.ReadAllFromDisk();
+                    docSync.ImportAll(folder);
                     changes.AddRange(docSync.ChangeList);
 
-                    LogHelper.Info<uSync>("Document Types imported - {0} changes ({1}ms)", () => docSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                    LogHelper.Info<uSync>("Imported Document Types {0} changes ({1}ms)", () => docSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
 
                 if (uSyncSettings.Elements.Macros)
                 {
                     var macroSync = new SyncMacro(folder, backupSet);
-                    macroSync.ReadAllFromDisk();
+                    macroSync.ImportAll(folder);
                     changes.AddRange(macroSync.ChangeList);
 
-                    LogHelper.Info<uSync>("Imported Macros - {0} changes ({1}ms)", ()=> macroSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                    LogHelper.Info<uSync>("Imported Macros {0} changes ({1}ms)", ()=> macroSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
 
                 if (uSyncSettings.Elements.MediaTypes)
                 {
                     var mediaSync = new SyncMediaTypes(folder, backupSet);
-                    mediaSync.ReadAllFromDisk();
+                    mediaSync.ImportAll(folder);
                     changes.AddRange(mediaSync.ChangeList);
 
-                    LogHelper.Info<uSync>("Imported MediaTypes - {0} changes ({1} ms)", ()=> mediaSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                    LogHelper.Info<uSync>("Imported MediaTypes {0} changes ({1} ms)", ()=> mediaSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
 
                 if (uSyncSettings.Elements.Dictionary) 
                 {
                     var langSync = new SyncLanguage(folder, backupSet);
-                    langSync.ReadAllFromDisk();
+                    langSync.ImportAll(folder);
                     changes.AddRange(langSync.ChangeList);
 
-                    LogHelper.Info<uSync>("Imported Languages {0} - changes ({1}ms)", () => langSync.ChangeCount, ()=> sw.ElapsedMilliseconds - last);
+                    LogHelper.Info<uSync>("Imported Languages {0} changes ({1}ms)", () => langSync.ChangeCount, ()=> sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
 
                     var dicSync = new SyncDictionary(folder, backupSet);
                     dicSync.ImportAll(folder);
                     changes.AddRange(dicSync.ChangeList);
 
-                    LogHelper.Info<uSync>("Imported Dictionary Items {0} - changes ({1} ms)", ()=>  dicSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                    LogHelper.Info<uSync>("Imported Dictionary Items {0} changes ({1} ms)", ()=>  dicSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
                 }
 
@@ -266,7 +266,7 @@ namespace jumps.umbraco.usync
                 {
                     var dataTypeSync = new SyncDataType(folder, backupSet);
                     dataTypeSync.ImportAll(folder);
-                    LogHelper.Info<uSync>("Imported DataTypes (again) {0} changes - ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                    LogHelper.Info<uSync>("Imported DataTypes (again) {0} changes ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                 }
 
                 LogHelper.Debug<uSync>("Reading from Disk - End");

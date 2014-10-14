@@ -4,17 +4,24 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using umbraco.cms.businesslogic;
+using umbraco.BusinessLogic;
+using umbraco.cms.businesslogic.web;
 
 namespace jumps.umbraco.usync.Models
 {
-    public static class uDictionaryItem 
+    public static class uStylesheet
     {
-        public static XElement SyncExport(this Dictionary.DictionaryItem item)
+        static User _user; 
+        static uStylesheet()
+        {
+            _user = new User(0);
+        }
+
+        public static XElement SyncExport(this StyleSheet item)
         {
             XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
             xmlDoc.AppendChild(item.ToXml(xmlDoc));
-            
+
             return XElement.Load(new XmlNodeReader(xmlDoc));
         }
 
@@ -22,22 +29,21 @@ namespace jumps.umbraco.usync.Models
         {
             var change = new ChangeItem
             {
+                itemType = ItemType.Stylesheet,
                 changeType = ChangeType.Success,
-                itemType = ItemType.Dictionary,
-                name = node.Attribute("Key").Value
+                name = node.Element("Name").Value
             };
 
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(node.ToString());
 
-            var xmlNode = xmlDoc.SelectSingleNode("//DictionaryItem");
+            var xmlNode = xmlDoc.SelectSingleNode("//Stylesheet");
 
-            Dictionary.DictionaryItem item = Dictionary.DictionaryItem.Import(xmlNode);
-            if (item != null)
+            var s = StyleSheet.Import(xmlNode, _user);
+            if (s != null)
             {
-                item.Save();
-                change.id = item.id;
-                change.name = item.key;
+                s.Save();
+                change.id = s.Id;
             }
 
             return change; 

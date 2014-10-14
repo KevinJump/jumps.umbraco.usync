@@ -28,8 +28,9 @@ namespace jumps.umbraco.usync.helpers
         #region Export Mappings
         
         
-        public static string MapPreValId(string val, XElement node, MappedDataTypeSettings settings)
+        public static bool MapPreValId(string val, XElement node, Guid mapId, MappedDataTypeSettings settings)
         {
+            var mapped = false; 
             LogHelper.Debug<PreValMapper>("Mapping PreValues {0}", () => val);
 
             var idVals = GetPreValueMatchSubString(val, settings);
@@ -66,12 +67,13 @@ namespace jumps.umbraco.usync.helpers
                     if ( !string.IsNullOrEmpty(mappedVal))
                     {
                         // add it to the nodes thingy 
-                        AddToNode(id, mappedVal, type, node);
+                        AddToNode(id, mappedVal, type, node, mapId);
+                        mapped = true; 
                     }
                 }
             }
 
-            return val;
+            return mapped;
         }
 
 
@@ -166,12 +168,12 @@ namespace jumps.umbraco.usync.helpers
             return string.Empty;
         }
 
-        private static void AddToNode(int id, string val, string type, XElement node)
+        private static void AddToNode(int id, string val, string type, XElement node, Guid mapId)
         {
-            XElement nodes = node.Element("Nodes");
+            XElement nodes = node.Element("nodes");
             if (nodes == null)
             {
-                nodes = new XElement("Nodes");
+                nodes = new XElement("nodes");
                 node.Add(nodes);
             }
 
@@ -179,6 +181,9 @@ namespace jumps.umbraco.usync.helpers
             mapNode.Add(new XAttribute("id", id.ToString()));
             mapNode.Add(new XAttribute("value", val));
             mapNode.Add(new XAttribute("type", type));
+            mapNode.Add(new XAttribute("mapId", mapId.ToString()));
+
+            nodes.Add(mapNode);
         }
 
 

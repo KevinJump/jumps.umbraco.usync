@@ -86,6 +86,12 @@
     <Compile Include="helpers\XmlDocFileEventArgs.cs" />
     <Compile Include="Models\uDataTypeDefinition.cs" />
     <Compile Include="Models\uDictionaryItem.cs" />
+    <Compile Include="Models\uDocType.cs" />
+    <Compile Include="Models\uLanguage.cs" />
+    <Compile Include="Models\uMacro.cs" />
+    <Compile Include="Models\uMediaType.cs" />
+    <Compile Include="Models\uStylesheet.cs" />
+    <Compile Include="Models\uTemplate.cs" />
     <Compile Include="SyncDataType.cs" />
     <Compile Include="SyncDictionary.cs" />
     <Compile Include="SyncDocType.cs" />

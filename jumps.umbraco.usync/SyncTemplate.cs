@@ -19,7 +19,9 @@ using Umbraco.Core.Logging;
 using umbraco;
 using umbraco.businesslogic;
 
+using jumps.umbraco.usync.Models;
 using jumps.umbraco.usync.helpers;
+using System.Xml.Linq;
 
 
 namespace jumps.umbraco.usync
@@ -45,44 +47,48 @@ namespace jumps.umbraco.usync
         public SyncTemplate(string folder, string set) :
             base(folder, set) { }
 
-        public void SaveToDisk(Template item, string path = null)
-        {
-            if (item != null)
-            {
-                try
-                {
-                    if (string.IsNullOrEmpty(path))
-                        path = _savePath;
 
-                    XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-                    xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    xmlDoc.AddMD5Hash(item.Alias + item.Text);
-                    helpers.XmlDoc.SaveXmlDoc(
-                        item.GetType().ToString(), GetDocPath(item) , "def", xmlDoc, path);
-                }
-                catch (Exception ex)
-                {
-                    LogHelper.Info<SyncTemplate>("uSync: Error Saving Template {0} - {1}", 
-                        ()=>item.Text, ()=>ex.ToString());
-                }
-            }
-        }
-
-        public void SaveAllToDisk()
+        public override void ExportAll(string folder)
         {
             try
             {
                 foreach (Template item in Template.GetAllAsList().ToArray())
                 {
-                    SaveToDisk(item);
+                    ExportToDisk(item, folder);
                 }
             }
-            catch( Exception ex )
+            catch (Exception ex)
             {
-                LogHelper.Info<SyncTemplate>("uSync: Error saving all templates {0}", ()=> ex.ToString()); 
+                LogHelper.Info<SyncTemplate>("uSync: Error saving all templates {0}", () => ex.ToString());
             }
         }
 
+        public override void ExportToDisk(Template item, string folder = null)
+        {
+            if (item == null)
+                throw new ArgumentNullException("item");
+
+            if (string.IsNullOrEmpty(folder))
+                folder = _savePath;
+
+            try
+            {
+                XElement node = item.SyncExport();
+                XmlDoc.SaveNode(folder, GetDocPath(item), "def", node, Constants.ObjectTypes.Template);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Info<SyncTemplate>("uSync: Error Saving Template {0} - {1}",
+                    () => item.Text, () => ex.ToString());
+            }
+        }
+
+        /// <summary>
+        ///  templates are stored in a tree, so we need to workout the 
+        ///  tree path, we are going to save it in...
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
         private string GetDocPath(Template item)
         {
             string path = "";
@@ -93,106 +99,62 @@ namespace jumps.umbraco.usync
                     path = GetDocPath(new Template(item.MasterTemplate));
                 }
 
-                path = string.Format("{0}//{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
+                path = string.Format("{0}\\{1}", path, helpers.XmlDoc.ScrubFile(item.Alias));
             }
             return path;
         }
 
-        public void ReadAllFromDisk()
+        public override void ImportAll(string folder)
         {
-
-            string path = IOHelper.MapPath(string.Format("{0}{1}",
-                helpers.uSyncIO.RootFolder,
-                "Template"));
-
-            ReadFromDisk(path);
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Template));
+            base.ImportFolder(root);
         }
 
-        public void ReadFromDisk(string path)
+        public override void Import(string filePath)
         {
-            if (Directory.Exists(path))
+            if (!File.Exists(filePath))
+                throw new ArgumentNullException("filePath");
+
+            XElement node = XElement.Load(filePath);
+
+            if (node.Name.LocalName != "Template")
+                throw new ArgumentException("Not a template file", filePath);
+
+
+            if (tracker.TemplateChanged(node))
             {
-                User user = new User(0); 
+                var backup = Backup(node);
 
-                foreach (string file in Directory.GetFiles(path, "*.config"))
-                {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(file);
+                ChangeItem change = uTemplate.SyncImport(node);
 
-                    XmlNode node = xmlDoc.SelectSingleNode("//Template");
+                if (change.changeType == ChangeType.Mismatch)
+                    Restore(backup);
 
-                    if (node != null)
-                    {
-
-                        if (tracker.TemplateChanged(xmlDoc))
-                        {
-                            var change = new ChangeItem
-                            {
-                                file = file,
-                                itemType = ItemType.Template,
-                                changeType = ChangeType.Success
-                            };
-
-                            PreChangeBackup(node);
-
-                            LogHelper.Debug<SyncTemplate>("Importing template {0} {1}",
-                                () => path, () => node.InnerXml);
-
-
-                            Template t = Template.Import(node, user);
-
-                            if (t != null)
-                            {
-                                change.id = t.Id;
-                                change.name = t.Text;
-                                
-                                string master = XmlHelper.GetNodeValue(node.SelectSingleNode("Master"));
-
-                                if (master.Trim() != "")
-                                {
-                                    Template masterTemplate = Template.GetByAlias(master);
-                                    if (masterTemplate != null)
-                                    {
-                                        t.MasterTemplate = masterTemplate.Id;
-                                    }
-                                    t.Save();
-                                }
-                            }
-                            else
-                            {
-                                // need to check if we get null on success.
-                                LogHelper.Info<SyncTemplate>("Null templated returned? this might be ok");
-                            }
-
-                            AddChange(change);
-                        }
-                        else
-                        {
-                            AddNoChange(ItemType.Template, file);
-                        }
-                    }
-                }
-
-                foreach (string folder in Directory.GetDirectories(path))
-                {
-                    ReadFromDisk(folder);
-                }
+                AddChange(change);
             }
+            else
+                AddNoChange(ItemType.Template, filePath);
         }
 
-        private void PreChangeBackup(XmlNode node)
+        protected override string Backup(XElement node)
         {
-            string alias = xmlHelper.GetNodeValue(node.SelectSingleNode("Alias"));
-            if (string.IsNullOrEmpty(alias))
-                return;
-
+            var alias = node.Element("Alias").Value;
             var template = Template.GetByAlias(alias);
-            if (template == null)
-                return;
 
-            SaveToDisk(template, _backupPath);
-                
+            if (template != null)
+            {
+                ExportToDisk(template, _backupPath);
+                return XmlDoc.GetSavePath(_backupPath, GetDocPath(template), "def", Constants.ObjectTypes.Template);
+            }
 
+            return "";
+        }
+
+        protected override void Restore(string backup)
+        {
+            XElement backupNode = XmlDoc.GetBackupNode(backup);
+            if (backupNode != null)
+                uTemplate.SyncImport(backupNode, false);
         }
 
         static string _eventFolder = "";
@@ -218,8 +180,8 @@ namespace jumps.umbraco.usync
         static void Template_AfterSave(Template sender, SaveEventArgs e)
         {
             // save
-            var tSync = new SyncTemplate(_eventFolder);
-            tSync.SaveToDisk(sender);
+            var tSync = new SyncTemplate();
+            tSync.ExportToDisk(sender, _eventFolder);
         }
         
     }
