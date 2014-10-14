@@ -1,0 +1,9 @@
+﻿.btn {
+    border: 1px solid #aaa;
+    padding: 0.5em;
+    font-size: 1em;
+}
+
+ul.list-none {
+    list-style: none;
+}
