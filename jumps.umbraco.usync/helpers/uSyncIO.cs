@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace jumps.umbraco.usync.helpers
+﻿namespace jumps.umbraco.usync.helpers
 {
     public class uSyncIO
     {
@@ -20,6 +14,14 @@ namespace jumps.umbraco.usync.helpers
             get
             {
                 return uSyncSettings.Archive;
+            }
+        }
+
+        public static string BackupFolder
+        {
+            get
+            {
+                return uSyncSettings.BackupFolder;
             }
         }
 

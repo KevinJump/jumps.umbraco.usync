@@ -26,7 +26,7 @@ namespace jumps.umbraco.usync
             _changeCount = 0;
             if (!string.IsNullOrEmpty(set))
             {
-                _backupPath = string.Format("~\\uSync.Backup\\{0}", set);
+                _backupPath = string.Format("~\\{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), set);
             }
             _changes = new List<ChangeItem>();
         }

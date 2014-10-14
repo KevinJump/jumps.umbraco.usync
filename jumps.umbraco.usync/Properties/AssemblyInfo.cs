@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("jumps.umbraco.usync")]
-[assembly: AssemblyDescription("umbraco syncing thing - special no the api isn't working yet version")]
+[assembly: AssemblyDescription("umbraco syncing thing - for Umbraco 6.1.x")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("jumoo")]
 [assembly: AssemblyProduct("jumps.umbraco.usync")]
@@ -32,4 +32,4 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.6.1.*")]
+[assembly: AssemblyVersion("6.1.8.*")]

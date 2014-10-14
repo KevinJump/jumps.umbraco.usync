@@ -1,22 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-
 using System.IO ; 
-using System.Xml ;
-
-using umbraco.BusinessLogic ; 
-
-using Umbraco.Core.IO ;
-using Umbraco.Core.Logging;
-
+using System.Xml;
 using System.Xml.Linq;
 using System.Security.Cryptography;
 
-
-using System.Runtime.InteropServices; 
+using Umbraco.Core.IO ;
+using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync.helpers
 {
@@ -102,7 +92,7 @@ namespace jumps.umbraco.usync.helpers
 
         public static XElement GetBackupNode(string backup, string name, string type)
         {
-            string backupPath = GetSavePath(String.Format("~\\uSync.Backup\\{0}", backup), name, type);
+            string backupPath = GetSavePath(String.Format("~\\{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), backup), name, type);
             return GetBackupNode(backupPath);
         }
 
@@ -208,12 +198,10 @@ namespace jumps.umbraco.usync.helpers
 
             OnSaved(new XmlDocFileEventArgs(savePath)); 
         }
-        */
 
         /// <summary>
         /// Archive a file (and delete the orgininal) called when a file is deleted
         /// </summary>
-        /*
         public static void ArchiveFile(string path, string name)
         {
             ArchiveFile(path, name, true);
@@ -280,7 +268,6 @@ namespace jumps.umbraco.usync.helpers
             }
 
         }
-        */
 
         public static void DeleteuSyncFile(string type, string path, string name)
         {
@@ -298,12 +285,11 @@ namespace jumps.umbraco.usync.helpers
 
                 LogHelper.Info<XmlDoc>("Deleted File [{0}]", ()=> currentFile); 
             }
-            
-            
         }
+        */
 
 
-       
+
         /// <summary>
         /// we need to clean the name up to make it a valid file name..
         /// </summary>
@@ -332,14 +318,13 @@ namespace jumps.umbraco.usync.helpers
             else
                 return value;
         }
-        */
-
         
         public static string GetTypeFolder(string type)
         {
             return type.Substring(type.LastIndexOf('.') + 1);
         }
-        
+        */
+
         public static void OnPreSave(XmlDocFileEventArgs e)
         {
             SyncFileWatcher.Pause();

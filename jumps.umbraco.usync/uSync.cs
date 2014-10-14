@@ -1,7 +1,7 @@
 ﻿//
-// uSync 1.3.4
+// uSync 1.6.1
 
-// For Umbraco 4.11.x/6.0.6+
+// For Umbraco 6.1.x
 //
 // uses precompile conditions to build a v4 and v6 version
 // of usync. 
@@ -9,22 +9,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using System.IO; // so we can write to disk..
-using System.Xml; // so we can serialize stuff
+using System.Diagnostics;
 
 using Umbraco.Core.IO;
 using Umbraco.Core;
 using Umbraco.Core.Logging;
-
-using umbraco.businesslogic;
-using umbraco.BusinessLogic;
-using Umbraco.Web;
-
-using System.Diagnostics;
 
 namespace jumps.umbraco.usync
 {
@@ -45,8 +35,6 @@ namespace jumps.umbraco.usync
         private bool _read;
         private bool _write;
         private bool _attach;
-
-        private bool _docTypeSaveWorks = false;
 
         // our own events - fired when we start and stop
         public static event uSyncBulkEventHander Starting;
@@ -91,10 +79,6 @@ namespace jumps.umbraco.usync
 
             _attach = uSyncSettings.Attach;
             LogHelper.Debug<uSync>("Settings : Attach = {0}", () => _attach);
-
-            // Remove version check
-            // we don't work on pre v6.0.1 anymore anyway 
-            _docTypeSaveWorks = true ; 
         }
 
         /// <summary>
@@ -172,17 +156,7 @@ namespace jumps.umbraco.usync
                 LogHelper.Debug<uSync>("Reading from Disk - starting");
 
                 // if backup first...
-                var backupSet = DateTime.Now.ToString("yyyy_MM_dd_HHmmss");
-                /*
-                if ()
-                {
-                 
-                    SaveAllToDisk(string.Format("~/usync.backup/{0}/", backupSet));
-                    LogHelper.Info<uSync>("Backup Created ({0}ms)", ()=> sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-
-                }
-                */
+                var backupSet = DateTime.Now.ToString("yyyy_MM_dd_HHmmss");          
                 var changes = new List<ChangeItem>();
 
                 if (uSyncSettings.Elements.Templates)
@@ -350,16 +324,16 @@ namespace jumps.umbraco.usync
             LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
 
             if (!ApplicationContext.Current.IsConfigured)
-             {
-                 LogHelper.Info<uSync>("umbraco not configured, usync aborting");
-                 return;
-             }
+            {
+                LogHelper.Info<uSync>("umbraco not configured, usync aborting");
+                return;
+            }
 
             OnStarting(new uSyncEventArgs(_read, _write, _attach)); 
 
             // Save Everything to disk.
-            // only done first time or when write = true           
-            if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write )
+            // only done first time (no directory and when attach = true) or when write = true 
+            if ((!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) && _attach) || _write )
             {
                 SaveAllToDisk();
             }

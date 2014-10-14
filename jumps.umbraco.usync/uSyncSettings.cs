@@ -99,6 +99,19 @@ namespace jumps.umbraco.usync
             }
         }
 
+        [ConfigurationProperty("backupFolder", DefaultValue = "~/App_data/TEMP/usync.backups/", IsRequired = true)]
+        public String BackupFolder
+        {
+            get
+            {
+                return (String)this["backupFolder"];
+            }
+            set
+            {
+                this["backupFolder"] = value;
+            }
+        }
+
         [ConfigurationProperty("versions", DefaultValue = "true", IsRequired = false)]
         public Boolean Versions
         {
@@ -429,6 +442,11 @@ namespace jumps.umbraco.usync
         public static string Archive
         {
             get { return _settings.Archive ; }
+        }
+
+        public static string BackupFolder
+        {
+            get { return _settings.BackupFolder; }
         }
 
         public static bool Preserve
