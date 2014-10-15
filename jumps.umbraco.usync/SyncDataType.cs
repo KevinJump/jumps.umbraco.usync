@@ -149,18 +149,57 @@ namespace jumps.umbraco.usync
 
             var preValues = node.Element("PreValues");
             var dataTypeSerivce = ApplicationContext.Current.Services.DataTypeService;
+            var existingPreValues = dataTypeSerivce.GetPreValuesCollectionByDataTypeId(dataType.Id).PreValuesAsDictionary;
+
 
             if (preValues != null)
             {
+
+                List<string> toRemove = new List<string>();
+
+                // alter any values (add new ones)
+                foreach (var preVal in existingPreValues)
+                {
+                    var updateVal = preValues.Elements("PreValue").Where(x => ((string)x.Attribute("Alias").Value == preVal.Key)).FirstOrDefault();
+
+                    if (updateVal != null)
+                    {
+                        preVal.Value.Value = updateVal.Attribute("Value").Value;
+                    }
+                    else
+                    {
+                        // this is a delete...
+                        LogHelper.Debug<SyncDataType>("Deleting prevalue {0}", ()=> preVal.Key);
+                        toRemove.Add(preVal.Key);
+                    }
+                }
+
+                // remove the ones we don't have anymore...
+                foreach (var removeKey in toRemove)
+                {
+                    existingPreValues.Remove(removeKey);
+                }
+
+                // add the new ones..
+                var valuesWithKeys = preValues.Elements("PreValue")
+                    .Where(x => ((string)x.Attribute("Alias")).IsNullOrWhiteSpace() == false)
+                    .ToDictionary(key => (string)key.Attribute("Alias"), val => (string)val.Attribute("Value"));
+
+                foreach (var newVal in valuesWithKeys)
+                {
+                    if (!existingPreValues.ContainsKey(newVal.Key))
+                    {
+                        LogHelper.Debug<SyncDataType>("Adding prevalue {0}", ()=> newVal.Key);
+                        existingPreValues.Add(newVal.Key,new PreValue(newVal.Value));
+                    }
+                }
+
+
                 var valuesWithoutKeys = preValues.Elements("PreValue")
                                                       .Where(x => ((string)x.Attribute("Alias")).IsNullOrWhiteSpace())
                                                       .Select(x => x.Attribute("Value").Value);
 
-                var valuesWithKeys = preValues.Elements("PreValue")
-                                                     .Where(x => ((string)x.Attribute("Alias")).IsNullOrWhiteSpace() == false)
-                                                     .ToDictionary(key => (string)key.Attribute("Alias"), val => new PreValue((string)val.Attribute("Value")));
-
-                dataTypeSerivce.SavePreValues(dataType, valuesWithKeys);
+                dataTypeSerivce.SavePreValues(dataType, existingPreValues);
                 dataTypeSerivce.SavePreValues(dataType.Id, valuesWithoutKeys);
             }
         }
