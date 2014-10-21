@@ -28,7 +28,7 @@ namespace jumps.umbraco.usync.Models
             {
                 itemType = ItemType.DocumentType,
                 changeType = ChangeType.Success,
-                name = node.Element("Name").Value
+                name = node.Element("Info").Element("Name").Value
             };
 
             ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);

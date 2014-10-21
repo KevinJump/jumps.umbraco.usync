@@ -76,6 +76,24 @@ namespace jumoo.usync.ui {
         protected global::System.Web.UI.WebControls.Button btnImport;
         
         /// <summary>
+        /// chkImportReport control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkImportReport;
+        
+        /// <summary>
+        /// chkForceImport control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkForceImport;
+        
+        /// <summary>
         /// btnExport control.
         /// </summary>
         /// <remarks>
@@ -83,5 +101,23 @@ namespace jumoo.usync.ui {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnExport;
+        
+        /// <summary>
+        /// status control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label status;
+        
+        /// <summary>
+        /// resultsRpt control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater resultsRpt;
     }
 }

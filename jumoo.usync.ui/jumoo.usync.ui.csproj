@@ -38,8 +38,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ClientDependency.Core">
-      <HintPath>..\..\..\Web\Umbraco\DevUmbraco6.1.6\bin\ClientDependency.Core.dll</HintPath>
+    <Reference Include="ClientDependency.Core, Version=1.7.0.4, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.1.6\ClientDependency.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="interfaces, Version=1.0.5021.24867, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.1.6\interfaces.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Web.DynamicData" />
@@ -58,6 +63,10 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
+    <Reference Include="Umbraco.Core, Version=1.0.5021.24867, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Refrences\Umb6.1.6\Umbraco.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Web.Debug.config">
@@ -81,10 +90,16 @@
     <Compile Include="uSyncDashboard.ascx.designer.cs">
       <DependentUpon>uSyncDashboard.ascx</DependentUpon>
     </Compile>
+    <Compile Include="uSyncDashControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Models\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\jumps.umbraco.usync\jumps.umbraco.usync_4.csproj">
+      <Project>{30f3e02e-c93e-421a-bc65-90f815681bdd}</Project>
+      <Name>jumps.umbraco.usync_4</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

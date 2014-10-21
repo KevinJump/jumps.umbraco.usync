@@ -13,30 +13,26 @@ namespace jumps.umbraco.usync
     /// </summary>
     public abstract class SyncItemBase<T>: IDisposable
     {
-        public SyncItemBase(string root)
+        protected ImportSettings _settings; 
+
+        public SyncItemBase()
         {
-            _savePath = root;
-            _changeCount = 0;
-            _changes = new List<ChangeItem>();
+            ImportSettings _settings = new ImportSettings();
         }
 
-        public SyncItemBase(string root, string set)
+        public SyncItemBase(ImportSettings settings)
         {
-            _savePath = root;
+            _settings = settings; 
             _changeCount = 0;
-            if (!string.IsNullOrEmpty(set))
-            {
-                _backupPath = string.Format("~\\{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), set);
-            }
             _changes = new List<ChangeItem>();
         }
 
         #region ChangeTracking 
         protected ChangeType _changeType; 
-        protected string _savePath;
-        protected string _backupPath;
+
         private int _changeCount;
         private List<ChangeItem> _changes;
+        
         public bool ChangesMade
         {
             get { return _changeCount > 0; }
@@ -78,10 +74,10 @@ namespace jumps.umbraco.usync
         #endregion 
         
         #region Export and Import
-        public abstract void ExportAll(string folder);
+        public abstract void ExportAll();
         public abstract void ExportToDisk(T item, string folder = null);
         public abstract void Import(string filePath);
-        public abstract void ImportAll(string folder);
+        public abstract void ImportAll();
 
         protected void ImportFolder(string folder)
         {

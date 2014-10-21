@@ -38,15 +38,12 @@ namespace jumps.umbraco.usync
     public class SyncMacro : SyncItemBase<Macro>
     {
         public SyncMacro() :
-            base(uSyncSettings.Folder) { }
+            base() { }
 
-        public SyncMacro(string folder) :
-            base (folder) {}
+        public SyncMacro(ImportSettings settings) :
+            base (settings) {}
 
-        public SyncMacro(string folder, string set) :
-            base(folder, set) { }
-
-        public override void ExportAll(string folder)
+        public override void ExportAll()
         {
             foreach(Macro item in Macro.GetAll())
             {
@@ -60,7 +57,7 @@ namespace jumps.umbraco.usync
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
-                folder = _savePath;
+                folder = _settings.Folder;
 
             try
             {
@@ -73,9 +70,9 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public override void ImportAll(string folder)
+        public override void ImportAll()
         {
-            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Macro));
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Macro));
             base.ImportFolder(root);
         }
 
@@ -89,16 +86,29 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "macro")
                 throw new ArgumentException("Not a macro file", filePath);
 
-            if (tracker.MacroChanged(node))
+            if (_settings.ForceImport || tracker.MacroChanged(node))
             {
-                var backup = Backup(node);
+                if (!_settings.ReportOnly)
+                {
+                    var backup = Backup(node);
 
-                ChangeItem change = uMacro.SyncImport(node);
+                    ChangeItem change = uMacro.SyncImport(node);
 
-                if (change.changeType == ChangeType.Mismatch)
-                    Restore(backup);
+                    if (change.changeType == ChangeType.Mismatch)
+                        Restore(backup);
 
-                AddChange(change);
+                    AddChange(change);
+                }
+                else
+                {
+                    AddChange(new ChangeItem
+                    {
+                        changeType = ChangeType.WillChange,
+                        itemType = ItemType.Macro,
+                        name = node.Element("name").Value,
+                        message = "Reporting: will update"
+                    });
+                }
             }
             else
                 AddNoChange(ItemType.Macro, filePath);
@@ -111,8 +121,8 @@ namespace jumps.umbraco.usync
 
             if ( macro != null )
             {
-                ExportToDisk(macro, _backupPath);
-                return XmlDoc.GetSavePath(_backupPath, macro.Alias, Constants.ObjectTypes.Macro);
+                ExportToDisk(macro, _settings.BackupPath);
+                return XmlDoc.GetSavePath(_settings.BackupPath, macro.Alias, Constants.ObjectTypes.Macro);
             }
 
             return "";

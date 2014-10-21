@@ -25,7 +25,7 @@ namespace jumps.umbraco.usync.Models
             {
                 itemType = ItemType.Languages,
                 changeType = ChangeType.Success,
-                name = node.Element("CultureAlias").Value
+                name = node.Attribute("CultureAlias").Value
             };
 
             XmlDocument xmlDoc = new XmlDocument();

@@ -419,12 +419,34 @@ namespace jumps.umbraco.usync.helpers
         public static string CalculateDictionaryHash(XElement node)
         {
             XElement copy = new XElement(node);
-            foreach(var val in copy.Elements("Values"))
-            {
-                val.SetAttributeValue("Id", "");
-            }
-            return CalculateMD5Hash(copy);
 
+            StripDictionaryIds(copy);
+            /*
+            foreach(var val in copy.Elements("Value"))
+            {
+                val.SetAttributeValue("LanguageId", "");
+            }
+
+            if ( copy.Element("DictionaryItem") != null)
+            {
+
+            }
+             */
+            LogHelper.Info<XmlDoc>("Dictionary:\n{0}", ()=> copy.ToString());
+            return CalculateMD5Hash(copy);
+        }
+
+        private static void StripDictionaryIds(XElement node)
+        {
+            foreach (var val in node.Elements("Value"))
+            {
+                val.SetAttributeValue("LanguageId", "");
+            }
+
+            if (node.Element("DictionaryItem") != null)
+            {
+                StripDictionaryIds(node.Element("DictionaryItem"));
+            }
         }
 
         //

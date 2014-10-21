@@ -32,15 +32,12 @@ namespace jumps.umbraco.usync
     public class SyncMediaTypes : SyncItemBase<MediaType>
     {
         public SyncMediaTypes() :
-            base(uSyncSettings.Folder) { }
+            base() { }
 
-        public SyncMediaTypes(string folder) :
-            base(folder) { }
+        public SyncMediaTypes(ImportSettings settings) :
+            base(settings) { }
 
-        public SyncMediaTypes(string folder, string set) :
-            base(folder, set) { }
-
-        public override void ExportAll(string folder)
+        public override void ExportAll()
         {
             foreach (MediaType item in MediaType.GetAllAsList())
             {
@@ -54,7 +51,7 @@ namespace jumps.umbraco.usync
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
-                folder = _savePath;
+                folder = _settings.Folder;
 
             XElement node = item.SyncExport();
 
@@ -63,9 +60,9 @@ namespace jumps.umbraco.usync
 
         Dictionary<string, string> updates; 
 
-        public override void ImportAll(string folder)
+        public override void ImportAll()
         {
-            string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", folder, Constants.ObjectTypes.MediaType));
+            string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.MediaType));
 
             updates = new Dictionary<string, string>();
             base.ImportFolder(rootFolder);
@@ -87,16 +84,29 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "MediaType")
                 throw new ArgumentException("Not a MediaType File", filePath);
 
-            if (tracker.MediaTypeChanged(node))
+            if (_settings.ForceImport || tracker.MediaTypeChanged(node))
             {
-                var backup = Backup(node);
-
-                ChangeItem change = uMediaType.SyncImport(node);
-
-                if ( change.changeType ==  ChangeType.Success )
+                if (!_settings.ReportOnly)
                 {
-                    // add to updates for second pass.
-                    updates.Add(filePath, backup);
+                    var backup = Backup(node);
+
+                    ChangeItem change = uMediaType.SyncImport(node);
+
+                    if (change.changeType == ChangeType.Success)
+                    {
+                        // add to updates for second pass.
+                        updates.Add(filePath, backup);
+                    }
+                }
+                else
+                {
+                    AddChange(new ChangeItem
+                    {
+                        changeType = ChangeType.WillChange,
+                        itemType = ItemType.MediaItem,
+                        name = node.Element("Info").Element("Name").Value,
+                        message = "Reporting: will update"
+                    });
                 }
             }
             else
@@ -129,8 +139,8 @@ namespace jumps.umbraco.usync
 
             if (mediaType != null)
             {
-                ExportToDisk(mediaType, _backupPath);
-                return XmlDoc.GetSavePath(_backupPath, GetMediaPath(mediaType), "def", Constants.ObjectTypes.MediaType);
+                ExportToDisk(mediaType, _settings.BackupPath);
+                return XmlDoc.GetSavePath(_settings.BackupPath, GetMediaPath(mediaType), "def", Constants.ObjectTypes.MediaType);
             }
 
             return "";
@@ -179,7 +189,7 @@ namespace jumps.umbraco.usync
             LogHelper.Debug<SyncMediaTypes>("DeletingMediaType for {0} items", ()=> e.DeletedEntities.Count());
             if (e.DeletedEntities.Count() > 0)
             {
-                var syncMedia = new SyncMediaTypes(_eventFolder);
+                var syncMedia = new SyncMediaTypes();
 
                 foreach (var mediaType in e.DeletedEntities)
                 {

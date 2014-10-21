@@ -21,15 +21,12 @@ namespace jumps.umbraco.usync
     public class SyncLanguage : SyncItemBase<Language>
     {
         public SyncLanguage() :
-            base(uSyncSettings.Folder) { }
+            base() { }
 
-        public SyncLanguage(string folder) :
-            base(folder) { }
+        public SyncLanguage(ImportSettings settings) :
+            base(settings) { }
 
-        public SyncLanguage(string folder, string set) :
-            base(folder, set) { }
-
-        public override void ExportAll(string folder)
+        public override void ExportAll()
         {
             foreach(Language item in Language.GetAllAsList())
             {
@@ -43,15 +40,15 @@ namespace jumps.umbraco.usync
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
-                folder = _savePath;
+                folder = _settings.Folder;
 
             XElement node = item.SyncExport();
             XmlDoc.SaveNode(folder, item.CultureAlias, node, Constants.ObjectTypes.Language);
         }
 
-        public override void ImportAll(string folder)
+        public override void ImportAll()
         {
-            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Language));
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Language));
             ImportFolder(root);
         }
 
@@ -65,16 +62,30 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "Language")
                 throw new ArgumentException("Not a Language file", filePath);
 
-            if (tracker.LanguageChanged(node))
+            if (_settings.ForceImport || tracker.LanguageChanged(node))
             {
-                var backup = Backup(node);
+                if (!_settings.ReportOnly)
+                {
 
-                ChangeItem change = uLanguage.SyncImport(node);
+                    var backup = Backup(node);
 
-                if (change.changeType == ChangeType.Mismatch)
-                    Restore(backup);
+                    ChangeItem change = uLanguage.SyncImport(node);
 
-                AddChange(change);
+                    if (change.changeType == ChangeType.Mismatch)
+                        Restore(backup);
+
+                    AddChange(change);
+                }
+                else
+                {
+                    AddChange(new ChangeItem
+                    {
+                        changeType = ChangeType.WillChange,
+                        itemType = ItemType.Languages,
+                        name = node.Attribute("CultureAlias").Value,
+                        message = "Reporting: will update"
+                    });
+                }
             }
             else
                 AddNoChange(ItemType.Languages, filePath);
@@ -87,8 +98,8 @@ namespace jumps.umbraco.usync
 
             if (lang != null)
             {
-                ExportToDisk(lang, _backupPath);
-                return XmlDoc.GetSavePath(_backupPath, lang.CultureAlias, Constants.ObjectTypes.Language);
+                ExportToDisk(lang, _settings.BackupPath);
+                return XmlDoc.GetSavePath(_settings.BackupPath, lang.CultureAlias, Constants.ObjectTypes.Language);
             }
 
             return "";

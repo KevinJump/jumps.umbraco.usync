@@ -23,22 +23,19 @@ namespace jumps.umbraco.usync
     public class SyncDictionary : SyncItemBase<Dictionary.DictionaryItem>
     {
         public SyncDictionary() :
-            base(uSyncSettings.Folder) { }
+            base() { }
 
-        public SyncDictionary(string folder) :
-            base(folder) { }
+        public SyncDictionary(ImportSettings settings) :
+            base(settings) { }
 
-        public SyncDictionary(string folder, string set) :
-            base(folder, set) { }
-
-        public override void ExportAll(string folder)
+        public override void ExportAll()
         {
             LogHelper.Debug<SyncDictionary>("Saving Dictionary Types");
 
             foreach (Dictionary.DictionaryItem item in Dictionary.getTopMostItems)
             {
-                LogHelper.Debug<SyncDictionary>("Dictionary Item {0}", () => item.key);
-                ExportToDisk(item, folder);
+                LogHelper.Info<SyncDictionary>("Dictionary Item {0}", () => item.key);
+                ExportToDisk(item, _settings.Folder);
             }
         }
 
@@ -48,7 +45,7 @@ namespace jumps.umbraco.usync
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
-                folder = _savePath;
+                folder = _settings.Folder;
 
             XElement node = item.SyncExport();
 
@@ -60,9 +57,9 @@ namespace jumps.umbraco.usync
                     xmlDoc, _savePath);
         */
 
-        public override void ImportAll(string folder)
+        public override void ImportAll()
         {
-            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Dictionary));
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Dictionary));
             ImportFolder(root);
         }
 
@@ -76,16 +73,29 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "DictionaryItem")
                 throw new ArgumentException("Not a DictionaryItem file", filePath);
 
-            if (tracker.DictionaryChanged(node))
+            if (_settings.ForceImport || tracker.DictionaryChanged(node))
             {
-                var backup = Backup(node);
+                if (!_settings.ReportOnly)
+                {
+                    var backup = Backup(node);
 
-                ChangeItem change = uDictionaryItem.SyncImport(node);
+                    ChangeItem change = uDictionaryItem.SyncImport(node);
 
-                if (change.changeType == ChangeType.Mismatch)
-                    Restore(backup);
+                    if (change.changeType == ChangeType.Mismatch)
+                        Restore(backup);
 
-                AddChange(change);
+                    AddChange(change);
+                }
+                else
+                {
+                    AddChange(new ChangeItem
+                    {
+                        changeType = ChangeType.WillChange,
+                        itemType = ItemType.Dictionary,
+                        name = node.Attribute("Key").Value,
+                        message = "Reporting: will update"
+                    });
+                }
             }
             else
                 AddNoChange(ItemType.Dictionary, filePath);
@@ -101,8 +111,8 @@ namespace jumps.umbraco.usync
             {
                 if (i.key == key)
                 {
-                    ExportToDisk(i, _backupPath);
-                    return XmlDoc.GetSavePath(_backupPath, key, Constants.ObjectTypes.Dictionary);
+                    ExportToDisk(i, _settings.BackupPath);
+                    return XmlDoc.GetSavePath(_settings.BackupPath, key, Constants.ObjectTypes.Dictionary);
                 }
             }
 

@@ -38,23 +38,18 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncTemplate : SyncItemBase<Template>
     {
-        public SyncTemplate() :
-            base(uSyncSettings.Folder) { }
+        public SyncTemplate() : base() { }
 
-        public SyncTemplate(string folder) :
-            base(folder) { }
+        public SyncTemplate(ImportSettings settings) :
+            base(settings) { }
 
-        public SyncTemplate(string folder, string set) :
-            base(folder, set) { }
-
-
-        public override void ExportAll(string folder)
+        public override void ExportAll()
         {
             try
             {
                 foreach (Template item in Template.GetAllAsList().ToArray())
                 {
-                    ExportToDisk(item, folder);
+                    ExportToDisk(item, _settings.Folder);
                 }
             }
             catch (Exception ex)
@@ -69,7 +64,7 @@ namespace jumps.umbraco.usync
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
-                folder = _savePath;
+                folder = _settings.Folder;
 
             try
             {
@@ -104,9 +99,9 @@ namespace jumps.umbraco.usync
             return path;
         }
 
-        public override void ImportAll(string folder)
+        public override void ImportAll()
         {
-            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Template));
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Template));
             base.ImportFolder(root);
         }
 
@@ -121,16 +116,30 @@ namespace jumps.umbraco.usync
                 throw new ArgumentException("Not a template file", filePath);
 
 
-            if (tracker.TemplateChanged(node))
+            if (_settings.ForceImport || tracker.TemplateChanged(node))
             {
-                var backup = Backup(node);
+                if (!_settings.ReportOnly)
+                {
+                    var backup = Backup(node);
 
-                ChangeItem change = uTemplate.SyncImport(node);
+                    ChangeItem change = uTemplate.SyncImport(node);
 
-                if (change.changeType == ChangeType.Mismatch)
-                    Restore(backup);
+                    if (change.changeType == ChangeType.Mismatch)
+                        Restore(backup);
 
-                AddChange(change);
+                    AddChange(change);
+                }
+                else
+                {
+                    AddChange(new ChangeItem
+                    {
+                        changeType = ChangeType.WillChange,
+                        itemType = ItemType.Template,
+                        name = node.Element("Name").Value,
+                        message = "Reporting: will update"
+
+                    });
+                }
             }
             else
                 AddNoChange(ItemType.Template, filePath);
@@ -143,8 +152,8 @@ namespace jumps.umbraco.usync
 
             if (template != null)
             {
-                ExportToDisk(template, _backupPath);
-                return XmlDoc.GetSavePath(_backupPath, GetDocPath(template), "def", Constants.ObjectTypes.Template);
+                ExportToDisk(template, _settings.BackupPath);
+                return XmlDoc.GetSavePath(_settings.BackupPath, GetDocPath(template), "def", Constants.ObjectTypes.Template);
             }
 
             return "";
@@ -170,7 +179,7 @@ namespace jumps.umbraco.usync
         static void Template_AfterDelete(Template sender, DeleteEventArgs e)
         {
             // helpers.XmlDoc.ArchiveFile( helpers.XmlDoc.GetTypeFolder(sender.GetType().ToString()) + GetDocPath(sender), "def");
-            var tSync = new SyncTemplate(_eventFolder);
+            var tSync = new SyncTemplate();
 
             XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, tSync.GetDocPath(sender), "def", Constants.ObjectTypes.Template), true);
 

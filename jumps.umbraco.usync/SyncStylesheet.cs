@@ -38,19 +38,16 @@ namespace jumps.umbraco.usync
     public class SyncStylesheet : SyncItemBase<StyleSheet>
     {
         public SyncStylesheet() :
-            base(uSyncSettings.Folder) { }
+            base() { }
 
-        public SyncStylesheet(string folder) :
-            base(folder) { }
+        public SyncStylesheet(ImportSettings settings) :
+            base(settings) { }
 
-        public SyncStylesheet(string folder, string set) :
-            base(folder, set) { }
-
-        public override void ExportAll(string folder)
+        public override void ExportAll()
         {
             foreach (StyleSheet item in StyleSheet.GetAll())
             {
-                ExportToDisk(item, folder);
+                ExportToDisk(item, _settings.Folder);
             }
         }
 
@@ -60,7 +57,7 @@ namespace jumps.umbraco.usync
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
-                folder = _savePath;
+                folder = _settings.Folder;
 
             try
             {
@@ -73,9 +70,9 @@ namespace jumps.umbraco.usync
             }
         }
 
-        public override void ImportAll(string folder)
+        public override void ImportAll()
         {
-            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.Stylesheet));
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Stylesheet));
             base.ImportFolder(root);
         }
 
@@ -89,16 +86,30 @@ namespace jumps.umbraco.usync
             if ( node.Name.LocalName != "Stylesheet")
                 throw new ArgumentException("Not a stylesheet file", filePath);
 
-            if (tracker.StylesheetChanged(node))
+            if (_settings.ForceImport || tracker.StylesheetChanged(node))
             {
-                var backup = Backup(node);
+                if (!_settings.ReportOnly)
+                {
+                    var backup = Backup(node);
 
-                ChangeItem change = uStylesheet.SyncImport(node);
+                    ChangeItem change = uStylesheet.SyncImport(node);
 
-                if (change.changeType == ChangeType.Mismatch)
-                    Restore(backup);
+                    if (change.changeType == ChangeType.Mismatch)
+                        Restore(backup);
 
-                AddChange(change);
+                    AddChange(change);
+                }
+                else
+                {
+                    AddChange(new ChangeItem
+                    {
+                        changeType = ChangeType.WillChange,
+                        itemType = ItemType.Stylesheet,
+                        name = node.Element("Name").Value,
+                        message = "Reporting: will update"
+                    });
+                }
+
             }
             else
                 AddNoChange(ItemType.Stylesheet, filePath);
@@ -111,8 +122,8 @@ namespace jumps.umbraco.usync
 
             if (stylesheet != null)
             {
-                ExportToDisk(stylesheet, _backupPath);
-                return XmlDoc.GetSavePath(_backupPath, name, Constants.ObjectTypes.Stylesheet);
+                ExportToDisk(stylesheet, _settings.BackupPath);
+                return XmlDoc.GetSavePath(_settings.BackupPath, name, Constants.ObjectTypes.Stylesheet);
             }
 
             return "" ;

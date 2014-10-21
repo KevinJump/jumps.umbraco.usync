@@ -21,24 +21,20 @@ namespace jumps.umbraco.usync
     /// </summary>
     public class SyncDataType : SyncItemBase<DataTypeDefinition> 
     {
-        public SyncDataType() :
-            base(uSyncSettings.Folder) { }
+        public SyncDataType() : base() { }
 
-        public SyncDataType(string folder) :
-            base(folder) { }
-
-        public SyncDataType(string folder, string set) :
-            base(folder, set) { }
+        public SyncDataType(ImportSettings settings) :
+            base(settings) { }
 
 
-        public override void ExportAll(string folder)
+        public override void ExportAll()
         {
             try
             {
                 foreach(DataTypeDefinition item in DataTypeDefinition.GetAll())
                 {
                     if (item != null)
-                        ExportToDisk(item, folder);
+                        ExportToDisk(item, _settings.Folder);
                 }
             }
             catch (Exception ex)
@@ -54,7 +50,7 @@ namespace jumps.umbraco.usync
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
-                folder = _savePath;
+                folder = _settings.Folder;
 
             XElement node = item.SyncExport();
 
@@ -62,9 +58,9 @@ namespace jumps.umbraco.usync
             
         }
 
-        public override void ImportAll(string folder)
+        public override void ImportAll()
         {
-            string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", folder, Constants.ObjectTypes.DataType));
+            string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.DataType));
             base.ImportFolder(rootFolder);
         }
         
@@ -78,19 +74,32 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "DataType")  
                 throw new ArgumentException("Not a DataType File", filePath);
 
-            if (tracker.DataTypeChanged(node))
+            if (_settings.ForceImport || tracker.DataTypeChanged(node))
             {
-                LogHelper.Info<SyncDataType>("Updating: {0}", () => Path.GetFileNameWithoutExtension(filePath));
-                var backup = Backup(node);
-
-                ChangeItem change = uDataTypeDefinition.SyncImport(node);
-
-                if (change.changeType == ChangeType.Mismatch)
+                if (!_settings.ReportOnly)
                 {
-                    Restore(backup);
-                }
+                    LogHelper.Info<SyncDataType>("Updating: {0}", () => Path.GetFileNameWithoutExtension(filePath));
+                    var backup = Backup(node);
 
-                AddChange(change);
+                    ChangeItem change = uDataTypeDefinition.SyncImport(node);
+
+                    if (change.changeType == ChangeType.Mismatch)
+                    {
+                        Restore(backup);
+                    }
+
+                    AddChange(change);
+                }
+                else
+                {
+                    AddChange(new ChangeItem
+                    {
+                        changeType = ChangeType.WillChange,
+                        itemType = ItemType.DataType,
+                        name = node.Attribute("Name").Value,
+                        message = "Reporting: will update"
+                    });
+                }
             }
             else
             {
@@ -104,8 +113,8 @@ namespace jumps.umbraco.usync
             if ( CMSNode.IsNode(_def))
             {
                 var dtd = DataTypeDefinition.GetDataTypeDefinition(_def);
-                ExportToDisk(dtd, _backupPath);
-                return XmlDoc.GetSavePath(_backupPath, dtd.Text, Constants.ObjectTypes.DataType);
+                ExportToDisk(dtd, _settings.BackupPath);
+                return XmlDoc.GetSavePath(_settings.BackupPath, dtd.Text, Constants.ObjectTypes.DataType);
             }
             return "";
         }
@@ -153,13 +162,13 @@ namespace jumps.umbraco.usync
                 {
                     LogHelper.Info<SyncDataType>("DataType Saving (Saving)");
                     // do the save.
-                    SyncDataType syncDataType = new SyncDataType(_eventFolder);
+                    SyncDataType syncDataType = new SyncDataType();
 
                     int typeID = _saveQueue.Dequeue();
                     var dt = DataTypeDefinition.GetDataTypeDefinition(typeID);
                     if (dt != null)
                     {
-                        syncDataType.ExportToDisk(dt);
+                        syncDataType.ExportToDisk(dt, _eventFolder);
                     }
 
                     LogHelper.Info<SyncDataType>("DataType Saved (Saving-complete)");

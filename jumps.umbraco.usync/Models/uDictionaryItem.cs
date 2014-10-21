@@ -5,6 +5,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using umbraco.cms.businesslogic;
+using umbraco.cms.businesslogic.language;
 
 namespace jumps.umbraco.usync.Models
 {
@@ -27,20 +28,68 @@ namespace jumps.umbraco.usync.Models
                 name = node.Attribute("Key").Value
             };
 
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(node.ToString());
+            var item = AddOrUpdateDictionaryItem(node);
 
-            var xmlNode = xmlDoc.SelectSingleNode("//DictionaryItem");
-
-            Dictionary.DictionaryItem item = Dictionary.DictionaryItem.Import(xmlNode);
             if (item != null)
             {
                 item.Save();
                 change.id = item.id;
                 change.name = item.key;
             }
-
             return change; 
+        }
+
+        private static Dictionary.DictionaryItem AddOrUpdateDictionaryItem(XElement node, Dictionary.DictionaryItem parent =null)
+        {
+            Dictionary.DictionaryItem item = null;
+            var key = node.Attribute("Key").Value;
+
+            if (!Dictionary.DictionaryItem.hasKey(key))
+            {
+                if (parent != null)
+                {
+                    Dictionary.DictionaryItem.addKey(key, " ", parent.key);
+                }
+                else
+                {
+                    Dictionary.DictionaryItem.addKey(key, " ");
+                }
+            }
+          
+
+            item = new Dictionary.DictionaryItem(key);
+
+            var values = node.Elements("Value");
+            if (values.Any())
+            {
+                // update values...
+                foreach (var val in values)
+                {
+                    var alias = val.Attribute("LanguageCultureAlias").Value;
+                    if (alias != null)
+                    {
+                        var lang = Language.GetByCultureCode(alias);
+                        if (lang != null)
+                        {
+                            item.setValue(lang.id, val.Value);
+                        }
+                    }
+                }
+                
+                //remove values we don't care about? 
+
+            }
+            var children = node.Elements("DictionaryItem");
+
+            if (children.Any())
+            {
+                foreach (var child in children)
+                {
+                    AddOrUpdateDictionaryItem(child, item);
+                }
+            }
+
+            return item;
         }
     }
 }

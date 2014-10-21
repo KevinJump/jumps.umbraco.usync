@@ -7,15 +7,13 @@ namespace jumps.umbraco.usync
 {
     public class ChangeItem
     {
-        public string name;
-        public int id;
-        public string file; 
-        public ItemType itemType;
-        public ChangeType changeType;
-        public string message; 
-       
+        public string name { get; set; }
+        public int id { get; set; }
+        public string file { get; set; }
+        public ItemType itemType { get; set; }
+        public ChangeType changeType { get; set; }
+        public string message { get; set; } 
     }
-
 
     public enum ItemType
     {
@@ -36,6 +34,7 @@ namespace jumps.umbraco.usync
         NoChange,
         Fail = 11,
         ImportFail,
-        Mismatch
+        Mismatch,
+        WillChange
     }
 }

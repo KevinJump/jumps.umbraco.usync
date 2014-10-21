@@ -35,15 +35,12 @@ namespace jumps.umbraco.usync
     public class SyncDocType : SyncItemBase<DocumentType>
     {   
         public SyncDocType() :
-            base(uSyncSettings.Folder) { }
+            base() { }
 
-        public SyncDocType(string folder) :
-            base(folder) { }
+        public SyncDocType(ImportSettings settings) :
+            base(settings) { }
 
-        public SyncDocType(string folder, string set) :
-            base(folder, set) { }        
-
-        public override void ExportAll(string folder)
+        public override void ExportAll()
         {
             foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
             {
@@ -60,7 +57,7 @@ namespace jumps.umbraco.usync
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
-                folder = _savePath;
+                folder = _settings.Folder;
 
             try
             {
@@ -76,9 +73,9 @@ namespace jumps.umbraco.usync
 
         Dictionary<string, Tuple<string, string>> updates;
 
-        public override void ImportAll(string folder)
+        public override void ImportAll()
         {
-            string root = IOHelper.MapPath(string.Format("{0}\\{1}", folder, Constants.ObjectTypes.DocType));
+            string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.DocType));
 
             updates = new Dictionary<string,Tuple<string,string>>();
             
@@ -97,25 +94,42 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "DocumentType")
                 throw new ArgumentException("Not a DocumentType file", filePath);
 
-            if (tracker.DocTypeChanged(node))
+            if (_settings.ForceImport || tracker.DocTypeChanged(node))
             {
-                var backup = Backup(node);
 
-                ChangeItem change = uDocType.SyncImport(node);
-
-                if (change.changeType == ChangeType.Success)
+                if (!_settings.ReportOnly)
                 {
-                    var alias = node.Element("Info").Element("Alias").Value;
+                    var backup = Backup(node);
 
-                    if ( !updates.ContainsKey(alias)) {
-                        updates.Add(alias, new Tuple<string, string>(filePath, backup));
+                    ChangeItem change = uDocType.SyncImport(node);
+
+                    if (change.changeType == ChangeType.Success)
+                    {
+                        var alias = node.Element("Info").Element("Alias").Value;
+
+                        if (!updates.ContainsKey(alias))
+                        {
+                            updates.Add(alias, new Tuple<string, string>(filePath, backup));
+                        }
+                        else
+                        {
+                            // duplicate
+                            change.changeType = ChangeType.ImportFail;
+                            change.message = "Duplicated doctype found";
+                            AddChange(change);
+                        }
                     }
-                    else {
-                        // duplicate
-                        change.changeType = ChangeType.ImportFail;
-                        change.message = "Duplicated doctype found";
-                        AddChange(change);
-                    }                   
+                }
+                else
+                {
+                    AddChange(new ChangeItem
+                    {
+                        changeType = ChangeType.WillChange,
+                        itemType = ItemType.DocumentType,
+                        name = node.Element("Info").Element("Alias").Value,
+                        message = "Reporting: will update"
+                    });
+
                 }
             }
             else
@@ -155,8 +169,8 @@ namespace jumps.umbraco.usync
 
             if (docType != null)
             {
-                ExportToDisk(docType, _backupPath);
-                return XmlDoc.GetSavePath(_backupPath, GetDocPath(docType), "def", Constants.ObjectTypes.DocType);
+                ExportToDisk(docType, _settings.BackupPath);
+                return XmlDoc.GetSavePath(_settings.BackupPath, GetDocPath(docType), "def", Constants.ObjectTypes.DocType);
             }
 
             return "";
@@ -228,7 +242,7 @@ namespace jumps.umbraco.usync
 
             if (e.SavedEntities.Count() > 0)
             {
-                var docSync = new SyncDocType(_eventFolder);
+                var docSync = new SyncDocType();
 
                 foreach (var docType in e.SavedEntities)
                 {
@@ -243,7 +257,7 @@ namespace jumps.umbraco.usync
             // delete things (there can sometimes be more than one??)
             if (e.DeletedEntities.Count() > 0)
             {
-                var docSync = new SyncDocType(_eventFolder);
+                var docSync = new SyncDocType();
 
                 foreach (var docType in e.DeletedEntities)
                 {
