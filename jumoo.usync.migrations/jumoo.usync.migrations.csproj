@@ -7,12 +7,12 @@
     <ProductVersion>
     </ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{16DAF8F9-7B40-44A8-9891-223E95F00775}</ProjectGuid>
+    <ProjectGuid>{5ED46FEC-5423-4EB9-B4F2-C455A5DA2E7C}</ProjectGuid>
     <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>jumoo.usync.ui</RootNamespace>
-    <AssemblyName>jumoo.usync.ui</AssemblyName>
+    <RootNamespace>jumoo.usync.migrations</RootNamespace>
+    <AssemblyName>jumoo.usync.migrations</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
@@ -38,14 +38,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ClientDependency.Core, Version=1.7.0.4, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Refrences\Umb6.1.6\ClientDependency.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="interfaces, Version=1.0.5021.24867, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Refrences\Umb6.1.6\interfaces.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Web.DynamicData" />
     <Reference Include="System.Web.Entity" />
@@ -63,10 +55,6 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
-    <Reference Include="Umbraco.Core, Version=1.0.5021.24867, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Refrences\Umb6.1.6\Umbraco.Core.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Web.Debug.config">
@@ -77,28 +65,22 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="usyncdash.css" />
-    <Content Include="uSyncDashboard.ascx" />
+    <Content Include="uSyncMigrationDashboard.ascx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="uSyncDashboard.ascx.cs">
-      <DependentUpon>uSyncDashboard.ascx</DependentUpon>
+    <Compile Include="uSyncMigrationDashboard.ascx.cs">
+      <DependentUpon>uSyncMigrationDashboard.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="uSyncDashboard.ascx.designer.cs">
-      <DependentUpon>uSyncDashboard.ascx</DependentUpon>
+    <Compile Include="uSyncMigrationDashboard.ascx.designer.cs">
+      <DependentUpon>uSyncMigrationDashboard.ascx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\jumps.umbraco.usync\jumps.umbraco.usync_4.csproj">
-      <Project>{30f3e02e-c93e-421a-bc65-90f815681bdd}</Project>
-      <Name>jumps.umbraco.usync_4</Name>
-    </ProjectReference>
+    <Folder Include="Models\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
@@ -113,9 +95,9 @@
         <WebProjectProperties>
           <UseIIS>True</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>51596</DevelopmentServerPort>
+          <DevelopmentServerPort>62992</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:57771/</IISUrl>
+          <IISUrl>http://localhost:62992/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
@@ -127,14 +109,11 @@
   </ProjectExtensions>
   <PropertyGroup>
     <PostBuildEvent>@ECHO - Coping to package folder.
-@XCOPY "$(TargetPath)" "$(SolutionDir)\Package\uSync\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncDashboard.ascx" "$(SolutionDir)\Package\uSync\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncdash.css" "$(SolutionDir)\Package\uSync\"  /y /i /q
+@REM XCOPY "$(TargetPath)" "$(SolutionDir)\Package\uSync\"  /y /i /q
 
 @Echo to Umbraco Test Site (6.1.6)
 @XCOPY "$(TargetPath)" "D:\Development\Web\Umbraco\DevUmbraco6.1.6\Bin\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncDashboard.ascx"  "D:\Development\Web\Umbraco\DevUmbraco6.1.6\umbraco\plugins\usync\"  /y /i /q
-@XCOPY "$(ProjectDir)uSyncdash.css"  "D:\Development\Web\Umbraco\DevUmbraco6.1.6\umbraco\plugins\usync\"  /y /i /q
+@XCOPY "$(ProjectDir)uSyncMigrationDashboard.ascx"  "D:\Development\Web\Umbraco\DevUmbraco6.1.6\umbraco\plugins\usync\"  /y /i /q
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

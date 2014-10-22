@@ -170,8 +170,6 @@ namespace jumps.umbraco.usync
                     {
                         syncDataType.ExportToDisk(dt, _eventFolder);
                     }
-
-                    LogHelper.Info<SyncDataType>("DataType Saved (Saving-complete)");
                 }
             }
         }

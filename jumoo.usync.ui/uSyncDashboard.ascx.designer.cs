@@ -22,6 +22,15 @@ namespace jumoo.usync.ui {
         protected global::ClientDependency.Core.Controls.CssInclude CssInclude2;
         
         /// <summary>
+        /// UpdatePanel1 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.UpdatePanel UpdatePanel1;
+        
+        /// <summary>
         /// chkRead control.
         /// </summary>
         /// <remarks>
@@ -67,15 +76,6 @@ namespace jumoo.usync.ui {
         protected global::System.Web.UI.WebControls.Button btnSave;
         
         /// <summary>
-        /// btnImport control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnImport;
-        
-        /// <summary>
         /// chkImportReport control.
         /// </summary>
         /// <remarks>
@@ -94,6 +94,15 @@ namespace jumoo.usync.ui {
         protected global::System.Web.UI.WebControls.CheckBox chkForceImport;
         
         /// <summary>
+        /// btnImport control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnImport;
+        
+        /// <summary>
         /// btnExport control.
         /// </summary>
         /// <remarks>
@@ -101,6 +110,15 @@ namespace jumoo.usync.ui {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnExport;
+        
+        /// <summary>
+        /// resultsPanel control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel resultsPanel;
         
         /// <summary>
         /// status control.
@@ -119,5 +137,14 @@ namespace jumoo.usync.ui {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater resultsRpt;
+        
+        /// <summary>
+        /// repRecent control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater repRecent;
     }
 }

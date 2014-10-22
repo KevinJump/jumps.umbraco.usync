@@ -32,9 +32,9 @@ namespace jumps.umbraco.usync
     {
         Success = 0,
         NoChange,
+        WillChange,
         Fail = 11,
         ImportFail,
-        Mismatch,
-        WillChange
+        Mismatch
     }
 }

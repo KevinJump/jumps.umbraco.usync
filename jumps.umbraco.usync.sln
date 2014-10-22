@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "jumps.umbraco.usync_4", "ju
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "jumoo.usync.ui", "jumoo.usync.ui\jumoo.usync.ui.csproj", "{16DAF8F9-7B40-44A8-9891-223E95F00775}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "jumoo.usync.migrations", "jumoo.usync.migrations\jumoo.usync.migrations.csproj", "{5ED46FEC-5423-4EB9-B4F2-C455A5DA2E7C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{16DAF8F9-7B40-44A8-9891-223E95F00775}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{16DAF8F9-7B40-44A8-9891-223E95F00775}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{16DAF8F9-7B40-44A8-9891-223E95F00775}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5ED46FEC-5423-4EB9-B4F2-C455A5DA2E7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5ED46FEC-5423-4EB9-B4F2-C455A5DA2E7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5ED46FEC-5423-4EB9-B4F2-C455A5DA2E7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5ED46FEC-5423-4EB9-B4F2-C455A5DA2E7C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

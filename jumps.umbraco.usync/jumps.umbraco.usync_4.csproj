@@ -107,6 +107,7 @@
     <Compile Include="uSyncConstants.cs" />
     <Compile Include="uSyncReporter.cs" />
     <Compile Include="uSyncSettings.cs" />
+    <Compile Include="uSyncSettingsConfiguration.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="uSyncSettings.config" />

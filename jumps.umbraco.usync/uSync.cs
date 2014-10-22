@@ -81,6 +81,15 @@ namespace jumps.umbraco.usync
             LogHelper.Debug<uSync>("Settings : Attach = {0}", () => _attach);
         }
 
+        public void ClearFolder()
+        {
+            var root = IOHelper.MapPath(helpers.uSyncIO.RootFolder);
+            if ( Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
         /// <summary>
         /// save everything in the DB to disk. 
         /// </summary>
@@ -445,7 +454,7 @@ namespace jumps.umbraco.usync
             ForceImport = false;
             Folder = helpers.uSyncIO.RootFolder;
             var set = DateTime.Now.ToString("yyyy_MM_dd_HHmmss");
-            BackupPath = string.Format("~\\{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), set);
+            BackupPath = string.Format("{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), set);
         }
 
         public ImportSettings(string folder)
@@ -454,7 +463,7 @@ namespace jumps.umbraco.usync
             ForceImport = false;
             Folder = folder;
             var set = DateTime.Now.ToString("yyyy_MM_dd_HHmmss");
-            BackupPath = string.Format("~\\{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), set);
+            BackupPath = string.Format("{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), set);
         }
     }
 }

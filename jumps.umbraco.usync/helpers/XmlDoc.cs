@@ -87,12 +87,13 @@ namespace jumps.umbraco.usync.helpers
         public static string GetSavePath(string folder, string name, string type)
         {
             var safeName = ScrubFile(name);
-            return IOHelper.MapPath(String.Format("{0}\\{1}\\{2}.config", folder, type, safeName));
+            string fullpath = String.Format("{0}\\{1}\\{2}.config", folder, type, safeName);
+            return IOHelper.MapPath(fullpath);
         }
 
         public static XElement GetBackupNode(string backup, string name, string type)
         {
-            string backupPath = GetSavePath(String.Format("~\\{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), backup), name, type);
+            string backupPath = GetSavePath(String.Format("{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), backup), name, type);
             return GetBackupNode(backupPath);
         }
 
@@ -421,18 +422,6 @@ namespace jumps.umbraco.usync.helpers
             XElement copy = new XElement(node);
 
             StripDictionaryIds(copy);
-            /*
-            foreach(var val in copy.Elements("Value"))
-            {
-                val.SetAttributeValue("LanguageId", "");
-            }
-
-            if ( copy.Element("DictionaryItem") != null)
-            {
-
-            }
-             */
-            LogHelper.Info<XmlDoc>("Dictionary:\n{0}", ()=> copy.ToString());
             return CalculateMD5Hash(copy);
         }
 
