@@ -105,7 +105,9 @@ namespace jumps.umbraco.usync
                     LogHelper.Info<uSyncReporter>("Nothing changed that time...");
                 }
 
-                WriteToLog(string.Format("uSync {0} Items processed, {1} Changes made {2} Errors", changes.Count(), changeCount, errorCount));
+                var logline = string.Format("uSync {0} Items processed, {1} Changes made {2} Errors", changes.Count(), changeCount, errorCount);
+                WriteToLog(logline);
+                LogHelper.Info<uSyncReporter>(logline);
             }
         }
 
@@ -123,7 +125,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                LogHelper.Info<uSyncReporter>("Cannot send email: {0}", ()=> ex.ToString());
+                LogHelper.Info<uSyncReporter>("Cannot send email: {0}", ()=> ex.Message);
             }
 
         }
