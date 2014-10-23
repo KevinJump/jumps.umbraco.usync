@@ -27,6 +27,9 @@ namespace jumps.umbraco.usync
             string logFile = IOHelper.MapPath(string.Format("{0}{1}", uSyncSettings.Folder, "changes.log"));
             if (!File.Exists(logFile))
             {
+                if (!Directory.Exists(Path.GetDirectoryName(logFile)))
+                    Directory.CreateDirectory(Path.GetDirectoryName(logFile));
+
                 using ( StreamWriter sw = File.CreateText(logFile))
                 {
                    sw.WriteLine("Starting Log: {0}", DateTime.Now);
@@ -93,12 +96,9 @@ namespace jumps.umbraco.usync
                     sb.Append("uSync - Report Complete");
                     LogHelper.Info<uSyncReporter>("Emailing Changes to {0}", () => uSyncSettings.Reporter.Email);
                     // LogHelper.Debug<uSyncReporter>("Email:\n{0}", () => sb.ToString());
-                    SmtpClient client = new SmtpClient();
-                    MailMessage msg = new MailMessage("usync@jumoo.co.uk", uSyncSettings.Reporter.Email);
-                    msg.Body = sb.ToString();
-                    msg.IsBodyHtml = true;
-                    msg.Subject = string.Format("uSync Report {0} : {1} changes {2} errors", DateTime.Now, changeCount, errorCount);
-                    client.Send(msg);
+                    SendMailMessage(
+                        string.Format("uSync Report {0} : {1} changes {2} errors", DateTime.Now, changeCount, errorCount),
+                        sb.ToString());
                 }
                 else
                 {
@@ -109,5 +109,23 @@ namespace jumps.umbraco.usync
             }
         }
 
+
+        private void SendMailMessage(string subject, string message)
+        {
+            try
+            {
+                SmtpClient client = new SmtpClient();
+                MailMessage msg = new MailMessage("usync@jumoo.co.uk", uSyncSettings.Reporter.Email);
+                msg.Body = message;
+                msg.IsBodyHtml = true;
+                msg.Subject = subject;
+                client.Send(msg);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Info<uSyncReporter>("Cannot send email: {0}", ()=> ex.ToString());
+            }
+
+        }
     }
 }
