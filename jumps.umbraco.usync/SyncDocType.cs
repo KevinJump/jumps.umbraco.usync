@@ -178,6 +178,7 @@ namespace jumps.umbraco.usync
 
         protected override void Restore(string backup)
         {
+            LogHelper.Info<SyncDocType>("Restoring Previous {0}", () => backup);
             XElement backupNode = XmlDoc.GetBackupNode(backup);
             if (backupNode != null)
             {

@@ -19,8 +19,65 @@ namespace jumps.umbraco.usync.Models
             XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
             xmlDoc.AppendChild(item.ToXml(xmlDoc));
 
-            return XElement.Load(new XmlNodeReader(xmlDoc));
+            var node = XElement.Load(new XmlNodeReader(xmlDoc));
+            node = FixProperies(item, node);
+            node = TabSortOrder(item, node);
+
+            return node;
         }
+
+        private static XElement FixProperies(DocumentType item, XElement node)
+        {
+            var props = node.Element("GenericProperties");
+
+            if (props == null)
+                return node;
+            props.RemoveAll();
+
+            foreach(var property in item.PropertyTypes.OrderBy(x => x.Name))
+            {
+                XElement prop = new XElement("GenericProperty");
+
+                prop.Add(new XElement("Name", property.Name));
+                prop.Add(new XElement("Alias", property.Alias));
+                prop.Add(new XElement("Type", property.DataTypeDefinition.DataType.Id.ToString()));
+                prop.Add(new XElement("Definition", property.DataTypeDefinition.UniqueId.ToString()));
+
+                var tab = item.PropertyTypeGroups.Where(x => x.Id == property.PropertyTypeGroup ).FirstOrDefault();
+                if (tab != null)
+                    prop.Add(new XElement("Tab",tab.Name));
+
+                prop.Add(new XElement("Mandatory", property.Mandatory));
+                prop.Add(new XElement("Validation", property.ValidationRegExp));
+                prop.Add(new XElement("Description", new XCData(property.Description)));
+                prop.Add(new XElement("SortOrder", property.SortOrder));
+
+                props.Add(prop);
+            }
+            return node;
+        }
+
+        private static XElement TabSortOrder(DocumentType item, XElement node)
+        {
+            var tabNode = node.Element("Tabs");
+
+            if ( tabNode != null )
+            {
+                tabNode.RemoveAll();
+            }
+            foreach(var tab in item.PropertyTypeGroups.OrderBy(x => x.SortOrder))
+            {
+                var t = new XElement("Tab");
+                t.Add(new XElement("Id", tab.Id));
+                t.Add(new XElement("Caption", tab.Name));
+                t.Add(new XElement("SortOrder", tab.SortOrder));
+
+                tabNode.Add(t);
+            }
+
+            return node;
+        }
+        
 
         public static ChangeItem SyncImport(XElement node, bool postCheck = true)
         {
@@ -30,6 +87,9 @@ namespace jumps.umbraco.usync.Models
                 changeType = ChangeType.Success,
                 name = node.Element("Info").Element("Name").Value
             };
+
+            // LogHelper.Info<uSync>("Import:\n {0}", () => node.ToString());
+            LogHelper.Info<uSync>("Importing: {0}", () => node.Element("Info").Element("Name").Value);
 
             ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
 
@@ -49,12 +109,16 @@ namespace jumps.umbraco.usync.Models
                 change.id = item.Id;
                 change.name = item.Name;
 
+                // basic stuff (like name)
+                item.Description = node.Element("Info").Element("Description").Value;
+                item.Thumbnail = node.Element("Info").Element("Thumbnail").Value;
+
                 ImportStructure(item, node);
 
                 RemoveMissingProperties(item, node);
 
                 // tab sort order
-                // TabSortOrder(item, node);
+                TabSortOrder(item, node);
 
                 UpdateExistingProperties(item, node);
 
@@ -95,9 +159,12 @@ namespace jumps.umbraco.usync.Models
 
         private static void TabSortOrder(IContentType docType, XElement node)
         {
-            XElement tabs = node.Element("tabs");
+            XElement tabs = node.Element("Tabs");
 
-            foreach (var tab in tabs.Elements("tab"))
+            if (tabs == null)
+                return;
+
+            foreach (var tab in tabs.Elements("Tab"))
             {
                 var caption = tab.Element("Caption").Value;
 
@@ -160,6 +227,9 @@ namespace jumps.umbraco.usync.Models
                     property.Mandatory = bool.Parse(propNode.Element("Mandatory").Value);
                     property.ValidationRegExp = propNode.Element("Validation").Value;
                     property.Description = propNode.Element("Description").Value;
+
+                    if ( propNode.Element("SortOrder") != null )
+                        property.SortOrder = int.Parse(propNode.Element("SortOrder").Value);
 
                     // change of type ? 
                     var defId = Guid.Parse(propNode.Element("Definition").Value);

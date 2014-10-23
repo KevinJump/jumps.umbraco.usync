@@ -27,7 +27,7 @@ namespace jumps.umbraco.usync.helpers
     {
         public static bool DocTypeChanged(XElement node)
         {
-            string filehash = XmlDoc.ReCalculateHash(node);
+            string filehash = XmlDoc.ReCalculateHash(node, true);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -35,15 +35,19 @@ namespace jumps.umbraco.usync.helpers
             if (name == null)
                 return true;
 
+
             // get it...
             var docType = DocumentType.GetByAlias(name.Value);
             if (docType == null)
                 return true;
 
-            XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
-            xmlDoc.AppendChild(docType.ToXml(xmlDoc));
+            XElement elementNode = uDocType.SyncExport(docType);
 
-            string dbMD5 = helpers.XmlDoc.CalculateMD5Hash(xmlDoc);
+            LogHelper.Info<uSync>("Before: {0}", () => node.ToString(SaveOptions.DisableFormatting));
+            LogHelper.Info<uSync>("After : {0}", () => elementNode.ToString(SaveOptions.DisableFormatting));
+
+
+            string dbMD5 = helpers.XmlDoc.CalculateMD5Hash(elementNode, true);
             return (!filehash.Equals(dbMD5));
         }
 

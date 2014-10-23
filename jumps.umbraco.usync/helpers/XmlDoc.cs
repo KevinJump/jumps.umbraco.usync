@@ -391,7 +391,7 @@ namespace jumps.umbraco.usync.helpers
             {
                 XElement copy = new XElement(node);
                 var preValueRoot = copy.Element("PreValues");
-                if (preValueRoot.HasElements)
+                if (preValueRoot != null && preValueRoot.HasElements)
                 {
                     var preValues = preValueRoot.Elements("PreValue");
                     foreach (var preValue in preValues)
@@ -407,6 +407,17 @@ namespace jumps.umbraco.usync.helpers
                 var nodes = copy.Element("nodes");
                 if (nodes != null)
                     nodes.Remove();
+
+                // tab ids 
+                var tabs = copy.Element("Tabs");
+                if (tabs != null && tabs.HasElements)
+                {
+                    foreach(var t in tabs.Elements("Tab"))
+                    {
+                        if ( t.Element("Id") != null )
+                            t.Element("Id").Remove();
+                    }
+                }
 
                 return CalculateMD5Hash(copy);
             }
