@@ -280,6 +280,37 @@ namespace jumps.umbraco.usync
 
                 EventPaused = false; 
 
+                if ( !importSettings.ReportOnly && !importSettings.ForceImport && uSyncSettings.FullRestore)
+                {
+                    // if we're not on a reporting run, or a force run and the global settings is for a full restore
+                    // then we need to go through our import. 
+
+                    // if there are any changes that didn't work - we do a full restore of the whole backup.
+                    var errors = false;
+                    foreach(var change in changes)
+                    {
+                        if (change.changeType >= ChangeType.Fail)
+                        {
+                            errors = true;
+                            break;
+                        }
+                    }
+
+                    if ( errors )
+                    {
+                        LogHelper.Info<uSync>("Import contained errors - Full Rollback to {0}", () => importSettings.BackupPath);
+
+                        var restoreSettings = new ImportSettings(importSettings.BackupPath);
+                        restoreSettings.ForceImport = true;
+
+                        ReadAllFromDisk(restoreSettings);
+                    }
+
+
+
+                }
+
+
                 return changes; 
             }
             else
