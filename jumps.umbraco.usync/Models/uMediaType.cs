@@ -7,6 +7,8 @@ using System.Xml;
 using System.Xml.Linq;
 using umbraco.cms.businesslogic.media;
 
+using Umbraco.Core;
+
 namespace jumps.umbraco.usync.Models
 {
     public static class uMediaType
@@ -46,17 +48,21 @@ namespace jumps.umbraco.usync.Models
                 name = node.Element("Info").Element("Alias").Value
             };
 
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(node.ToString());
+            var contentService = ApplicationContext.Current.Services.ContentTypeService;
+            var alias = node.Element("Info").Element("Alias").Value;
 
-            XmlNode xmlNode = xmlDoc.SelectSingleNode("//MediaType");
-
-            MediaTypeHelper.Import(xmlNode, true);
+            var item = contentService.GetMediaType(alias);
+            if (item != null)
+            {
+                MediaTypeHelper.SyncImportFitAndFix(item, node, true);
+                contentService.Save(item);
+            }
 
             if ( postCheck && tracker.MediaTypeChanged(node))
             {
                 change.changeType = ChangeType.Mismatch;
             }
+
 
             return change; 
         }

@@ -464,6 +464,8 @@ namespace jumps.umbraco.usync
                     pt.ValidationRegExp = xmlHelper.GetNodeValue(gp.SelectSingleNode("Validation"));
                     pt.Description = xmlHelper.GetNodeValue(gp.SelectSingleNode("Description"));
 
+                    LogHelper.Info<SyncMediaTypes>("{0} {1}", ()=> pt.Description, () => xmlHelper.GetNodeValue(gp.SelectSingleNode("Description")));
+
                     // tab
                     try
                     {
@@ -509,6 +511,53 @@ namespace jumps.umbraco.usync
 
         }
 
+
+        public static ChangeItem SyncImportFitAndFix(Umbraco.Core.Models.IMediaType item, XElement node, bool postCheck = true)
+        {
+            var change = new ChangeItem
+            {
+                itemType = ItemType.MediaItem,
+                changeType = ChangeType.Success
+            };
+
+            if (item != null)
+            {
+                change.id = item.Id;
+                change.name = item.Name;
+
+                var iNode = node.Element("Info");
+                if (iNode != null && iNode.HasElements)
+                {
+                    item.Icon = iNode.Element("Icon").Value;
+                    item.Thumbnail = iNode.Element("Thumbnail").Value;
+                    item.Description = iNode.Element("Description").Value;
+                    item.AllowedAsRoot = bool.Parse(iNode.Element("AllowAtRoot").Value);
+                }
+
+                var sNode = node.Element("Scructure");
+                if (sNode != null && sNode.HasElements)
+                {
+                    // structure...
+                    uDocType.ImportStructure(item, node);
+                }
+
+                var pNode = node.Element("GenericProperties");
+                if (pNode != null && pNode.HasElements)
+                {
+                    // properties...
+                    uDocType.RemoveMissingProperties(item, node);
+                    uDocType.UpdateExistingProperties(item, node);
+                }
+
+                var tNode = node.Element("Tabs");
+                if (tNode != null && tNode.HasElements)
+                {
+                    uDocType.TabSortOrder(item, node);
+                }
+            }
+            return null;
+        }
+    
         private static int findDataTypeDefinitionFromType(ref Guid dtId)
         {
             int dfId = 0;

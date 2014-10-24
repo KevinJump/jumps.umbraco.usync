@@ -135,7 +135,7 @@ namespace jumps.umbraco.usync.Models
         }
 
 
-        private static void ImportStructure(IContentType docType, XElement node)
+        internal static void ImportStructure(IContentTypeBase docType, XElement node)
         {
             XElement structure = node.Element("Structure");
 
@@ -157,7 +157,7 @@ namespace jumps.umbraco.usync.Models
             docType.AllowedContentTypes = allowed;
         }
 
-        private static void TabSortOrder(IContentType docType, XElement node)
+        internal static void TabSortOrder(IContentTypeBase docType, XElement node)
         {
             XElement tabs = node.Element("Tabs");
 
@@ -176,7 +176,7 @@ namespace jumps.umbraco.usync.Models
             }
         }
 
-        private static void RemoveMissingProperties(IContentType docType, XElement node)
+        internal static void RemoveMissingProperties(IContentTypeBase docType, XElement node)
         {
             if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
             {
@@ -210,7 +210,7 @@ namespace jumps.umbraco.usync.Models
             }
         }
 
-        private static void UpdateExistingProperties(IContentType docType, XElement node)
+        internal static void UpdateExistingProperties(IContentTypeBase docType, XElement node)
         {
             Dictionary<string, string> tabMoves = new Dictionary<string, string>();
 

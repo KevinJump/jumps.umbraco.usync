@@ -43,17 +43,13 @@ namespace jumps.umbraco.usync.helpers
 
             XElement elementNode = uDocType.SyncExport(docType);
 
-            LogHelper.Info<uSync>("Before: {0}", () => node.ToString(SaveOptions.DisableFormatting));
-            LogHelper.Info<uSync>("After : {0}", () => elementNode.ToString(SaveOptions.DisableFormatting));
-
-
             string dbMD5 = helpers.XmlDoc.CalculateMD5Hash(elementNode, true);
             return (!filehash.Equals(dbMD5));
         }
 
         public static bool MediaTypeChanged(XElement node)
         {
-            string filehash = XmlDoc.ReCalculateHash(node);
+            string filehash = XmlDoc.ReCalculateHash(node, true);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -67,7 +63,7 @@ namespace jumps.umbraco.usync.helpers
 
             XmlDocument doc = XmlDoc.CreateDoc();
             doc.AppendChild(MediaTypeHelper.ToXml(doc, item));
-            var dbMD5 = XmlDoc.CalculateMD5Hash(doc);
+            var dbMD5 = XmlDoc.CalculateMD5Hash(doc, true);
 
             return (!filehash.Equals(dbMD5));
         }
@@ -96,7 +92,8 @@ namespace jumps.umbraco.usync.helpers
 
         public static bool DataTypeChanged(XElement node)
         {
-            string filehash = XmlDoc.ReCalculateHash(node, true);
+            var importNode = uDataTypeDefinition.ConvertToImportXML(node);
+            string filehash = XmlDoc.ReCalculateHash(importNode, true);
 
             if (string.IsNullOrEmpty(filehash))
                 return true;
@@ -115,7 +112,8 @@ namespace jumps.umbraco.usync.helpers
                 return true;
 
             XElement dbNode = dtd.SyncExport();
-            var dbMD5 = XmlDoc.CalculateMD5Hash(dbNode, true);
+            XElement dbImportNode = uDataTypeDefinition.ConvertToImportXML(dbNode);
+            var dbMD5 = XmlDoc.CalculateMD5Hash(dbImportNode, true);
 
             return (!filehash.Equals(dbMD5));
         }

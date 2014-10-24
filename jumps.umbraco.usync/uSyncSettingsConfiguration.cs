@@ -252,7 +252,7 @@ namespace jumps.umbraco.usync
         [ConfigurationProperty("preValueType", IsRequired = false, DefaultValue = "text")]
         public string PreValueType
         {
-            get { return (string)base["preValueType"]; }
+            get { return ((string)base["preValueType"]).ToLower(); }
         }
 
         [ConfigurationProperty("propertyName", IsRequired = false)]

@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Security.Cryptography;
 using System.Text;
-using System.IO ; 
 using System.Xml;
 using System.Xml.Linq;
-using System.Security.Cryptography;
 
-using Umbraco.Core.IO ;
+using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync.helpers
@@ -152,144 +153,6 @@ namespace jumps.umbraco.usync.helpers
 
             return doc;
         }
-        /*
-        public static void SaveXmlDoc(string type, string path, string name, XmlDocument doc,string root = null)
-        {
-            string savePath = string.Format("{0}\\{1}\\{2}.config", GetTypeFolder(type), path, name) ;
-            SaveXmlDoc(savePath, doc, root); 
-        }
-
-        public static void SaveXmlDoc(string type, string name, XmlDocument doc,string root=null)
-        {
-            string savePath = string.Format("{0}\\{1}.config", GetTypeFolder(type), ScrubFile(name)) ;
-            SaveXmlDoc(savePath, doc, root) ;
-        }
-
-        public static void SaveXmlDoc(string path, XmlDocument doc, string root = null)
-        {
-            if ( string.IsNullOrWhiteSpace(root))
-                root = uSyncIO.RootFolder;
-
-            string savePath = string.Format("{0}\\{1}", IOHelper.MapPath(root), path);
-            
-            //
-            // moved because we can attempt to delete it so we need to fire before we start
-            //
-            OnPreSave(new XmlDocFileEventArgs(savePath));
-
-
-            if ( !Directory.Exists(Path.GetDirectoryName(savePath)))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(savePath));
-            }
-            else {
-                if ( File.Exists(savePath) ) 
-                {
-                    // TODO: Archive here..? 
-                    if ( _versions ) {
-                        ArchiveFile(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path), false);  
-                    }
-            
-                    File.Delete(savePath);
-                }
-            }
-
-            LogHelper.Info<XmlDoc>("##SAVE## {0}", () => savePath);
-            doc.Save(savePath) ;
-
-            OnSaved(new XmlDocFileEventArgs(savePath)); 
-        }
-
-        /// <summary>
-        /// Archive a file (and delete the orgininal) called when a file is deleted
-        /// </summary>
-        public static void ArchiveFile(string path, string name)
-        {
-            ArchiveFile(path, name, true);
-        }
-
-        public static void ArchiveFile(string type, string path, string name)
-        {
-            string savePath = string.Format(@"{0}\{1}\", GetTypeFolder(type), path);
-            ArchiveFile(savePath, name, true);
-        }
-
-        /// <summary>
-        /// archive a file, and optionally delete the orgiinal, allows us to use archive 
-        /// as a versioning tool :) 
-        /// </summary>
-        public static void ArchiveFile(string type, string name, bool delete)
-        {
-            string liveRoot = IOHelper.MapPath(uSyncIO.RootFolder);
-            string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder);
-
-            string currentFile = string.Format(@"{0}\{1}\{2}.config",
-                liveRoot, GetTypeFolder(type),ScrubFile(name));
-
-
-            string archiveFile = string.Format(@"{0}\{1}\{2}_{3}.config",
-                archiveRoot, GetTypeFolder(type), ScrubFile(name), DateTime.Now.ToString("ddMMyy_HHmmss"));
-
-
-            try
-            {
-
-                // we need to confirm the archive directory exists 
-                if (!Directory.Exists(Path.GetDirectoryName(archiveFile)))
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(archiveFile));
-                }
-
-                if (File.Exists(currentFile))
-                {
-                    // it shouldn't happen as we are going for a unique name
-                    // but it might be called twice v'quickly
-
-                    if (File.Exists(archiveFile))
-                    {
-                        File.Delete(archiveFile);
-                    }
-
-                    // 
-                    File.Copy(currentFile, archiveFile);
-                    OnPreDelete(new XmlDocFileEventArgs(currentFile));
-                    File.Delete(currentFile);
-                    OnDeleted(new XmlDocFileEventArgs(currentFile));
-
-                    LogHelper.Info<XmlDoc>("Archived [{0}] to [{1}]", ()=> currentFile, ()=> archiveFile); 
-                }
-            }
-            catch(Exception ex)
-            {
-               // archive is a non critical thing - if it fails we are not stopping
-               // umbraco, but we are going to log that it didn't work. 
-               // Log.Add(LogTypes.Error, 0, "Failed to archive") ; 
-               // to do some dialog popup text like intergration
-               LogHelper.Info<XmlDoc>("Failed to Archive {1}, {0}", ()=> type, ()=> name ); 
-            }
-
-        }
-
-        public static void DeleteuSyncFile(string type, string path, string name)
-        {
-            string liveRoot = IOHelper.MapPath(uSyncIO.RootFolder);
-            string archiveRoot = IOHelper.MapPath(uSyncIO.ArchiveFolder);
-
-            string currentFile = string.Format(@"{0}\{1}\{2}.config",
-                liveRoot, GetTypeFolder(type), ScrubFile(name));
-
-            if (File.Exists(currentFile))
-            {
-                OnPreDelete(new XmlDocFileEventArgs(currentFile));
-                File.Delete(currentFile);
-                OnDeleted(new XmlDocFileEventArgs(currentFile));
-
-                LogHelper.Info<XmlDoc>("Deleted File [{0}]", ()=> currentFile); 
-            }
-        }
-        */
-
-
 
         /// <summary>
         /// we need to clean the name up to make it a valid file name..
@@ -390,21 +253,35 @@ namespace jumps.umbraco.usync.helpers
             if (removePreValIds)
             {
                 XElement copy = new XElement(node);
+
                 var preValueRoot = copy.Element("PreValues");
                 if (preValueRoot != null && preValueRoot.HasElements)
                 {
+                    // for pre-values, we use to remove the ids, 
+
+                    // but to ensure the order - we create a new list of prevalues,
+                    // and sort it - then replace the prevalues with that 
+                    // then our hash will be in order...
                     var preValues = preValueRoot.Elements("PreValue");
+                    var newPreVals = new XElement("hash_prevals");
+                    List<string> vals = new List<string>();
+
                     foreach (var preValue in preValues)
                     {
-                        // find pre-vals - blank ids...
-                        preValue.SetAttributeValue("Id", "");
-
-                        if (preValue.Attribute("mapId") != null)
-                            preValue.Attribute("mapId").Remove();
+                        var genericValue = preValue.Attribute("Value").Value;
+                        vals.Add(genericValue);
                     }
+                 
+                    vals.Sort();
+                    foreach(var v in vals)
+                    {
+                        newPreVals.Add(new XElement("preval", v));
+                    }
+                    preValueRoot.RemoveAll();
+                    preValueRoot.Add(newPreVals);
                 }
 
-                var nodes = copy.Element("nodes");
+                var nodes = copy.Element("Nodes");
                 if (nodes != null)
                     nodes.Remove();
 
@@ -454,6 +331,7 @@ namespace jumps.umbraco.usync.helpers
         //
         public static string CalculateMD5Hash(XElement node)
         {
+            LogHelper.Info<XmlDoc>("Hash: {0}", () => node.ToString(SaveOptions.DisableFormatting));
             string md5Hash = "";
             MemoryStream stream = new MemoryStream();
             node.Save(stream);
@@ -485,16 +363,7 @@ namespace jumps.umbraco.usync.helpers
             }
             return hash;
         }
-
-        public static string GetPreCalculatedHash(XElement node)
-        {
-            XElement hashNode = node.Element("Hash");
-            if (hashNode == null)
-                return "";
-
-            return hashNode.Value;
-        }
-
+         
         public static string ReCalculateHash(XElement node, bool removePreVals = false)
         {
             XElement copy = new XElement(node);
