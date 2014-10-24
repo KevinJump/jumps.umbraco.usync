@@ -85,6 +85,7 @@ namespace jumps.umbraco.usync
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
                         Restore(backup);
+                        change.changeType = ChangeType.RolledBack;
                     }
 
                     AddChange(change);

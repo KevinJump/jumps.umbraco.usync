@@ -82,7 +82,10 @@ namespace jumps.umbraco.usync
                     ChangeItem change = uDictionaryItem.SyncImport(node);
 
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
+                    {
+                        change.changeType = ChangeType.RolledBack;
                         Restore(backup);
+                    }
 
                     AddChange(change);
                 }

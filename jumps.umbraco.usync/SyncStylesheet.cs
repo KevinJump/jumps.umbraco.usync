@@ -95,7 +95,10 @@ namespace jumps.umbraco.usync
                     ChangeItem change = uStylesheet.SyncImport(node);
 
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
+                    {
                         Restore(backup);
+                        change.changeType == ChangeType.RolledBack;
+                    }
 
                     AddChange(change);
                 }

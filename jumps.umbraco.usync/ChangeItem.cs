@@ -35,6 +35,7 @@ namespace jumps.umbraco.usync
         WillChange,
         Fail = 11,
         ImportFail,
-        Mismatch
+        Mismatch,
+        RolledBack
     }
 }
