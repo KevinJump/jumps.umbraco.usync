@@ -22,9 +22,14 @@ namespace jumps.umbraco.usync
         {
         }
 
-        public void WriteToLog(string message)
+        public static void WriteToLog(string message, params object[] args)
         {
-            string logFile = IOHelper.MapPath(string.Format("{0}{1}", uSyncSettings.Folder, "changes.log"));
+            WriteToLog(string.Format(message, args));
+        }
+
+        public static void WriteToLog(string message)
+        {
+            string logFile = IOHelper.MapPath("~/app_data/logs/changes.log");
             if (!File.Exists(logFile))
             {
                 if (!Directory.Exists(Path.GetDirectoryName(logFile)))
@@ -46,7 +51,7 @@ namespace jumps.umbraco.usync
 
         public List<string> GetRecentLog()
         {
-            string logFile = IOHelper.MapPath(string.Format("{0}{1}", uSyncSettings.Folder, "changes.log"));
+            string logFile = IOHelper.MapPath("~/app_data/logs/changes.log");
             if (!File.Exists(logFile))
                 return null;
 

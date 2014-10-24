@@ -31,6 +31,7 @@ namespace jumps.umbraco.usync
     public enum ChangeType
     {
         Success = 0,
+        Delete,
         NoChange,
         WillChange,
         Fail = 11,

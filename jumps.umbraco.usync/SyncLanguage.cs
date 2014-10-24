@@ -50,6 +50,7 @@ namespace jumps.umbraco.usync
         {
             string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Language));
             ImportFolder(root);
+            RemoveFromSource(root);
         }
 
         public override void Import(string filePath)
@@ -76,6 +77,7 @@ namespace jumps.umbraco.usync
                         Restore(backup);
                         change.changeType = ChangeType.RolledBack;
                     }
+                    uSyncReporter.WriteToLog("Imported Language [{0}] {1}", change.name, change.changeType.ToString());
 
                     AddChange(change);
                 }
@@ -92,6 +94,40 @@ namespace jumps.umbraco.usync
             }
             else
                 AddNoChange(ItemType.Languages, filePath);
+        }
+
+        private void RemoveFromSource(string filepath)
+        {
+            // will remove any languages from the suste, that are not on the disk.
+            foreach (Language item in Language.GetAllAsList())
+            {
+                var file = XmlDoc.GetSavePath(_settings.Folder, item.CultureAlias, Constants.ObjectTypes.Language);
+                if ( !System.IO.File.Exists(file))
+                {
+                    // delete from the db.
+                    if (_settings.ReportOnly)
+                    {
+                        AddChange(new ChangeItem
+                        {
+                            changeType = ChangeType.WillChange,
+                            name = item.CultureAlias,
+                            message = "Will delete " + file,
+                            itemType = ItemType.Languages
+                        });
+                    }
+                    else
+                    {
+                        item.Delete();
+                        AddChange(new ChangeItem
+                        {
+                            changeType = ChangeType.Delete,
+                            name = item.CultureAlias,
+                            message = "deleted " + file,
+                            itemType = ItemType.Languages
+                        });
+                    }
+                }
+            }
         }
 
         protected override string Backup(XElement node)
@@ -143,6 +179,7 @@ namespace jumps.umbraco.usync
 
         static void Language_AfterSave(Language sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
         {
+            LogHelper.Info<SyncLanguage>("PostSave: {0} {1}", () => sender.id, () => sender.CultureAlias);
             if (!uSync.EventPaused)
             {
                 var langSync = new SyncLanguage();

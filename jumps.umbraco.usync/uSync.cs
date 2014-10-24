@@ -1,15 +1,29 @@
 ﻿//
-// uSync 1.6.1
-
-// For Umbraco 6.1.x
+// uSync 1.6.1 for Umbraco 6.1.x
+// 
+// fairly major re-write to include: 
+//      * Mapping :
+//          will map Content, Media, Stylesheet and Tab Ids
+//          inside DataTypes during the import
 //
-// uses precompile conditions to build a v4 and v6 version
-// of usync. 
+//      * Rollback :
+//          at the flick of a config, will attempt to work out
+//          if an import has worked (by comparing before and afters)
+//          and if they don't match it will then either
+//              a) rollback the item you just imported
+//              b) rollback the whole import
 //
-
+//          rollbacks can help as part of a callorie controleld diet
+//          but you need to make sure you're watching or you could
+//          just end up in forever rollback.
+//
+//      * Dashboard support
+//          A nice dashboard in umbraco, to manually control imports
+//          and exports, as well as a nice - what might change report
+//          
 using System;
 using System.Collections.Generic;
-using System.IO; // so we can write to disk..
+using System.IO; 
 using System.Diagnostics;
 
 using Umbraco.Core.IO;
@@ -303,13 +317,11 @@ namespace jumps.umbraco.usync
                         var restoreSettings = new ImportSettings(importSettings.BackupPath);
                         restoreSettings.ForceImport = true;
 
-                        ReadAllFromDisk(restoreSettings);
+                        var rollbackChanges = ReadAllFromDisk(restoreSettings);
+
+                        changes.AddRange(rollbackChanges);
                     }
-
-
-
                 }
-
 
                 return changes; 
             }

@@ -95,23 +95,24 @@
                     </div>
                </div>
             </asp:Panel>
+
+               <div class="dashboardColWrapper">
+                    <div class="dashboardCols">
+                        <div class="dashboardCol">
+                            <h3>Recent changes</h3>
+                            <asp:Repeater id="repRecent" runat="server">
+                                <HeaderTemplate><ul></HeaderTemplate>
+                                <ItemTemplate>
+                                          <li><%# Container.DataItem.ToString() %></li>
+                                </ItemTemplate>
+                                <FooterTemplate></ul></FooterTemplate>
+                            </asp:Repeater>
+                        </div>
+                    </div>
+                </div>
             </ContentTemplate>
             </asp:UpdatePanel>
 
-           <div class="dashboardColWrapper">
-                <div class="dashboardCols">
-                    <div class="dashboardCol">
-                        <h3>Status last 50 passes</h3>
-                        <asp:Repeater id="repRecent" runat="server">
-                            <HeaderTemplate><ul></HeaderTemplate>
-                            <ItemTemplate>
-                                      <li><%# Container.DataItem.ToString() %></li>
-                            </ItemTemplate>
-                            <FooterTemplate></ul></FooterTemplate>
-                        </asp:Repeater>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>

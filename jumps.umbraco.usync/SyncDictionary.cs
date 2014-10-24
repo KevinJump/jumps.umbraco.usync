@@ -86,6 +86,7 @@ namespace jumps.umbraco.usync
                         change.changeType = ChangeType.RolledBack;
                         Restore(backup);
                     }
+                    uSyncReporter.WriteToLog("Imported Dictionary [{0}] {1}", change.name, change.changeType.ToString());
 
                     AddChange(change);
                 }

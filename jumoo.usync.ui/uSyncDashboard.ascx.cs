@@ -23,6 +23,11 @@ namespace jumoo.usync.ui
                 chkWatch.Checked = uSyncSettings.WatchFolder;
             }
 
+            loadRecent();
+        }
+
+        private void loadRecent()
+        {
             uSyncReporter r = new uSyncReporter();
             List<string> recent = r.GetRecentLog();
 
@@ -51,6 +56,7 @@ namespace jumoo.usync.ui
                 sw.Stop();
 
                 resultsPanel.Visible = true;
+                loadRecent();
                 status.Text = string.Format("Import complete: {2} changes in {0} items in {1}ms", changes.Count(), sw.ElapsedMilliseconds, changesMade.Count());
             }
             catch (Exception ex)

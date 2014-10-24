@@ -100,6 +100,7 @@ namespace jumps.umbraco.usync
                         change.changeType = ChangeType.RolledBack;
                     }
 
+                    uSyncReporter.WriteToLog("Imported Macro [{0}] {1}", change.name, change.changeType.ToString());
                     AddChange(change);
                 }
                 else

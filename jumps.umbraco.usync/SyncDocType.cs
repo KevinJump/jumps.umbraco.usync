@@ -127,9 +127,8 @@ namespace jumps.umbraco.usync
                         changeType = ChangeType.WillChange,
                         itemType = ItemType.DocumentType,
                         name = node.Element("Info").Element("Alias").Value,
-                        message = "Reporting: will update"
+                        message = "will change/update"
                     });
-
                 }
             }
             else
@@ -156,6 +155,9 @@ namespace jumps.umbraco.usync
                                 Restore(update.Value.Item2);
                                 change.changeType = ChangeType.RolledBack;
                             }
+
+                            uSyncReporter.WriteToLog("Imported Doctype [{0}] {1}", change.name, change.changeType.ToString());
+
                             AddChange(change);
                         }
                     }
