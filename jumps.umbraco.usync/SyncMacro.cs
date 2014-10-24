@@ -150,14 +150,20 @@ namespace jumps.umbraco.usync
 
         static void Macro_AfterDelete(Macro sender, DeleteEventArgs e)
         {
-            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Alias, Constants.ObjectTypes.Macro), true);
-            e.Cancel = false;
+            if (!uSync.EventPaused)
+            {
+                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Alias, Constants.ObjectTypes.Macro), true);
+                e.Cancel = false;
+            }
         }
 
         static void Macro_AfterSave(Macro sender, SaveEventArgs e)
         {
-            SyncMacro m = new SyncMacro();
-            m.ExportToDisk(sender, _eventFolder); 
+            if (!uSync.EventPaused)
+            {
+                SyncMacro m = new SyncMacro();
+                m.ExportToDisk(sender, _eventFolder);
+            }
         }
     }
 }

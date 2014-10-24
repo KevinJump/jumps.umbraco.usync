@@ -181,28 +181,34 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_DeletingMediaType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<Umbraco.Core.Models.IMediaType> e)
         {
-            LogHelper.Debug<SyncMediaTypes>("DeletingMediaType for {0} items", ()=> e.DeletedEntities.Count());
-            if (e.DeletedEntities.Count() > 0)
+            if (!uSync.EventPaused)
             {
-                var syncMedia = new SyncMediaTypes();
-
-                foreach (var mediaType in e.DeletedEntities)
+                LogHelper.Debug<SyncMediaTypes>("DeletingMediaType for {0} items", () => e.DeletedEntities.Count());
+                if (e.DeletedEntities.Count() > 0)
                 {
-                    var savePath = syncMedia.GetMediaPath(new MediaType(mediaType.Id));
-                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.MediaType), true);
+                    var syncMedia = new SyncMediaTypes();
+
+                    foreach (var mediaType in e.DeletedEntities)
+                    {
+                        var savePath = syncMedia.GetMediaPath(new MediaType(mediaType.Id));
+                        XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.MediaType), true);
+                    }
                 }
             }
         }
 
         static void ContentTypeService_SavedMediaType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<Umbraco.Core.Models.IMediaType> e)
         {
-            LogHelper.Debug<SyncMediaTypes>("SaveContent Type Fired for {0} types", ()=> e.SavedEntities.Count());
-            if (e.SavedEntities.Count() > 0)
+            if (!uSync.EventPaused)
             {
-                var syncMedia = new SyncMediaTypes();
-                foreach (var mediaType in e.SavedEntities)
+                LogHelper.Debug<SyncMediaTypes>("SaveContent Type Fired for {0} types", () => e.SavedEntities.Count());
+                if (e.SavedEntities.Count() > 0)
                 {
-                    syncMedia.ExportToDisk(new MediaType(mediaType.Id), _eventFolder);
+                    var syncMedia = new SyncMediaTypes();
+                    foreach (var mediaType in e.SavedEntities)
+                    {
+                        syncMedia.ExportToDisk(new MediaType(mediaType.Id), _eventFolder);
+                    }
                 }
             }
         }

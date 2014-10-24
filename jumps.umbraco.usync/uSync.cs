@@ -38,7 +38,9 @@ namespace jumps.umbraco.usync
 
         // our own events - fired when we start and stop
         public static event uSyncBulkEventHander Starting;
-        public static event uSyncBulkEventHander Initialized; 
+        public static event uSyncBulkEventHander Initialized;
+
+        public static bool EventPaused = false; 
 
         /// <summary>
         /// do the stuff we do when we start, using locks, and flags so
@@ -162,6 +164,9 @@ namespace jumps.umbraco.usync
             if (importSettings == null)
                 importSettings = new ImportSettings();
 
+            if (!importSettings.ReportOnly)
+                EventPaused = true;
+
             if (!File.Exists(Path.Combine(IOHelper.MapPath(importSettings.Folder), "usync.stop")))
             {
                 Stopwatch sw = new Stopwatch();
@@ -272,6 +277,8 @@ namespace jumps.umbraco.usync
 
                 var report = new uSyncReporter();
                 report.ReportChanges(changes);
+
+                EventPaused = false; 
 
                 return changes; 
             }

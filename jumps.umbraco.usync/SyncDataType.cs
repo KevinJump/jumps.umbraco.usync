@@ -178,32 +178,36 @@ namespace jumps.umbraco.usync
  
         public static void DataTypeDefinition_Saving(DataTypeDefinition sender, EventArgs e)
         {
-            lock ( _saveLock )
+            if (!uSync.EventPaused)
             {
-                _saveTimer.Stop();
-                _saveTimer.Start();
+                lock (_saveLock)
+                {
+                    _saveTimer.Stop();
+                    _saveTimer.Start();
 
-                LogHelper.Info<SyncDataType>("Queuing {0}", () => sender.Id);
+                    LogHelper.Info<SyncDataType>("Queuing {0}", () => sender.Id);
 
-                _saveQueue.Enqueue(sender.Id);
+                    _saveQueue.Enqueue(sender.Id);
 
+                }
+                // SaveToDisk((DataTypeDefinition)sender);
             }
-            // SaveToDisk((DataTypeDefinition)sender);
         }
 
         //
         // umbraco 6.0.4 changed the defintion of this event! 
         //
         public static void DataTypeDefinition_AfterDelete(DataTypeDefinition sender, EventArgs e)
-
         {
-            if (typeof(DataTypeDefinition) == sender.GetType())
+            if (!uSync.EventPaused)
             {
-                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.DataType), true);
-            }
+                if (typeof(DataTypeDefinition) == sender.GetType())
+                {
+                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.DataType), true);
+                }
 
-            // no cancel... 
-           
+                // no cancel... 
+            }           
         }
         
     }

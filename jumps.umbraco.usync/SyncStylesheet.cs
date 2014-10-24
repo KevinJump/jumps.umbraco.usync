@@ -97,7 +97,7 @@ namespace jumps.umbraco.usync
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
                         Restore(backup);
-                        change.changeType == ChangeType.RolledBack;
+                        change.changeType = ChangeType.RolledBack;
                     }
 
                     AddChange(change);
@@ -153,15 +153,21 @@ namespace jumps.umbraco.usync
 
         static void StyleSheet_BeforeDelete(StyleSheet sender, DeleteEventArgs e)
         {
-            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.Stylesheet), true);
-            e.Cancel = false;
+            if (!uSync.EventPaused)
+            {
+                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.Stylesheet), true);
+                e.Cancel = false;
+            }
         }
         
 
         static void StyleSheet_AfterSave(StyleSheet sender, SaveEventArgs e)
         {
-            var styleSync = new SyncStylesheet();
-            styleSync.ExportToDisk(sender,_eventFolder); 
+            if (!uSync.EventPaused)
+            {
+                var styleSync = new SyncStylesheet();
+                styleSync.ExportToDisk(sender, _eventFolder);
+            }
         }
     }
 }

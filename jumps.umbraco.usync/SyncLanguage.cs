@@ -135,13 +135,19 @@ namespace jumps.umbraco.usync
 
         static void Language_AfterDelete(Language sender, global::umbraco.cms.businesslogic.DeleteEventArgs e)
         {
-            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.CultureAlias, Constants.ObjectTypes.Language), true);
+            if (!uSync.EventPaused)
+            {
+                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.CultureAlias, Constants.ObjectTypes.Language), true);
+            }
         }
 
         static void Language_AfterSave(Language sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
         {
-            var langSync = new SyncLanguage();
-            langSync.ExportToDisk(sender, _eventFolder);
+            if (!uSync.EventPaused)
+            {
+                var langSync = new SyncLanguage();
+                langSync.ExportToDisk(sender, _eventFolder);
+            }
         }
     }
 }

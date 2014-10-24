@@ -239,32 +239,38 @@ namespace jumps.umbraco.usync
 
         static void ContentTypeService_SavedContentType(IContentTypeService sender, Umbraco.Core.Events.SaveEventArgs<IContentType> e)
         {
-            LogHelper.Debug<SyncDocType>("SaveContent Type Fired for {0} types", 
-                ()=> e.SavedEntities.Count());
-
-            if (e.SavedEntities.Count() > 0)
+            if (!uSync.EventPaused)
             {
-                var docSync = new SyncDocType();
+                LogHelper.Debug<SyncDocType>("SaveContent Type Fired for {0} types",
+                    () => e.SavedEntities.Count());
 
-                foreach (var docType in e.SavedEntities)
+                if (e.SavedEntities.Count() > 0)
                 {
-                    docSync.ExportToDisk(new DocumentType(docType.Id), _eventFolder);
+                    var docSync = new SyncDocType();
+
+                    foreach (var docType in e.SavedEntities)
+                    {
+                        docSync.ExportToDisk(new DocumentType(docType.Id), _eventFolder);
+                    }
                 }
             }
         }
 
         static void ContentTypeService_DeletingContentType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<IContentType> e)
         {
-            LogHelper.Debug<SyncDocType>("Deleting Type Fired for {0} types", () => e.DeletedEntities.Count());
-            // delete things (there can sometimes be more than one??)
-            if (e.DeletedEntities.Count() > 0)
+            if (!uSync.EventPaused)
             {
-                var docSync = new SyncDocType();
-
-                foreach (var docType in e.DeletedEntities)
+                LogHelper.Debug<SyncDocType>("Deleting Type Fired for {0} types", () => e.DeletedEntities.Count());
+                // delete things (there can sometimes be more than one??)
+                if (e.DeletedEntities.Count() > 0)
                 {
-                    var savePath = docSync.GetDocPath(new DocumentType(docType.Id));
-                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.DocType), true);
+                    var docSync = new SyncDocType();
+
+                    foreach (var docType in e.DeletedEntities)
+                    {
+                        var savePath = docSync.GetDocPath(new DocumentType(docType.Id));
+                        XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.DocType), true);
+                    }
                 }
             }
         }

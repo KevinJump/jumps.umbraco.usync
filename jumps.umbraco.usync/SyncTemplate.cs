@@ -176,25 +176,29 @@ namespace jumps.umbraco.usync
             _eventFolder = folder;
             Template.AfterSave += Template_AfterSave;
             Template.AfterDelete += Template_AfterDelete;
-
         }
 
         static void Template_AfterDelete(Template sender, DeleteEventArgs e)
         {
-            // helpers.XmlDoc.ArchiveFile( helpers.XmlDoc.GetTypeFolder(sender.GetType().ToString()) + GetDocPath(sender), "def");
-            var tSync = new SyncTemplate();
+            if (!uSync.EventPaused)
+            {
+                // helpers.XmlDoc.ArchiveFile( helpers.XmlDoc.GetTypeFolder(sender.GetType().ToString()) + GetDocPath(sender), "def");
+                var tSync = new SyncTemplate();
 
-            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, tSync.GetDocPath(sender), "def", Constants.ObjectTypes.Template), true);
+                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, tSync.GetDocPath(sender), "def", Constants.ObjectTypes.Template), true);
 
-            e.Cancel = false; 
+                e.Cancel = false;
+            }
         }
 
         static void Template_AfterSave(Template sender, SaveEventArgs e)
         {
-            // save
-            var tSync = new SyncTemplate();
-            tSync.ExportToDisk(sender, _eventFolder);
+            if (!uSync.EventPaused)
+            {
+                // save
+                var tSync = new SyncTemplate();
+                tSync.ExportToDisk(sender, _eventFolder);
+            }
         }
-        
     }
 }

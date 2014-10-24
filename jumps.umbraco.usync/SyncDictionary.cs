@@ -146,58 +146,61 @@ namespace jumps.umbraco.usync
 
         static void DictionaryItem_Deleting(Dictionary.DictionaryItem sender, EventArgs e)
         {
-            lock (_deleteLock)
+            if (!uSync.EventPaused)
             {
-                if (sender.hasChildren)
+                lock (_deleteLock)
                 {
-                    // we get the delets in a backwards order, so we add all the children of this
-                    // node to the list we are not going to delete when we get asked to.
-                    // 
-                    foreach(Dictionary.DictionaryItem child in sender.Children)
+                    if (sender.hasChildren)
                     {
-                        _dChildren.Add(child.id) ; 
+                        // we get the delets in a backwards order, so we add all the children of this
+                        // node to the list we are not going to delete when we get asked to.
+                        // 
+                        foreach (Dictionary.DictionaryItem child in sender.Children)
+                        {
+                            _dChildren.Add(child.id);
+                        }
                     }
-                }
 
-                if (_dChildren.Contains(sender.id))
-                {
-                    // this is a child of a parent we have already deleted.
-                    _dChildren.Remove(sender.id);
-                    LogHelper.Debug<SyncDictionary>("No Deleteing Dictionary item {0} because we deleted it's parent", 
-                        ()=> sender.key); 
-                }
-                else
-                {
-                    //actually delete 
-
-
-                    LogHelper.Debug<SyncDictionary>("Deleting Dictionary Item {0}",  ()=> sender.key);
-
-                    // when you delete a tree, the top gets called before the children. 
-                    //             
-                    if (!sender.IsTopMostItem())
+                    if (_dChildren.Contains(sender.id))
                     {
-                        // if it's not top most, we save it's parent (that will delete)
-                        var dicSync = new SyncDictionary();
-                        dicSync.ExportToDisk(GetTop(sender), _eventFolder);
+                        // this is a child of a parent we have already deleted.
+                        _dChildren.Remove(sender.id);
+                        LogHelper.Debug<SyncDictionary>("No Deleteing Dictionary item {0} because we deleted it's parent",
+                            () => sender.key);
                     }
                     else
                     {
-                        // it's top we need to delete
-                        XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.key, Constants.ObjectTypes.Dictionary), true);
+                        //actually delete 
+
+
+                        LogHelper.Debug<SyncDictionary>("Deleting Dictionary Item {0}", () => sender.key);
+
+                        // when you delete a tree, the top gets called before the children. 
+                        //             
+                        if (!sender.IsTopMostItem())
+                        {
+                            // if it's not top most, we save it's parent (that will delete)
+                            var dicSync = new SyncDictionary();
+                            dicSync.ExportToDisk(GetTop(sender), _eventFolder);
+                        }
+                        else
+                        {
+                            // it's top we need to delete
+                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.key, Constants.ObjectTypes.Dictionary), true);
+                        }
                     }
                 }
-            }
-            
-            
-            
+            }            
         }
 
 
         static void DictionaryItem_Saving(Dictionary.DictionaryItem sender, EventArgs e)
         {
-            var dicSync = new SyncDictionary();
-            dicSync.ExportToDisk(GetTop(sender), _eventFolder);
+            if (!uSync.EventPaused)
+            {
+                var dicSync = new SyncDictionary();
+                dicSync.ExportToDisk(GetTop(sender), _eventFolder);
+            }
         }
 
         private static Dictionary.DictionaryItem GetTop(Dictionary.DictionaryItem item)
