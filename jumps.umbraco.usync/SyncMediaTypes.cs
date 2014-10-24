@@ -1,31 +1,25 @@
-﻿using System;
-using System.Collections; 
+﻿//using Umbraco.Core.Models;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
 
-using System.Xml; 
-using System.IO ;
-
-using umbraco; 
+using umbraco;
+using umbraco.BusinessLogic;
 using umbraco.cms.businesslogic;
-using umbraco.cms.businesslogic.datatype;
-using umbraco.cms.businesslogic.media ;
+using umbraco.cms.businesslogic.media;
 using umbraco.cms.businesslogic.propertytype;
-using umbraco.DataLayer;
-using umbraco.cms.businesslogic.template;
-using umbraco.BusinessLogic ; 
 
 using Umbraco.Core;
 using Umbraco.Core.IO;
-using Umbraco.Core.Services;
 using Umbraco.Core.Logging;
-//using Umbraco.Core.Models;
+using Umbraco.Core.Services;
 
 using jumps.umbraco.usync.helpers;
 using jumps.umbraco.usync.Models;
-using System.Xml.Linq;
 
 namespace jumps.umbraco.usync
 {
@@ -124,7 +118,7 @@ namespace jumps.umbraco.usync
 
             var change = uMediaType.SyncImportFitAndFix(node);
 
-            if ( change.changeType == ChangeType.Mismatch)
+            if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
             {
                 Restore(backup);
             }
@@ -464,8 +458,6 @@ namespace jumps.umbraco.usync
                     pt.ValidationRegExp = xmlHelper.GetNodeValue(gp.SelectSingleNode("Validation"));
                     pt.Description = xmlHelper.GetNodeValue(gp.SelectSingleNode("Description"));
 
-                    LogHelper.Info<SyncMediaTypes>("{0} {1}", ()=> pt.Description, () => xmlHelper.GetNodeValue(gp.SelectSingleNode("Description")));
-
                     // tab
                     try
                     {
@@ -534,11 +526,11 @@ namespace jumps.umbraco.usync
                     item.AllowedAsRoot = bool.Parse(iNode.Element("AllowAtRoot").Value);
                 }
 
-                var sNode = node.Element("Scructure");
+                var sNode = node.Element("Structure");
                 if (sNode != null && sNode.HasElements)
                 {
                     // structure...
-                    uDocType.ImportStructure(item, node);
+                    uDocType.ImportStructure(item, node, "MediaType");
                 }
 
                 var pNode = node.Element("GenericProperties");
@@ -557,7 +549,8 @@ namespace jumps.umbraco.usync
             }
             return null;
         }
-    
+
+
         private static int findDataTypeDefinitionFromType(ref Guid dtId)
         {
             int dfId = 0;

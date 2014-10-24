@@ -86,7 +86,10 @@ namespace jumps.umbraco.usync
             var root = IOHelper.MapPath(helpers.uSyncIO.RootFolder);
             if ( Directory.Exists(root))
             {
-                Directory.Delete(root, true);
+                foreach(var subDir in Directory.GetDirectories(root))
+                {
+                    Directory.Delete(subDir, true);
+                }
             }
         }
 

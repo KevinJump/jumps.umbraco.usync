@@ -33,7 +33,6 @@ namespace jumps.umbraco.usync.Models
             }
 
             XElement preVals = new XElement("PreValues");
-
             List<PreValue> _preVals = GetPreValues(item);
 
             foreach (PreValue preValItem in _preVals)
@@ -53,7 +52,7 @@ namespace jumps.umbraco.usync.Models
                     Guid _specialId = Guid.NewGuid();
                     if (mapper.MapIdToValue(preValueValue, _specialId))
                     {
-                        preValue.Add(new XAttribute("mapId", _specialId));
+                        preValue.Add(new XAttribute("MapGuid", _specialId));
                     }
                 }
 
@@ -132,9 +131,15 @@ namespace jumps.umbraco.usync.Models
                         {
                             preValue.Attribute("Value").Value = value;
                         }
+
+                        preValue.Attribute("MapGuid").Remove();
                     }
                 }
             }
+
+
+            if (nodeCopy.Element("Nodes") != null)
+                nodeCopy.Element("Nodes").Remove();
             return nodeCopy; 
         }
      

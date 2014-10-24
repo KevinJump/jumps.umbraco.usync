@@ -71,7 +71,7 @@ namespace jumps.umbraco.usync
 
                     ChangeItem change = uLanguage.SyncImport(node);
 
-                    if (change.changeType == ChangeType.Mismatch)
+                    if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                         Restore(backup);
 
                     AddChange(change);

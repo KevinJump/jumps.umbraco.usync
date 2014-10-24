@@ -92,6 +92,24 @@ namespace jumps.umbraco.usync
             }
         }
 
+        [ConfigurationProperty("itemRestore", DefaultValue = false, IsRequired = false)]
+        public Boolean ItemRestore
+        {
+            get
+            {
+                return (Boolean)this["itemRestore"]; 
+            }
+        }
+
+        [ConfigurationProperty("fullRestore", DefaultValue = false, IsRequired = false)]
+        public Boolean FullRestore
+        {
+            get
+            {
+                return (Boolean)this["fullRestore"];
+            }
+        }
+
         [ConfigurationProperty("backupFolder", DefaultValue = "~/App_data/TEMP/usync.backups/", IsRequired = true)]
         public String BackupFolder
         {

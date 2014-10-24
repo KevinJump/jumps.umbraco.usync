@@ -172,23 +172,6 @@ namespace jumps.umbraco.usync.helpers
             return sb.ToString() ;
         }
 
-        /*
-        public static string GetNodeValue(XmlNode val)
-        {
-            string value = val.Value;
-
-            if (String.IsNullOrEmpty(value))
-                return "";
-            else
-                return value;
-        }
-        
-        public static string GetTypeFolder(string type)
-        {
-            return type.Substring(type.LastIndexOf('.') + 1);
-        }
-        */
-
         public static void OnPreSave(XmlDocFileEventArgs e)
         {
             SyncFileWatcher.Pause();
@@ -331,7 +314,6 @@ namespace jumps.umbraco.usync.helpers
         //
         public static string CalculateMD5Hash(XElement node)
         {
-            LogHelper.Info<XmlDoc>("Hash: {0}", () => node.ToString(SaveOptions.DisableFormatting));
             string md5Hash = "";
             MemoryStream stream = new MemoryStream();
             node.Save(stream);

@@ -78,12 +78,11 @@ namespace jumps.umbraco.usync
             {
                 if (!_settings.ReportOnly)
                 {
-                    LogHelper.Info<SyncDataType>("Updating: {0}", () => Path.GetFileNameWithoutExtension(filePath));
                     var backup = Backup(node);
 
                     ChangeItem change = uDataTypeDefinition.SyncImport(node);
 
-                    if (change.changeType == ChangeType.Mismatch)
+                    if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
                         Restore(backup);
                     }

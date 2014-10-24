@@ -81,7 +81,7 @@ namespace jumps.umbraco.usync
 
                     ChangeItem change = uDictionaryItem.SyncImport(node);
 
-                    if (change.changeType == ChangeType.Mismatch)
+                    if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                         Restore(backup);
 
                     AddChange(change);
@@ -121,8 +121,9 @@ namespace jumps.umbraco.usync
 
         protected override void Restore(string backup)
         {
-            XElement backupNode = XmlDoc.GetBackupNode(backup);
+            LogHelper.Info<SyncDictionary>("Restoring Backup: {0}", ()=> backup);
 
+            XElement backupNode = XmlDoc.GetBackupNode(backup);
             if (backupNode != null)
                 uDictionaryItem.SyncImport(backupNode, false);
         }

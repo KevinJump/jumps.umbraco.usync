@@ -151,7 +151,7 @@ namespace jumps.umbraco.usync
                         {
                             var change = uDocType.SyncImportFitAndFix(item, node);
 
-                            if (change.changeType == ChangeType.Mismatch)
+                            if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                             {
                                 Restore(update.Value.Item2);
                             }

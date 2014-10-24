@@ -32,37 +32,51 @@ namespace jumoo.usync.ui
 
         protected void btnImport_Click(object sender, EventArgs e)
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            uSync sync = new uSync();
+            try
+            {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                uSync sync = new uSync();
 
-            ImportSettings importSettings = new ImportSettings();
-            importSettings.ReportOnly = chkImportReport.Checked;
-            importSettings.ForceImport = chkForceImport.Checked;
+                ImportSettings importSettings = new ImportSettings();
+                importSettings.ReportOnly = chkImportReport.Checked;
+                importSettings.ForceImport = chkForceImport.Checked;
 
-            List<ChangeItem> changes = sync.ReadAllFromDisk(importSettings);
+                List<ChangeItem> changes = sync.ReadAllFromDisk(importSettings);
 
-            var changesMade = changes.Where(x => x.changeType != ChangeType.NoChange);
-            resultsRpt.DataSource = changesMade;
-            resultsRpt.DataBind();
+                var changesMade = changes.Where(x => x.changeType != ChangeType.NoChange);
+                resultsRpt.DataSource = changesMade;
+                resultsRpt.DataBind();
 
-            sw.Stop();
+                sw.Stop();
 
-            resultsPanel.Visible = true;
-            status.Text = string.Format("Import complete: {2} changes in {0} items in {1}ms", changes.Count(), sw.ElapsedMilliseconds, changesMade.Count());
+                resultsPanel.Visible = true;
+                status.Text = string.Format("Import complete: {2} changes in {0} items in {1}ms", changes.Count(), sw.ElapsedMilliseconds, changesMade.Count());
+            }
+            catch (Exception ex)
+            {
+                status.Text = string.Format("Error Importing {0}", ex.Message);
+            }
         }
 
         protected void btnExport_Click(object sender, EventArgs e)
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            uSync sync = new uSync();
-            sync.ClearFolder();
-            sync.SaveAllToDisk();
+            try
+            {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                uSync sync = new uSync();
+                sync.ClearFolder();
+                sync.SaveAllToDisk();
 
-            resultsPanel.Visible = true;
-            sw.Stop();
-            status.Text = string.Format("New Export created {0} ms", sw.ElapsedMilliseconds);
+                resultsPanel.Visible = true;
+                sw.Stop();
+                status.Text = string.Format("New Export created {0} ms", sw.ElapsedMilliseconds);
+            }
+            catch ( Exception ex )
+            {
+                status.Text = string.Format("Error exporting: {0}", ex.Message);
+            }
         }
 
         protected void btnSave_Click(object sender, EventArgs e)

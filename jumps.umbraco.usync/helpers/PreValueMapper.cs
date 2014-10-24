@@ -9,6 +9,7 @@ using Umbraco.Core;
 using Umbraco.Core.Models;
 
 using Newtonsoft.Json.Linq;
+using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync.helpers
 {
@@ -189,7 +190,7 @@ namespace jumps.umbraco.usync.helpers
         {
             var value = preValue.Attribute("Value").Value;
 
-            var MapGuid = preValue.Attribute("MapId");
+            var MapGuid = preValue.Attribute("MapGuid");
             if (MapGuid == null)
                 return value;
 
@@ -240,8 +241,8 @@ namespace jumps.umbraco.usync.helpers
 
         public string CleanValue(string value)
         {
-            Regex rgx = new Regex("(\")(\\d{1,4})(:zzusync)(\")");
-            return rgx.Replace(value, "$2");
+            var cleaned = value.Replace(":zzusync", "").Trim("\"");
+            return cleaned;
         }
 
         private string GetMappedId(string id, string value, string type)

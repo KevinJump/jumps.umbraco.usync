@@ -76,6 +76,17 @@ namespace jumps.umbraco.usync
             get { return _settings.Archive ; }
         }
 
+
+        public static bool ItemRestore
+        {
+            get { return _settings.ItemRestore; }
+        }
+
+        public static bool FullRestore
+        {
+            get { return _settings.FullRestore; }
+        }
+
         public static string BackupFolder
         {
             get { return _settings.BackupFolder; }

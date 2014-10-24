@@ -17,7 +17,12 @@ namespace jumps.umbraco.usync.Models
         {
             XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
             xmlDoc.AppendChild(MediaTypeHelper.ToXml(xmlDoc, item));
-            return XElement.Load(new XmlNodeReader(xmlDoc));
+
+            var node = XElement.Load(new XmlNodeReader(xmlDoc));
+            node = uDocType.FixProperies(item, node);
+            node = uDocType.TabSortOrder(item, node);
+
+            return node;
         }
 
         public static ChangeItem SyncImport(XElement node, bool postCheck = true)

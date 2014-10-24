@@ -26,30 +26,43 @@ namespace jumps.umbraco.usync.Models
             return node;
         }
 
-        private static XElement FixProperies(DocumentType item, XElement node)
+        internal static XElement FixProperies(global::umbraco.cms.businesslogic.ContentType item, XElement node)
         {
             var props = node.Element("GenericProperties");
-
             if (props == null)
                 return node;
+            
             props.RemoveAll();
 
-            foreach(var property in item.PropertyTypes.OrderBy(x => x.Name))
+            foreach (var property in item.PropertyTypes.OrderBy(x => x.Name))
             {
                 XElement prop = new XElement("GenericProperty");
 
-                prop.Add(new XElement("Name", property.Name));
-                prop.Add(new XElement("Alias", property.Alias));
-                prop.Add(new XElement("Type", property.DataTypeDefinition.DataType.Id.ToString()));
-                prop.Add(new XElement("Definition", property.DataTypeDefinition.UniqueId.ToString()));
+                if ( property.Name != null )
+                    prop.Add(new XElement("Name", property.Name));
+
+
+                if ( property.Alias != null )
+                    prop.Add(new XElement("Alias", property.Alias));
+
+                if (property.DataTypeDefinition != null)
+                {
+                    prop.Add(new XElement("Type", property.DataTypeDefinition.DataType.Id.ToString()));
+                    prop.Add(new XElement("Definition", property.DataTypeDefinition.UniqueId.ToString()));
+                }
 
                 var tab = item.PropertyTypeGroups.Where(x => x.Id == property.PropertyTypeGroup ).FirstOrDefault();
                 if (tab != null)
                     prop.Add(new XElement("Tab",tab.Name));
 
                 prop.Add(new XElement("Mandatory", property.Mandatory));
-                prop.Add(new XElement("Validation", property.ValidationRegExp));
-                prop.Add(new XElement("Description", new XCData(property.Description)));
+
+                if ( property.ValidationRegExp != null)
+                    prop.Add(new XElement("Validation", property.ValidationRegExp));
+
+                if ( property.Description != null)
+                    prop.Add(new XElement("Description", new XCData(property.Description)));
+
                 prop.Add(new XElement("SortOrder", property.SortOrder));
 
                 props.Add(prop);
@@ -57,7 +70,7 @@ namespace jumps.umbraco.usync.Models
             return node;
         }
 
-        private static XElement TabSortOrder(DocumentType item, XElement node)
+        internal static XElement TabSortOrder(global::umbraco.cms.businesslogic.ContentType item, XElement node)
         {
             var tabNode = node.Element("Tabs");
 
@@ -87,9 +100,6 @@ namespace jumps.umbraco.usync.Models
                 changeType = ChangeType.Success,
                 name = node.Element("Info").Element("Name").Value
             };
-
-            // LogHelper.Info<uSync>("Import:\n {0}", () => node.ToString());
-            LogHelper.Info<uSync>("Importing: {0}", () => node.Element("Info").Element("Name").Value);
 
             ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
 
@@ -135,17 +145,25 @@ namespace jumps.umbraco.usync.Models
         }
 
 
-        internal static void ImportStructure(IContentTypeBase docType, XElement node)
+        internal static void ImportStructure(IContentTypeBase item, XElement node, string structureType = "DocumentType")
         {
             XElement structure = node.Element("Structure");
 
             List<ContentTypeSort> allowed = new List<ContentTypeSort>();
             int sortOrder = 0;
 
-            foreach (var doc in structure.Elements("DocumentType"))
+            foreach (var doc in structure.Elements(structureType))
             {
                 string alias = doc.Value;
-                IContentType aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
+                IContentTypeBase aliasDoc = null;
+                if (structureType == "DocumentType")
+                {
+                    aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetContentType(alias);
+                }
+                else
+                {
+                    aliasDoc = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(alias);
+                }
 
                 if (aliasDoc != null)
                 {
@@ -154,7 +172,7 @@ namespace jumps.umbraco.usync.Models
                 }
             }
 
-            docType.AllowedContentTypes = allowed;
+            item.AllowedContentTypes = allowed;
         }
 
         internal static void TabSortOrder(IContentTypeBase docType, XElement node)
