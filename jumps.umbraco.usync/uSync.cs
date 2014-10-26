@@ -114,7 +114,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void SaveAllToDisk(string folder = null)
         {
-            if (String.IsNullOrWhiteSpace(folder))
+            if (String.IsNullOrEmpty(folder))
                 folder = helpers.uSyncIO.RootFolder;
 
             ImportSettings settings = new ImportSettings(folder);
@@ -337,7 +337,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void AttachToAll(string folder = null)
         {
-            if (String.IsNullOrWhiteSpace(folder))
+            if (String.IsNullOrEmpty(folder))
                 folder = helpers.uSyncIO.RootFolder;
 
             LogHelper.Debug<uSync>("Attaching to Events - Start"); 

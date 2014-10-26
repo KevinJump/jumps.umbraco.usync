@@ -50,7 +50,7 @@ namespace jumps.umbraco.usync.helpers
 
             LogHelper.Debug<ContentWalker>("Getting the id for path: {0}", () => path);
 
-            if (!string.IsNullOrWhiteSpace(path))
+            if (!string.IsNullOrEmpty(path))
             {
                 var bits = path.Split('\\');
                 var rootName = bits[0];
@@ -147,7 +147,7 @@ namespace jumps.umbraco.usync.helpers
 
             LogHelper.Debug<MediaWalker>("Getting the id for path: {0}", () => path);
 
-            if (!string.IsNullOrWhiteSpace(path))
+            if (!string.IsNullOrEmpty(path))
             {
                 var bits = path.Split('\\');
                 var rootName = bits[0];
