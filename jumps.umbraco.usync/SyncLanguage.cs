@@ -132,15 +132,17 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node)
         {
-            var culture = node.Attribute("CultureAlias").Value;
-            var lang = Language.GetByCultureCode(culture);
-
-            if (lang != null)
+            if (!string.IsNullOrEmpty(uSyncSettings.BackupFolder))
             {
-                ExportToDisk(lang, _settings.BackupPath);
-                return XmlDoc.GetSavePath(_settings.BackupPath, lang.CultureAlias, Constants.ObjectTypes.Language);
-            }
+                var culture = node.Attribute("CultureAlias").Value;
+                var lang = Language.GetByCultureCode(culture);
 
+                if (lang != null)
+                {
+                    ExportToDisk(lang, _settings.BackupPath);
+                    return XmlDoc.GetSavePath(_settings.BackupPath, lang.CultureAlias, Constants.ObjectTypes.Language);
+                }
+            }
             return "";
         }
 

@@ -11,11 +11,26 @@
       <orgPath>/config</orgPath>
       <orgName>uSyncSettings.config</orgName>
     </file>
+    <file>
+      <guid>jumoo.usync.ui.dll</guid>
+      <orgPath>/bin</orgPath>
+      <orgName>jumoo.usync.ui.dll</orgName>
+    </file>
+    <file>
+      <guid>usyncdashboard.ascx</guid>
+      <orgPath>/umbraco/plugins/uSync</orgPath>
+      <orgName>usyncdashboard.ascx</orgName>
+    </file>  
+    <file>
+      <guid>usyncdash.css</guid>
+      <orgPath>/umbraco/plugins/uSync</orgPath>
+      <orgName>usyncdash.css</orgName>
+    </file>  
   </files>
   <info>
     <package>
       <name>uSync for Umbraco 6</name>
-      <version>1.5.8.2</version>
+      <version>1.6</version>
       <license url="http://www.opensource.org/licenses/mit-license.php">MIT license</license>
       <url>http://jumoo.co.uk/usync</url>
       <requirements>
@@ -29,16 +44,23 @@
       <website>http://kevin.jumoo.co.uk/</website>
     </author>
     <readme><![CDATA[
-uSync for Umbraco 6 v1.5.8.Special
-==================================
-
-* this is a special throwback to 1.5.8 while we wait for
-  issues to be fixed in the umbraco core - when they are
-  the all new singing v2.1 will be super cool *
-
+uSync for Umbraco 6 v1.6.Mayfly Edition
+=======================================
 uSync is a umbraco DB to/from disk syncing tool. 
 
-uSync will write out the DocumentTypes, Macros, DataTypes,Dictionary Items, Languages, Templates and Stylesheets to disk so they can be added to source control, it also reads the same files from disk and adds them to the umbraco install. 
+uSync will write out:
+    DocumentTypes, 
+	Macros, 
+	DataTypes,
+	Dictionary Items, 
+	Languages, 
+	Templates
+	Stylesheets 
+	
+when they are on disk they can be added to source control
+
+It also reads the same files from disk and adds them to the umbraco install - so you can
+move things between installations.
 
 uSync is designed to aid the sycronization  and source control of umbraco installations, it needs to be used in conjunction with other tools as part of a calorie controlled installation. ]]></readme>
   </info>
@@ -49,4 +71,16 @@ uSync is designed to aid the sycronization  and source control of umbraco instal
   <DictionaryItems />
   <Languages />
   <DataTypes />
+ <Actions>
+    <Action runat="install" alias="addDashboardSection" dashboardAlias="usyncUi">
+      <section>
+        <areas>
+          <area>developer</area>
+        </areas>
+        <tab caption="uSync">
+          <control>/Umbraco/Plugins/usync/usyncdashboard.ascx</control>
+        </tab>
+      </section>
+    </Action>
+  </Actions>
 </umbPackage>

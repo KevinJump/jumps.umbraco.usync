@@ -110,7 +110,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        [ConfigurationProperty("backupFolder", DefaultValue = "~/App_data/TEMP/usync.backups/", IsRequired = true)]
+        [ConfigurationProperty("backupFolder", DefaultValue = "", IsRequired = true)]
         public String BackupFolder
         {
             get

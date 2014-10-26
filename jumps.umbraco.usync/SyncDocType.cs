@@ -167,15 +167,18 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node)
         {
-            var alias = node.Element("Info").Element("Alias").Value;
-            var docType = DocumentType.GetByAlias(alias);
-
-            if (docType != null)
+            if (!string.IsNullOrEmpty(uSyncSettings.BackupFolder))
             {
-                ExportToDisk(docType, _settings.BackupPath);
-                return XmlDoc.GetSavePath(_settings.BackupPath, GetDocPath(docType), "def", Constants.ObjectTypes.DocType);
-            }
 
+                var alias = node.Element("Info").Element("Alias").Value;
+                var docType = DocumentType.GetByAlias(alias);
+
+                if (docType != null)
+                {
+                    ExportToDisk(docType, _settings.BackupPath);
+                    return XmlDoc.GetSavePath(_settings.BackupPath, GetDocPath(docType), "def", Constants.ObjectTypes.DocType);
+                }
+            }
             return "";
         }
 
