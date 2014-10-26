@@ -132,7 +132,7 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node)
         {
-            if (!string.IsNullOrEmpty(uSyncSettings.BackupFolder))
+            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore)
             {
                 var culture = node.Attribute("CultureAlias").Value;
                 var lang = Language.GetByCultureCode(culture);

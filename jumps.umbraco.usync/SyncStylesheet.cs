@@ -121,7 +121,7 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node)
         {
-            if (!string.IsNullOrEmpty(uSyncSettings.BackupFolder))
+            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore)
             {
                 var name = node.Element("Name").Value;
                 var stylesheet = StyleSheet.GetByName(name);
