@@ -106,40 +106,6 @@ namespace jumps.umbraco.usync
                 AddNoChange(ItemType.Languages, filePath);
         }
 
-        private void RemoveFromSource(string filepath)
-        {
-            // will remove any languages from the suste, that are not on the disk.
-            foreach (Language item in Language.GetAllAsList())
-            {
-                var file = XmlDoc.GetSavePath(_settings.Folder, item.CultureAlias, Constants.ObjectTypes.Language);
-                if ( !System.IO.File.Exists(file))
-                {
-                    // delete from the db.
-                    if (_settings.ReportOnly)
-                    {
-                        AddChange(new ChangeItem
-                        {
-                            changeType = ChangeType.WillChange,
-                            name = item.CultureAlias,
-                            message = "Will delete " + file,
-                            itemType = ItemType.Languages
-                        });
-                    }
-                    else
-                    {
-                        item.Delete();
-                        AddChange(new ChangeItem
-                        {
-                            changeType = ChangeType.Delete,
-                            name = item.CultureAlias,
-                            message = "deleted " + file,
-                            itemType = ItemType.Languages
-                        });
-                    }
-                }
-            }
-        }
-
         protected override string Backup(XElement node)
         {
             if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore)
