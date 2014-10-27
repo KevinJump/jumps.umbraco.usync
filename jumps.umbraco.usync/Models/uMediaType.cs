@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using umbraco.cms.businesslogic.media;
 
 using Umbraco.Core;
+using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync.Models
 {
@@ -20,7 +21,7 @@ namespace jumps.umbraco.usync.Models
 
             var node = XElement.Load(new XmlNodeReader(xmlDoc));
             node = uDocType.FixProperies(item, node);
-            node = uDocType.TabSortOrder(item, node);
+            node = uDocType.GetTabSortOrder(item, node);
 
             return node;
         }
@@ -71,18 +72,66 @@ namespace jumps.umbraco.usync.Models
             return change; 
         }
 
+        private static MediaType FindMediaTypeByPath(string path)
+        {
+            var pathBits = path.Split('/');
+            var doc = MediaType.GetByAlias(pathBits[pathBits.Length - 1]);
+
+            if (doc != null)
+                return doc;
+
+            return null;
+        }
+
         internal static ChangeItem Delete(string path, bool reportOnly = false)
         {
-            var change = ChangeItem.DeleteStub(path, ItemType.MediaItem);
+            var name = System.IO.Path.GetFileName(path);
+
+            var change = ChangeItem.DeleteStub(name, ItemType.MediaItem);
+            var item = MediaType.GetByAlias(name);
+            if (item != null)
+            {
+                if (!reportOnly)
+                {
+                    item.delete();
+                    item.Save();
+                    change.changeType = ChangeType.Delete;
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
+            }
 
             return change;
         }
 
         internal static ChangeItem Rename(string oldPath, string newPath, bool reportOnly = false)
         {
-            var change = ChangeItem.RenameStub(oldPath, newPath, ItemType.MediaItem);
+            var oldName = System.IO.Path.GetFileName(oldPath);
+            var newName = System.IO.Path.GetFileName(newPath);
+
+            var change = ChangeItem.RenameStub(oldName, newName, ItemType.MediaItem);
+
+            var item = MediaType.GetByAlias(oldName);
+            if (item != null)
+            {
+                if (!reportOnly)
+                {
+                    LogHelper.Info<SyncDocType>("Renaming : {0} to {1}", () => oldName, () => newName);
+
+                    change.changeType = ChangeType.Success;
+                    item.Alias = newName;
+                    item.Save();
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
+            }
 
             return change;
         }
+
     }
 }

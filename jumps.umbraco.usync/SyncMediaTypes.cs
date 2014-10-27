@@ -59,12 +59,16 @@ namespace jumps.umbraco.usync
             foreach (var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.MediaType))
             {
                 // rename (isn't going to be simple)
-                uMediaType.Rename(rename.Key, rename.Value, _settings.ReportOnly);
+                AddChange(
+                    uMediaType.Rename(rename.Key, rename.Value, _settings.ReportOnly)
+                );
             }
 
             foreach (var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.MediaType))
             {
-                uMediaType.Delete(delete.Value, _settings.ReportOnly);
+                AddChange(
+                    uMediaType.Delete(delete.Value, _settings.ReportOnly)
+                );
             }
 
 
@@ -229,12 +233,27 @@ namespace jumps.umbraco.usync
 
                         if ( uSyncNameCache.IsRenamed(mt))
                         {
-                            var path = syncMedia.GetMediaPath(mt);
+                            var newPath = syncMedia.GetMediaPath(mt);
 
                             uSyncNameManager.SaveRename(Constants.ObjectTypes.MediaType,
-                                uSyncNameCache.MediaTypes[mt.Id], path);
+                                uSyncNameCache.MediaTypes[mt.Id], newPath);
 
-                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, path, "def", Constants.ObjectTypes.MediaType), true);
+                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.MediaTypes[mt.Id], "def", Constants.ObjectTypes.MediaType), true);
+
+                            XmlDoc.MoveChildren(
+                                XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.MediaTypes[mt.Id], "def", Constants.ObjectTypes.MediaType),
+                                XmlDoc.GetSavePath(_eventFolder, newPath, "def", Constants.ObjectTypes.MediaType)
+                                );
+
+                            if ( mt.HasChildren )
+                            {
+                                foreach (var child in mt.GetChildTypes())
+                                {
+                                    var childType = new MediaType(child.Id);
+                                    syncMedia.ExportToDisk(childType, _eventFolder);
+                                }
+                            }
+
                         }
 
                         uSyncNameCache.UpdateCache(mt);

@@ -21,7 +21,7 @@ namespace jumps.umbraco.usync.Models
 
             var node = XElement.Load(new XmlNodeReader(xmlDoc));
             node = FixProperies(item, node);
-            node = TabSortOrder(item, node);
+            node = GetTabSortOrder(item, node);
 
             return node;
         }
@@ -70,7 +70,8 @@ namespace jumps.umbraco.usync.Models
             return node;
         }
 
-        internal static XElement TabSortOrder(global::umbraco.cms.businesslogic.ContentType item, XElement node)
+        
+        internal static XElement GetTabSortOrder(global::umbraco.cms.businesslogic.ContentType item, XElement node)
         {
             var tabNode = node.Element("Tabs");
 
@@ -90,7 +91,6 @@ namespace jumps.umbraco.usync.Models
 
             return node;
         }
-        
 
         public static ChangeItem SyncImport(XElement node, bool postCheck = true)
         {
@@ -192,6 +192,24 @@ namespace jumps.umbraco.usync.Models
                     docType.PropertyGroups[caption].SortOrder = int.Parse(sortOrder);
                 }
             }
+
+            // ToDo: Delete tabs that have gone? 
+            List<string> tabsToRemove = new List<string>();
+            foreach(var tab in docType.PropertyGroups)
+            {
+                var tabE = tabs.Elements("Tab").Where(x => x.Element("Caption").Value == tab.Name).FirstOrDefault();
+                if (tabE == null)
+                {
+                    // delete the tab? 
+                    tabsToRemove.Add(tab.Name);
+                }
+            }
+
+            foreach(var tab in tabsToRemove)
+            {
+                // docType.RemovePropertyGroup(tab);
+                LogHelper.Info<SyncDocType>("Will we remove this tab? {0}", () => tab);
+            }
         }
 
         internal static void RemoveMissingProperties(IContentTypeBase docType, XElement node)
@@ -281,35 +299,18 @@ namespace jumps.umbraco.usync.Models
             }
         }
 
-        /// <summary>
-        ///  given a path - goes and finds the doctype.
-        ///  
-        ///  dispite being in a path you can't actually have two doctypes 
-        ///  with the same alias. so we can just get the last bit of the
-        ///  path and that is our doctype. 
-        /// </summary>
-        /// <returns></returns>
-        internal static DocumentType FindDocTypeByPath(string path)
+        internal static ChangeItem Delete(string path, bool reportOnly = false)
         {
-            var pathBits = path.Split('/');
-            var doc = DocumentType.GetByAlias(pathBits[pathBits.Length - 1]);
+            var name = System.IO.Path.GetFileName(path);
 
-            if (doc != null)
-                return doc;
-
-            return null;
-        }
-
-        internal static ChangeItem Delete(string name, bool reportOnly = false)
-        {
             var change = ChangeItem.DeleteStub(name, ItemType.DocumentType);
-
-            var doc = FindDocTypeByPath(name);
-            if ( doc != null )
+            var item = DocumentType.GetByAlias(name);
+            if ( item != null )
             {
                 if ( !reportOnly)
                 {
-                    doc.delete();
+                    item.delete();
+                    item.Save();
                     change.changeType = ChangeType.Delete;
                 }
                 else
@@ -323,10 +324,29 @@ namespace jumps.umbraco.usync.Models
 
         internal static ChangeItem Rename(string oldPath, string newPath, bool reportOnly = false)
         {
-            var change = ChangeItem.RenameStub(oldPath, newPath, ItemType.DocumentType);
+            var oldName = System.IO.Path.GetFileName(oldPath);
+            var newName = System.IO.Path.GetFileName(newPath);
+
+            var change = ChangeItem.RenameStub(oldName, newName, ItemType.DocumentType);
+
+            var item = DocumentType.GetByAlias(oldName);
+            if ( item != null )
+            {
+                if ( !reportOnly)
+                {
+                    LogHelper.Info<SyncDocType>("Renaming : {0} to {1}", () => oldName, () => newName);
+
+                    change.changeType = ChangeType.Success;
+                    item.Alias = newName;
+                    item.Save();
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
+            }
 
             return change;
         }
-
     }
 }

@@ -78,12 +78,16 @@ namespace jumps.umbraco.usync
             foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.DocType))
             {
                 // rename (isn't going to be simple)
-                uDocType.Rename(rename.Key, rename.Value, _settings.ReportOnly);
+                AddChange(
+                    uDocType.Rename(rename.Key, rename.Value, _settings.ReportOnly)
+                );
             }
 
             foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.DocType))
             {
-                uDocType.Delete(delete.Value, _settings.ReportOnly);
+                AddChange(
+                    uDocType.Delete(delete.Value, _settings.ReportOnly)
+                );
             }
 
             string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.DocType));
@@ -253,7 +257,7 @@ namespace jumps.umbraco.usync
 
         private static void InitNameCache()
         {
-            if (uSyncNameCache.DocumentTypes != null)
+            if (uSyncNameCache.DocumentTypes == null)
             {
                 uSyncNameCache.DocumentTypes = new Dictionary<int, string>();
                 var docSync = new SyncDocType();
@@ -285,14 +289,30 @@ namespace jumps.umbraco.usync
                     {
                         var dt = new DocumentType(docType.Id);
 
-                        if ( uSyncNameCache.IsRenamed(dt))
+                        if (uSyncNameCache.IsRenamed(dt))
                         {
-                            var savePath = docSync.GetDocPath(dt);
+                            var newSavePath = docSync.GetDocPath(dt);
 
                             uSyncNameManager.SaveRename(Constants.ObjectTypes.DocType,
-                                uSyncNameCache.DocumentTypes[docType.Id], savePath);
+                                uSyncNameCache.DocumentTypes[docType.Id], newSavePath);
 
-                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.DocType), true);
+                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.DocumentTypes[docType.Id], "def", Constants.ObjectTypes.DocType), true);
+
+                            XmlDoc.MoveChildren(
+                                XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.DocumentTypes[docType.Id], "def", Constants.ObjectTypes.DocType),
+                                XmlDoc.GetSavePath(_eventFolder, newSavePath, "def", Constants.ObjectTypes.DocType)
+                                );
+
+                            // we need to save all children - so we get a new export
+                            if ( dt.HasChildren )
+                            {
+                                foreach(var child in dt.GetChildTypes())
+                                {
+                                    var childType = new DocumentType(child.Id);
+                                    docSync.ExportToDisk(childType, _eventFolder);
+                                }
+                            }
+
                         }
                         uSyncNameCache.UpdateCache(dt);
 

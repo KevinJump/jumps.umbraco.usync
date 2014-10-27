@@ -141,8 +141,47 @@ namespace jumps.umbraco.usync.helpers
             {
                 OnPreDelete(new XmlDocFileEventArgs(filePath));
                 File.Delete(filePath);
+
+                // we delete the directory if it's empty.
+                var dir = Path.GetDirectoryName(filePath);
+                if (IsDirectoryEmpty(dir))
+                    Directory.Delete(dir);
+
                 OnDeleted(new XmlDocFileEventArgs(filePath));
             }
+        }
+
+        private static bool IsDirectoryEmpty(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                var directory = new DirectoryInfo(path);
+
+                FileInfo[] files = directory.GetFiles();
+                DirectoryInfo[] subdirs = directory.GetDirectories();
+
+                return (files.Length == 0 && subdirs.Length == 0);
+            }
+            return false; 
+        }
+
+        public static void MoveChildren(string source, string dest)
+        {
+            var sourceDir = Path.GetDirectoryName(source);
+            var destDir = Path.GetDirectoryName(dest);
+
+            if ( Directory.Exists(sourceDir))
+            {
+                /*
+                if (!Directory.Exists(destDir))
+                    Directory.CreateDirectory(destDir);
+                */
+
+                Directory.Move(sourceDir, destDir);
+            }
+
+            if (IsDirectoryEmpty(sourceDir))
+                Directory.Delete(sourceDir);
         }
 
         public static XmlDocument CreateDoc()

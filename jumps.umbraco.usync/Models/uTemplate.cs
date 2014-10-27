@@ -68,10 +68,36 @@ namespace jumps.umbraco.usync.Models
             return change;
 
         }
+        internal static Template FindTemplateByPath(string path)
+        {
+            var pathBits = path.Split('\\');
+            var doc = Template.GetByAlias(pathBits[pathBits.Length - 1]);
+
+            if (doc != null)
+                return doc;
+
+            return null;
+        }
+
 
         internal static ChangeItem Delete(string path, bool reportOnly = false)
         {
             var change = ChangeItem.DeleteStub(path, ItemType.Template);
+
+            var item = FindTemplateByPath(path);
+            if (item != null)
+            {
+                if (!reportOnly)
+                {
+                    item.delete();
+                    change.changeType = ChangeType.Delete;
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
+            }
+
 
             return change;
         }
@@ -79,8 +105,24 @@ namespace jumps.umbraco.usync.Models
         internal static ChangeItem Rename(string oldPath, string newPath, bool reportOnly = false)
         {
             var change = ChangeItem.RenameStub(oldPath, newPath, ItemType.Template);
+            /*
+            var parent = GetNewParent(newPath);
+            if (parent != null)
+            {
+                var template = FindTemplateByPath(oldPath);
 
+                if (template.ParentId != parent.Id)
+                    template.ParentId = parent.Id;
+            }
+            */
             return change;
+        }
+
+
+        static Template GetNewParent(string newPath)
+        {
+            return FindTemplateByPath(System.IO.Path.GetDirectoryName(newPath));
+
         }
     }
 }
