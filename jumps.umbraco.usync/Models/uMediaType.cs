@@ -68,8 +68,21 @@ namespace jumps.umbraco.usync.Models
                 change.changeType = ChangeType.Mismatch;
             }
 
-
             return change; 
+        }
+
+        internal static ChangeItem Delete(string path, bool reportOnly = false)
+        {
+            var change = ChangeItem.DeleteStub(path, ItemType.MediaItem);
+
+            return change;
+        }
+
+        internal static ChangeItem Rename(string oldPath, string newPath, bool reportOnly = false)
+        {
+            var change = ChangeItem.RenameStub(oldPath, newPath, ItemType.MediaItem);
+
+            return change;
         }
     }
 }

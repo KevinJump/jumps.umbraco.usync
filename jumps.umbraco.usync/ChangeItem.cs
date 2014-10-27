@@ -13,6 +13,28 @@ namespace jumps.umbraco.usync
         public ItemType itemType { get; set; }
         public ChangeType changeType { get; set; }
         public string message { get; set; } 
+
+        public static ChangeItem DeleteStub(string name, ItemType type)
+        {
+            return new ChangeItem
+            {
+                name = name,
+                itemType = type,
+                changeType = ChangeType.NoChange,
+                message = "Delete"
+            };
+        }
+
+        public static ChangeItem RenameStub(string name, string newName, ItemType type)
+        {
+            return new ChangeItem
+            {
+                name = name,
+                itemType = type,
+                changeType = ChangeType.NoChange,
+                message = string.Format("rename {0} to {1}", name, newName)
+            };
+        }
     }
 
     public enum ItemType

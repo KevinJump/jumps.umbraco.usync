@@ -72,6 +72,18 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
+            var renames = uSyncNameManager.GetRenames(Constants.ObjectTypes.Macro);
+            foreach (var rename in renames)
+            {
+                AddChange(uMacro.Rename(rename.Key, rename.Value, _settings.ReportOnly));
+            }
+
+            var deletes = uSyncNameManager.GetDeletes(Constants.ObjectTypes.Macro);
+            foreach (var delete in deletes)
+            {
+                AddChange(uMacro.Delete(delete.Value, _settings.ReportOnly));
+            }
+
             string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Macro));
             base.ImportFolder(root);
         }
@@ -147,6 +159,8 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents(string folder)
         {
+            InitNameCache();
+
             _eventFolder = folder;
             Macro.AfterSave += Macro_AfterSave;
             Macro.AfterDelete += Macro_AfterDelete;
@@ -156,6 +170,7 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
+                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Macro, sender.Name);
                 XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Alias, Constants.ObjectTypes.Macro), true);
                 e.Cancel = false;
             }
@@ -165,8 +180,31 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
+                if (uSyncNameCache.IsRenamed(sender))
+                {
+                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Macro,
+                        uSyncNameCache.Macros[sender.Id], sender.Alias);
+
+                    // delete old one
+                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Macros[sender.Id], Constants.ObjectTypes.Macro), true);
+                }
+
+                uSyncNameCache.UpdateCache(sender);
+
                 SyncMacro m = new SyncMacro();
                 m.ExportToDisk(sender, _eventFolder);
+            }
+        }
+
+        static void InitNameCache()
+        {
+            if (uSyncNameCache.Macros == null)
+            {
+                uSyncNameCache.Macros = new Dictionary<int, string>();
+                foreach (Macro item in Macro.GetAll())
+                {
+                    uSyncNameCache.Macros.Add(item.Id, item.Alias);
+                }
             }
         }
     }

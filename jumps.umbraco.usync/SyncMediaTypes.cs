@@ -56,6 +56,18 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
+            foreach (var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.MediaType))
+            {
+                // rename (isn't going to be simple)
+                uMediaType.Rename(rename.Key, rename.Value, _settings.ReportOnly);
+            }
+
+            foreach (var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.MediaType))
+            {
+                uMediaType.Delete(delete.Value, _settings.ReportOnly);
+            }
+
+
             string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.MediaType));
 
             updates = new Dictionary<string, string>();
@@ -156,7 +168,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        private string GetMediaPath(MediaType item)
+        internal string GetMediaPath(MediaType item)
         {
             string path = "";
 
@@ -213,11 +225,43 @@ namespace jumps.umbraco.usync
                     var syncMedia = new SyncMediaTypes();
                     foreach (var mediaType in e.SavedEntities)
                     {
-                        syncMedia.ExportToDisk(new MediaType(mediaType.Id), _eventFolder);
+                        var mt = new MediaType(mediaType.Id);
+
+                        if ( uSyncNameCache.IsRenamed(mt))
+                        {
+                            var path = syncMedia.GetMediaPath(mt);
+
+                            uSyncNameManager.SaveRename(Constants.ObjectTypes.MediaType,
+                                uSyncNameCache.MediaTypes[mt.Id], path);
+
+                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, path, "def", Constants.ObjectTypes.MediaType), true);
+                        }
+
+                        uSyncNameCache.UpdateCache(mt);
+
+                        syncMedia.ExportToDisk(mt, _eventFolder);
                     }
                 }
             }
         }
+
+        private static void InitNameCache()
+        {
+            if ( uSyncNameCache.MediaTypes == null)
+            {
+                uSyncNameCache.MediaTypes = new Dictionary<int,string>();
+
+                var mediaSync = new SyncMediaTypes();
+
+                foreach (MediaType item in MediaType.GetAllAsList())
+                {
+                    var path = mediaSync.GetMediaPath(item);
+                    uSyncNameCache.MediaTypes.Add(item.Id, path);
+                }
+            }
+
+        }
+
     }
 
     public class MediaTypeHelper
@@ -575,6 +619,5 @@ namespace jumps.umbraco.usync
                 }
             return dfId;
         }
-
     }
 }

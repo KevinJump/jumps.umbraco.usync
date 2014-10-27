@@ -279,7 +279,53 @@ namespace jumps.umbraco.usync.Models
             {
                 docType.MovePropertyType(move.Key, move.Value);
             }
+        }
 
+        /// <summary>
+        ///  given a path - goes and finds the doctype.
+        ///  
+        ///  dispite being in a path you can't actually have two doctypes 
+        ///  with the same alias. so we can just get the last bit of the
+        ///  path and that is our doctype. 
+        /// </summary>
+        /// <returns></returns>
+        internal static DocumentType FindDocTypeByPath(string path)
+        {
+            var pathBits = path.Split('/');
+            var doc = DocumentType.GetByAlias(pathBits[pathBits.Length - 1]);
+
+            if (doc != null)
+                return doc;
+
+            return null;
+        }
+
+        internal static ChangeItem Delete(string name, bool reportOnly = false)
+        {
+            var change = ChangeItem.DeleteStub(name, ItemType.DocumentType);
+
+            var doc = FindDocTypeByPath(name);
+            if ( doc != null )
+            {
+                if ( !reportOnly)
+                {
+                    doc.delete();
+                    change.changeType = ChangeType.Delete;
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
+            }
+
+            return change;
+        }
+
+        internal static ChangeItem Rename(string oldPath, string newPath, bool reportOnly = false)
+        {
+            var change = ChangeItem.RenameStub(oldPath, newPath, ItemType.DocumentType);
+
+            return change;
         }
 
     }

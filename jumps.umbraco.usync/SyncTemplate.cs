@@ -84,7 +84,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        private string GetDocPath(Template item)
+        internal string GetDocPath(Template item)
         {
             string path = "";
             if (item != null)
@@ -101,6 +101,21 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
+            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Template))
+            {
+                // renames are more complex for hierarchical items.
+                // we get two paths, we need to workout exactly what has changed.
+                
+                // because it could be a new parent has been inserted.
+                uTemplate.Rename(rename.Key, rename.Value, _settings.ReportOnly);
+            }
+
+            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Template))
+            {
+                // deletes - again we get a path - so we have to delete from the top down?
+                uTemplate.Delete(delete.Value, _settings.ReportOnly);
+            }
+
             string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Template));
             base.ImportFolder(root);
         }
@@ -177,6 +192,7 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents(string folder)
         {
+            InitNameCache();
             _eventFolder = folder;
             Template.AfterSave += Template_AfterSave;
             Template.AfterDelete += Template_AfterDelete;
@@ -186,10 +202,15 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
+
                 // helpers.XmlDoc.ArchiveFile( helpers.XmlDoc.GetTypeFolder(sender.GetType().ToString()) + GetDocPath(sender), "def");
                 var tSync = new SyncTemplate();
+                var path = tSync.GetDocPath(sender);
+                
+                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Template, path);
+                uSyncNameCache.Templates.Remove(sender.Id);
 
-                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, tSync.GetDocPath(sender), "def", Constants.ObjectTypes.Template), true);
+                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, path, "def", Constants.ObjectTypes.Template), true);
 
                 e.Cancel = false;
             }
@@ -199,9 +220,33 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
-                // save
                 var tSync = new SyncTemplate();
+
+                if (uSyncNameCache.IsRenamed(sender))
+                {
+                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Template, uSyncNameCache.Templates[sender.Id], tSync.GetDocPath(sender));
+                    XmlDoc.ArchiveFile(uSyncNameCache.Templates[sender.Id], true);
+                }
+
+                uSyncNameCache.UpdateCache(sender);
+
+                // save
                 tSync.ExportToDisk(sender, _eventFolder);
+            }
+        }
+
+        static void InitNameCache()
+        {
+            if ( uSyncNameCache.Templates == null)
+            {
+                uSyncNameCache.Templates = new Dictionary<int, string>();
+
+                var tSync = new SyncTemplate();
+
+                foreach(var template in Template.GetAllAsList())
+                {
+                    uSyncNameCache.Templates.Add(template.Id,tSync.GetDocPath(template));
+                }
             }
         }
     }

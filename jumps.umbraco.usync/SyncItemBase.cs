@@ -81,6 +81,7 @@ namespace jumps.umbraco.usync
 
         protected void ImportFolder(string folder)
         {
+
             if (Directory.Exists(folder))
             {
                 foreach (string file in Directory.GetFiles(folder, Constants.SyncFileMask))

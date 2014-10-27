@@ -72,6 +72,20 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
+            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Stylesheet))
+            {
+                AddChange(
+                   uStylesheet.Rename(rename.Key, rename.Value, _settings.ReportOnly)
+                );
+            }
+
+            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Stylesheet))
+            {
+                AddChange(
+                    uStylesheet.Delete(delete.Value, _settings.ReportOnly)
+                );
+            }
+
             string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Stylesheet));
             base.ImportFolder(root);
         }
@@ -148,6 +162,7 @@ namespace jumps.umbraco.usync
         public static void AttachEvents(string folder)
         {
             _eventFolder = folder;
+            InitNameCache();
             StyleSheet.AfterSave += StyleSheet_AfterSave;
             StyleSheet.BeforeDelete += StyleSheet_BeforeDelete;
            
@@ -158,6 +173,9 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
+                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Stylesheet, sender.Text);
+                uSyncNameCache.Stylesheets.Remove(sender.Id);
+
                 XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.Stylesheet), true);
                 e.Cancel = false;
             }
@@ -168,8 +186,30 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
+                if (uSyncNameCache.IsRenamed(sender))
+                {
+                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Stylesheet, uSyncNameCache.Stylesheets[sender.Id], sender.Text);
+
+                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Stylesheets[sender.Id], Constants.ObjectTypes.Stylesheet), true);
+                }
+
+                uSyncNameCache.UpdateCache(sender);
+
                 var styleSync = new SyncStylesheet();
                 styleSync.ExportToDisk(sender, _eventFolder);
+            }
+        }
+
+        static void InitNameCache()
+        {
+            if ( uSyncNameCache.Stylesheets == null )
+            {
+                uSyncNameCache.Stylesheets = new Dictionary<int, string>();
+                foreach (StyleSheet item in StyleSheet.GetAll())
+                {
+                    uSyncNameCache.Stylesheets.Add(item.Id, item.Text);
+                }
+
             }
         }
     }

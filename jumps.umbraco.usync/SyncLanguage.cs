@@ -48,9 +48,19 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
+            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Language))
+            {
+                AddChange(uLanguage.Rename(rename.Key, rename.Value, _settings.ReportOnly));
+            }
+
+            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Language))
+            {
+                AddChange(uLanguage.Delete(delete.Value, _settings.ReportOnly));
+            }
+
             string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Language));
             ImportFolder(root);
-            RemoveFromSource(root);
+            // RemoveFromSource(root);
         }
 
         public override void Import(string filePath)
@@ -175,17 +185,39 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
+                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Language, sender.CultureAlias);
+                uSyncNameCache.Languages.Remove(sender.id);
+
                 XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.CultureAlias, Constants.ObjectTypes.Language), true);
             }
         }
 
         static void Language_AfterSave(Language sender, global::umbraco.cms.businesslogic.SaveEventArgs e)
         {
-            LogHelper.Info<SyncLanguage>("PostSave: {0} {1}", () => sender.id, () => sender.CultureAlias);
             if (!uSync.EventPaused)
             {
+                if ( uSyncNameCache.IsRenamed(sender))
+                {
+                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Language, uSyncNameCache.Languages[sender.id], sender.CultureAlias);
+                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Languages[sender.id], Constants.ObjectTypes.Language), true);
+                }
+
+                uSyncNameCache.UpdateCache(sender);
+
                 var langSync = new SyncLanguage();
                 langSync.ExportToDisk(sender, _eventFolder);
+            }
+        }
+
+        static void InitNameCache()
+        {
+            if ( uSyncNameCache.Languages == null)
+            {
+                uSyncNameCache.Languages = new Dictionary<int, string>();
+                foreach (Language item in Language.GetAllAsList())
+                {
+                    uSyncNameCache.Languages.Add(item.id, item.CultureAlias);
+                }
             }
         }
     }

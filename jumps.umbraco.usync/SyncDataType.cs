@@ -60,6 +60,27 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
+            // handle delete and rename
+
+            // renames don't really matter for datatypes, as everything is done via the guid 
+            //
+            // but the rename process fires, because it also deletes the rouge .config files
+            // that can end up everywhere.
+            
+            // so on import we can just skip renames for datatypes..
+            
+            //var renames = uSyncNameManager.GetRenames(Constants.ObjectTypes.DataType);
+            //foreach(var rename in renames)
+            //{
+            //   LogHelper.Info<SyncDataType>("Rename: {0} to {1}", () => rename.Key, ()=> rename.Value);
+            //}
+            
+            var deletes = uSyncNameManager.GetDeletes(Constants.ObjectTypes.DataType);
+            foreach(var delete in deletes)
+            {
+                AddChange(uDataTypeDefinition.SyncDelete(delete.Value, _settings.ReportOnly));
+            }
+
             string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.DataType));
             base.ImportFolder(rootFolder);
         }
@@ -137,16 +158,18 @@ namespace jumps.umbraco.usync
         private static Timer _saveTimer;
         private static Queue<int> _saveQueue = new Queue<int>();
         private static object _saveLock = new object();
-
         private static string _eventFolder = "" ;
 
         public static void AttachEvents(string folder)
         {
-            _eventFolder = folder; 
+            _eventFolder = folder;
+            InitNameCache();
 
             // this only fires in 4.11.5 + 
             DataTypeDefinition.Saving += new DataTypeDefinition.SaveEventHandler(DataTypeDefinition_Saving);
             // DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
+
+            DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
 
             // but this is 
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
@@ -157,6 +180,25 @@ namespace jumps.umbraco.usync
             // and do the save - gets over this.
             _saveTimer = new Timer(4064);
             _saveTimer.Elapsed += _saveTimer_Elapsed;
+        }
+
+        static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
+        {
+            LogHelper.Info<SyncDataType>("After Save Fired (it never use to)");
+        }
+
+        static void InitNameCache()
+        {
+            if (uSyncNameCache.DataTypes == null)
+            {
+                uSyncNameCache.DataTypes = new Dictionary<int, string>();
+                foreach (DataTypeDefinition item in DataTypeDefinition.GetAll())
+                {
+                    uSyncNameCache.DataTypes.Add(item.Id, item.Text);
+                }
+
+            }
+
         }
 
         static void _saveTimer_Elapsed(object sender, ElapsedEventArgs e)
@@ -173,6 +215,15 @@ namespace jumps.umbraco.usync
                     var dt = DataTypeDefinition.GetDataTypeDefinition(typeID);
                     if (dt != null)
                     {
+                        if ( uSyncNameCache.IsRenamed(dt) )
+                        {
+                            // renames of datatypes don't need to be recorded. 
+                            // delete/archive old.
+                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.DataTypes[dt.Id], Constants.ObjectTypes.DataType), true);
+                        }
+
+                        uSyncNameCache.UpdateCache(dt);
+
                         syncDataType.ExportToDisk(dt, _eventFolder);
                     }
                 }
@@ -208,6 +259,7 @@ namespace jumps.umbraco.usync
             {
                 if (typeof(DataTypeDefinition) == sender.GetType())
                 {
+                    uSyncNameManager.SaveDelete(Constants.ObjectTypes.DataType, sender.Text,sender.UniqueId.ToString());
                     XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.DataType), true);
                 }
 

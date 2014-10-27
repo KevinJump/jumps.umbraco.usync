@@ -105,6 +105,8 @@
     <Compile Include="uSync.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="uSyncConstants.cs" />
+    <Compile Include="uSyncNameCache.cs" />
+    <Compile Include="uSyncNameManager.cs" />
     <Compile Include="uSyncReporter.cs" />
     <Compile Include="uSyncSettings.cs" />
     <Compile Include="uSyncSettingsConfiguration.cs" />

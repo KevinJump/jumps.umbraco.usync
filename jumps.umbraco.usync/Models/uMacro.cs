@@ -6,6 +6,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using umbraco.cms.businesslogic.macro;
+using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync.Models
 {
@@ -36,6 +37,8 @@ namespace jumps.umbraco.usync.Models
             var m = Macro.Import(xmlNode);
             if (m != null)
             {
+                m.Name = node.Element("name").Value;
+
                 m.Save();
 
                 if (postCheck && tracker.MacroChanged(node))
@@ -45,6 +48,54 @@ namespace jumps.umbraco.usync.Models
             }
 
             return change ; 
+        }
+
+        public static ChangeItem Rename(string oldName, string newName, bool reportOnly = false)
+        {
+            var change = ChangeItem.RenameStub(oldName, newName, ItemType.Macro);
+
+            var macro = Macro.GetByAlias(oldName);
+            if ( macro != null )
+            {
+                if (!reportOnly)
+                {
+                    LogHelper.Info<SyncMacro>("Renaming {0} to {1}", () => oldName, () => newName);
+
+                    change.changeType = ChangeType.Success;
+                    macro.Alias = newName;
+                    macro.Save();
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
+            }
+
+            return change;
+        }
+
+        public static ChangeItem Delete(string name, bool reportOnly = false)
+        {
+            var change = ChangeItem.DeleteStub(name, ItemType.Macro);
+
+            var macro = Macro.GetByAlias(name);
+            if (macro != null)
+            {
+                if (!reportOnly)
+                {
+                    LogHelper.Info<SyncMacro>("Deleting: {0}", () => name);
+                    
+                    change.changeType = ChangeType.Delete;
+                    macro.Delete();
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
+            }
+
+            return change;
+
         }
     }
 }

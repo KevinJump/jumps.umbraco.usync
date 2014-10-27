@@ -75,12 +75,21 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
+            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.DocType))
+            {
+                // rename (isn't going to be simple)
+                uDocType.Rename(rename.Key, rename.Value, _settings.ReportOnly);
+            }
+
+            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.DocType))
+            {
+                uDocType.Delete(delete.Value, _settings.ReportOnly);
+            }
+
             string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.DocType));
 
             updates = new Dictionary<string,Tuple<string,string>>();
-            
             base.ImportFolder(root);
-
             SecondPassFitAndFix();
         }
 
@@ -208,7 +217,7 @@ namespace jumps.umbraco.usync
         /// </summary>
         /// <param name="item">DocType path to find</param>
         /// <returns>folderstucture (relative to uSync folder)</returns>
-        private string GetDocPath(DocumentType item)
+        internal string GetDocPath(DocumentType item)
         {
             string path = "";
 
@@ -236,9 +245,28 @@ namespace jumps.umbraco.usync
         /// </summary>
         public static void AttachEvents(string folder)
         {
+            InitNameCache(); 
             _eventFolder = folder; 
             ContentTypeService.DeletingContentType += ContentTypeService_DeletingContentType;
             ContentTypeService.SavedContentType += ContentTypeService_SavedContentType;
+        }
+
+        private static void InitNameCache()
+        {
+            if (uSyncNameCache.DocumentTypes != null)
+            {
+                uSyncNameCache.DocumentTypes = new Dictionary<int, string>();
+                var docSync = new SyncDocType();
+
+                foreach (DocumentType item in DocumentType.GetAllAsList().ToArray())
+                {
+                    if (item != null)
+                    {
+                        var savePath = docSync.GetDocPath(new DocumentType(item.Id));
+                        uSyncNameCache.DocumentTypes.Add(item.Id, savePath);
+                    }
+                }
+            }
         }
 
 
@@ -255,7 +283,20 @@ namespace jumps.umbraco.usync
 
                     foreach (var docType in e.SavedEntities)
                     {
-                        docSync.ExportToDisk(new DocumentType(docType.Id), _eventFolder);
+                        var dt = new DocumentType(docType.Id);
+
+                        if ( uSyncNameCache.IsRenamed(dt))
+                        {
+                            var savePath = docSync.GetDocPath(dt);
+
+                            uSyncNameManager.SaveRename(Constants.ObjectTypes.DocType,
+                                uSyncNameCache.DocumentTypes[docType.Id], savePath);
+
+                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.DocType), true);
+                        }
+                        uSyncNameCache.UpdateCache(dt);
+
+                        docSync.ExportToDisk(dt, _eventFolder);
                     }
                 }
             }
@@ -274,6 +315,8 @@ namespace jumps.umbraco.usync
                     foreach (var docType in e.DeletedEntities)
                     {
                         var savePath = docSync.GetDocPath(new DocumentType(docType.Id));
+                        
+                        uSyncNameManager.SaveDelete(Constants.ObjectTypes.DocType, savePath);
                         XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, savePath, "def", Constants.ObjectTypes.DocType), true);
                     }
                 }

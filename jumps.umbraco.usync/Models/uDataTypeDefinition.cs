@@ -96,6 +96,36 @@ namespace jumps.umbraco.usync.Models
             return change;
         }
 
+        public static ChangeItem SyncDelete(string def, bool reportOnly = false)
+        {
+            var change = ChangeItem.DeleteStub(def, ItemType.DataType);
+
+            if (CMSNode.IsNode(new Guid(def)))
+            {
+                
+                // delete
+                var dtd = DataTypeDefinition.GetDataTypeDefinition(new Guid(def));
+
+                change.changeType = ChangeType.Delete;
+                change.name = dtd.Text;
+
+                if (!reportOnly)
+                {
+                    LogHelper.Info<SyncDataType>("Deleted Datatype: {0}", () => change.name);
+
+                    change.changeType = ChangeType.Delete;
+                    dtd.delete();
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
+
+            }
+
+            return change;
+        }
+
         /// <summary>
         ///  takes xml and converts it to something we can then just import
         ///  this means mapping IDs etc...
@@ -195,6 +225,8 @@ namespace jumps.umbraco.usync.Models
                     LogHelper.Info<SyncDataType>("Import Failed for [{0}] .uSync Could not find the underling type", () => _name);
                     return null;
                 }
+
+                dtd.Text = _name;
 
                 if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
                 {
