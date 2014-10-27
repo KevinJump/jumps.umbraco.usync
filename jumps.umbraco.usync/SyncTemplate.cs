@@ -224,8 +224,26 @@ namespace jumps.umbraco.usync
 
                 if (uSyncNameCache.IsRenamed(sender))
                 {
-                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Template, uSyncNameCache.Templates[sender.Id], tSync.GetDocPath(sender));
-                    XmlDoc.ArchiveFile(uSyncNameCache.Templates[sender.Id], true);
+                    var newPath = tSync.GetDocPath(sender);
+
+                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Template, uSyncNameCache.Templates[sender.Id], newPath);
+
+                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Templates[sender.Id], "def"), true);
+
+                    XmlDoc.MoveChildren(
+                        XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Templates[sender.Id], "def", Constants.ObjectTypes.Template),
+                        XmlDoc.GetSavePath(_eventFolder, newPath, "def", Constants.ObjectTypes.Template)
+                        );
+
+                    if (sender.HasChildren)
+                    {
+                        foreach (var child in sender.Children)
+                        {
+                            var childType = new Template(child.Id);
+                            tSync.ExportToDisk(childType, _eventFolder);
+                        }
+                    }
+
                 }
 
                 uSyncNameCache.UpdateCache(sender);

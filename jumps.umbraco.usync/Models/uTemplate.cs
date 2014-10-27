@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using umbraco.BusinessLogic;
 using umbraco.cms.businesslogic.template;
 using Umbraco.Core;
+using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync.Models
 {
@@ -104,17 +105,28 @@ namespace jumps.umbraco.usync.Models
 
         internal static ChangeItem Rename(string oldPath, string newPath, bool reportOnly = false)
         {
-            var change = ChangeItem.RenameStub(oldPath, newPath, ItemType.Template);
-            /*
-            var parent = GetNewParent(newPath);
-            if (parent != null)
-            {
-                var template = FindTemplateByPath(oldPath);
+            var oldName = System.IO.Path.GetFileName(oldPath);
+            var newName = System.IO.Path.GetFileName(newPath);
 
-                if (template.ParentId != parent.Id)
-                    template.ParentId = parent.Id;
+            var change = ChangeItem.RenameStub(oldName, newName, ItemType.Template);
+
+            var item = Template.GetByAlias(oldName);
+            if (item != null)
+            {
+                if (!reportOnly)
+                {
+                    LogHelper.Info<SyncTemplate>("Renaming : {0} to {1}", () => oldName, () => newName);
+
+                    change.changeType = ChangeType.Success;
+                    item.Alias = newName;
+                    item.Save();
+                }
+                else
+                {
+                    change.changeType = ChangeType.WillChange;
+                }
             }
-            */
+
             return change;
         }
 
