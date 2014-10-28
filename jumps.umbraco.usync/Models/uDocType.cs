@@ -270,7 +270,6 @@ namespace jumps.umbraco.usync.Models
 
         internal static void UpdateExistingProperties(IContentTypeBase docType, XElement node)
         {
-            LogHelper.Info<SyncMediaTypes>("Update Properties: 1");
             Dictionary<string, string> tabMoves = new Dictionary<string, string>();
 
             foreach (var property in docType.PropertyTypes)
@@ -307,7 +306,6 @@ namespace jumps.umbraco.usync.Models
                     {
                         property.DataTypeDefinitionId = dtd.Id;
                     }
-                    LogHelper.Info<SyncMediaTypes>("Update Properties: 4");
 
                     var tabName = propNode.Element("Tab").Value;
                     if (!string.IsNullOrEmpty(tabName))
@@ -322,25 +320,16 @@ namespace jumps.umbraco.usync.Models
                             }
                         }
                     }
-                    LogHelper.Info<SyncMediaTypes>("Update Properties: 5");
 
                 }
             }
-            LogHelper.Info<SyncMediaTypes>("Update Properties: 6");
 
             // you have to move tabs outside the loop as you are 
             // chaning the collection. 
             foreach (var move in tabMoves)
             {
-                LogHelper.Info<SyncMediaTypes>("Update Properties: 7");
-
                 docType.MovePropertyType(move.Key, move.Value);
-                LogHelper.Info<SyncMediaTypes>("Update Properties: 7.1");
-
             }
-
-            LogHelper.Info<SyncMediaTypes>("Update Properties: Finish");
-
         }
 
         internal static ChangeItem Delete(string path, bool reportOnly = false)

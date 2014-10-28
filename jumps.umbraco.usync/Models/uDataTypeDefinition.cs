@@ -157,11 +157,8 @@ namespace jumps.umbraco.usync.Models
                     {
                         var value = mapper.MapValueToID(preValue);
 
-
                         if (!string.IsNullOrEmpty(value))
                         {
-                            LogHelper.Info<SyncDataType>("Mapped Value: {0}", () => value);
-
                             preValue.Attribute("Value").Value = value;
                         }
 

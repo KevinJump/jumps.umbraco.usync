@@ -46,8 +46,6 @@ namespace jumps.umbraco.usync.helpers
 
         public static bool MediaTypeChanged(XElement node)
         {
-            LogHelper.Info<uSync>("Media Changed? {0}", ()=> node.Element("Info").Element("Alias").Value); 
-            
             string filehash = XmlDoc.ReCalculateHash(node, true);
             if (string.IsNullOrEmpty(filehash))
                 return true;
@@ -126,6 +124,12 @@ namespace jumps.umbraco.usync.helpers
             XElement dbNode = dtd.SyncExport();
             XElement dbImportNode = uDataTypeDefinition.ConvertToImportXML(dbNode);
             var dbMD5 = XmlDoc.CalculateMD5Hash(dbImportNode, true);
+
+            if (!filehash.Equals(dbMD5))
+            {
+                LogHelper.Info<SyncMediaTypes>("Importing: \n{0}", () => node.ToString());
+                LogHelper.Info<SyncMediaTypes>("Database : \n{0}", () => dbImportNode.ToString());
+            }
 
             return (!filehash.Equals(dbMD5));
         }

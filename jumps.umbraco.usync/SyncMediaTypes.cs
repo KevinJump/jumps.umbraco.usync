@@ -70,8 +70,6 @@ namespace jumps.umbraco.usync
                 );
             }
 
-            LogHelper.Info<SyncMediaTypes>("Done rename and Delete");
-
             string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.MediaType));
             updates = new Dictionary<string, string>();
 
@@ -86,8 +84,6 @@ namespace jumps.umbraco.usync
 
         public override void Import(string filePath)
         {
-            LogHelper.Info<SyncMediaTypes>("Importing {0}", () => filePath);
-
             if (!File.Exists(filePath))
                 throw new ArgumentNullException("filePath");
 
@@ -628,7 +624,6 @@ namespace jumps.umbraco.usync
                 var tNode = node.Element("Tabs");
                 if (tNode != null && tNode.HasElements)
                 {
-                    LogHelper.Info<SyncMediaTypes>("sort order Before");
                     uDocType.TabSortOrder(item, node);
                 }
             }
