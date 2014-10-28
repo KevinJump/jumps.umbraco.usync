@@ -84,6 +84,7 @@ namespace jumps.umbraco.usync
 
         public override void Import(string filePath)
         {
+            LogHelper.Info<SyncMediaTypes>("Base Import {0}", ()=> filePath);
             if (!File.Exists(filePath))
                 throw new ArgumentNullException("filePath");
 
@@ -98,7 +99,9 @@ namespace jumps.umbraco.usync
                 {
                     var backup = Backup(node);
 
+                    LogHelper.Info<SyncMediaTypes>("SyncImport < in");
                     ChangeItem change = uMediaType.SyncImport(node);
+                    LogHelper.Info<SyncMediaTypes>("SyncImport > out");
 
                     if (change.changeType == ChangeType.Success)
                     {
@@ -125,6 +128,7 @@ namespace jumps.umbraco.usync
 
         private void SecondPass(string filePath, string backup)
         {
+            LogHelper.Info<SyncMediaTypes>("Second Pass");
             if (!File.Exists(filePath))
                 throw new ArgumentNullException("filePath");
 
@@ -586,6 +590,7 @@ namespace jumps.umbraco.usync
 
         public static ChangeItem SyncImportFitAndFix(Umbraco.Core.Models.IMediaType item, XElement node, bool postCheck = true)
         {
+            LogHelper.Info<SyncMediaTypes>("Fix and Fix");
             var change = new ChangeItem
             {
                 itemType = ItemType.MediaItem,

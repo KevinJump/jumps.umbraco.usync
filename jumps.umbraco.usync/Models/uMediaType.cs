@@ -47,6 +47,7 @@ namespace jumps.umbraco.usync.Models
 
         public static ChangeItem SyncImportFitAndFix(XElement node, bool postCheck = true)
         {
+            LogHelper.Info<SyncMediaTypes>("Sync Import Fit and Fix");
             var change = new ChangeItem
             {
                 itemType = ItemType.MediaItem,
@@ -88,7 +89,11 @@ namespace jumps.umbraco.usync.Models
             var name = System.IO.Path.GetFileName(path);
 
             var change = ChangeItem.DeleteStub(name, ItemType.MediaItem);
-            var item = MediaType.GetByAlias(name);
+            var media = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(name);
+            if (media == null)
+                return change;
+
+            var item = new MediaType(media.Id);
             if (item != null)
             {
                 if (!reportOnly)
@@ -113,7 +118,11 @@ namespace jumps.umbraco.usync.Models
 
             var change = ChangeItem.RenameStub(oldName, newName, ItemType.MediaItem);
 
-            var item = MediaType.GetByAlias(oldName);
+            var media = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(oldName);
+            if (media == null)
+                return change;
+
+            var item = new MediaType(media.Id);
             if (item != null)
             {
                 if (!reportOnly)

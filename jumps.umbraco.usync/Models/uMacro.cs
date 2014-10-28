@@ -39,6 +39,8 @@ namespace jumps.umbraco.usync.Models
             {
                 m.Name = node.Element("name").Value;
 
+                RemoveMissingProperties(m, node);
+
                 m.Save();
 
                 if (postCheck && tracker.MacroChanged(node))
@@ -48,6 +50,29 @@ namespace jumps.umbraco.usync.Models
             }
 
             return change ; 
+        }
+
+        static void RemoveMissingProperties(Macro macro, XElement node)
+        {
+            List<MacroProperty> macroProperties = new List<MacroProperty>();
+
+            var props = node.Element("properties");
+            if (props == null)
+                return;
+
+            foreach(var property in macro.Properties.ToList())
+            {
+                if ( props.Elements("property").Where(x => x.Attribute("alias").Value == property.Alias ).FirstOrDefault() == null )
+                {
+                    // not in the xml file.
+                    macroProperties.Add(property);
+                }
+            }
+
+            foreach(var property in macroProperties)
+            {
+                property.Delete();
+            }
         }
 
         public static ChangeItem Rename(string oldName, string newName, bool reportOnly = false)
