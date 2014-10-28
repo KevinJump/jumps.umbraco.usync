@@ -70,9 +70,9 @@ namespace jumps.umbraco.usync
                 );
             }
 
+            LogHelper.Info<SyncMediaTypes>("Done rename and Delete");
 
             string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.MediaType));
-
             updates = new Dictionary<string, string>();
 
             base.ImportFolder(rootFolder);
@@ -86,6 +86,8 @@ namespace jumps.umbraco.usync
 
         public override void Import(string filePath)
         {
+            LogHelper.Info<SyncMediaTypes>("Importing {0}", () => filePath);
+
             if (!File.Exists(filePath))
                 throw new ArgumentNullException("filePath");
 
@@ -396,14 +398,21 @@ namespace jumps.umbraco.usync
 
             MediaType mt = null;
 
+
+
             try
             {
-                mt = MediaType.GetByAlias(alias);
+                var media = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(alias);
+                if (media != null)
+                {
+                    mt = new MediaType(media.Id);
+                }
             }
             catch (Exception ex)
             {
                 LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", ()=> ex.ToString()); 
             }
+
 
             if (mt == null)
             {
@@ -434,7 +443,6 @@ namespace jumps.umbraco.usync
             //Master content type
             string master = xmlHelper.GetNodeValue(n.SelectSingleNode("Info/Master"));
 
-
             if (!String.IsNullOrEmpty(master))
             {
                 // throw new System.Exception(String.Format("Throwing in {0}, master {1}", mt.Text, master));
@@ -445,7 +453,6 @@ namespace jumps.umbraco.usync
             }
 
             //tabs
-
             ContentType.TabI[] tabs = mt.getVirtualTabs;
 
             // load the current tabs
@@ -621,6 +628,7 @@ namespace jumps.umbraco.usync
                 var tNode = node.Element("Tabs");
                 if (tNode != null && tNode.HasElements)
                 {
+                    LogHelper.Info<SyncMediaTypes>("sort order Before");
                     uDocType.TabSortOrder(item, node);
                 }
             }

@@ -46,6 +46,8 @@ namespace jumps.umbraco.usync.helpers
 
         public static bool MediaTypeChanged(XElement node)
         {
+            LogHelper.Info<uSync>("Media Changed? {0}", ()=> node.Element("Info").Element("Alias").Value); 
+            
             string filehash = XmlDoc.ReCalculateHash(node, true);
             if (string.IsNullOrEmpty(filehash))
                 return true;
@@ -55,7 +57,6 @@ namespace jumps.umbraco.usync.helpers
                 return true;
 
             var media = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(name.Value);
-
             if (media == null)
                 return true;
 

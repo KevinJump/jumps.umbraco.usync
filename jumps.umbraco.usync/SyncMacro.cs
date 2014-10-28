@@ -164,7 +164,9 @@ namespace jumps.umbraco.usync
             _eventFolder = folder;
             Macro.AfterSave += Macro_AfterSave;
             Macro.AfterDelete += Macro_AfterDelete;
+            Macro.New += Macro_New;
         }
+
 
         static void Macro_AfterDelete(Macro sender, DeleteEventArgs e)
         {
@@ -180,20 +182,34 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
-                if (uSyncNameCache.IsRenamed(sender))
-                {
-                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Macro,
-                        uSyncNameCache.Macros[sender.Id], sender.Alias);
-
-                    // delete old one
-                    XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Macros[sender.Id], Constants.ObjectTypes.Macro), true);
-                }
-
-                uSyncNameCache.UpdateCache(sender);
-
-                SyncMacro m = new SyncMacro();
-                m.ExportToDisk(sender, _eventFolder);
+                SaveMacro(sender);
             }
+        }
+
+        static void Macro_New(Macro sender, NewEventArgs e)
+        {
+            LogHelper.Info<SyncMacro>("New Fired");
+            if (!uSync.EventPaused)
+            {
+                SaveMacro(sender);
+            }
+        }
+
+        static void SaveMacro(Macro sender)
+        {
+            if (uSyncNameCache.IsRenamed(sender))
+            {
+                uSyncNameManager.SaveRename(Constants.ObjectTypes.Macro,
+                    uSyncNameCache.Macros[sender.Id], sender.Alias);
+
+                // delete old one
+                XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Macros[sender.Id], Constants.ObjectTypes.Macro), true);
+            }
+
+            uSyncNameCache.UpdateCache(sender);
+
+            SyncMacro m = new SyncMacro();
+            m.ExportToDisk(sender, _eventFolder);
         }
 
         static void InitNameCache()

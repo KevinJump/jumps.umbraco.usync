@@ -157,8 +157,11 @@ namespace jumps.umbraco.usync.Models
                     {
                         var value = mapper.MapValueToID(preValue);
 
+
                         if (!string.IsNullOrEmpty(value))
                         {
+                            LogHelper.Info<SyncDataType>("Mapped Value: {0}", () => value);
+
                             preValue.Attribute("Value").Value = value;
                         }
 
@@ -199,17 +202,35 @@ namespace jumps.umbraco.usync.Models
 
                 DataTypeDefinition dtd;
 
+                global::umbraco.cms.businesslogic.datatype.controls.Factory f = new global::umbraco.cms.businesslogic.datatype.controls.Factory();
+
                 if (CMSNode.IsNode(new Guid(_def)))
                 {
                     dtd = DataTypeDefinition.GetDataTypeDefinition(new Guid(_def));
+
+                    if ( dtd != null )
+                    {
+                        dtd.Text = _name;
+
+                        var dataType = f.DataType(new Guid(_id));
+                        if (dataType == null && dataType.Id != null)
+                            throw new NullReferenceException("Could not resolve a data type with id " + _id);
+
+                        if ( dtd.DataType.Id != dataType.Id )
+                        {
+                            // change type ? 
+                            // lets have a go see if this works !
+                            dtd.DataType = dataType;
+                        }
+                        dtd.Save();
+                                               
+                    }
                 }
                 else
                 {
                     isNew = true;
 
                     var u = global::umbraco.BusinessLogic.User.GetUser(0);
-
-                    global::umbraco.cms.businesslogic.datatype.controls.Factory f = new global::umbraco.cms.businesslogic.datatype.controls.Factory();
 
                     dtd = DataTypeDefinition.MakeNew(u, _name, new Guid(_def));
                     var dataType = f.DataType(new Guid(_id));
@@ -225,8 +246,7 @@ namespace jumps.umbraco.usync.Models
                     LogHelper.Info<SyncDataType>("Import Failed for [{0}] .uSync Could not find the underling type", () => _name);
                     return null;
                 }
-
-                dtd.Text = _name;
+                
 
                 if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
                 {

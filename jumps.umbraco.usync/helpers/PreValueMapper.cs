@@ -93,7 +93,7 @@ namespace jumps.umbraco.usync.helpers
                         var propertyValue = jObject.SelectToken(_mSettings.PropName);
                         if ( propertyValue != null )
                         {
-                            return propertyValue.ToString();
+                            return propertyValue.ToString(Newtonsoft.Json.Formatting.None);
                         }
                     }
                     break;
@@ -143,6 +143,8 @@ namespace jumps.umbraco.usync.helpers
 
         private string MapTabId(int id)
         {
+            LogHelper.Info<PreValueMapper>("Mapping Tabs... {0}", ()=> id);
+
             foreach(IContentType contentType in ApplicationContext.Current.Services.ContentTypeService.GetAllContentTypes())
             {
                 foreach (PropertyGroup propertyGroup in contentType.PropertyGroups)
@@ -221,9 +223,16 @@ namespace jumps.umbraco.usync.helpers
                     // at the end of our mapping process we clean out the extra bits.
                 }
 
+                LogHelper.Info<PreValueMapper>("Replacing {0} with {1} in {2}", () => mapId, () => localId, () => valueSubString);
+
                 var targetSubString = valueSubString.Replace(mapId, localId);
+
+                LogHelper.Info<PreValueMapper>("Replacing {0} with {1} in {2}", () => valueSubString, () => targetSubString, () => value);
                 value = value.Replace(valueSubString, targetSubString);
             }
+
+            LogHelper.Info<PreValueMapper>("Returning {0}", () => value);
+
             return CleanValue(value);
         }
 
@@ -247,6 +256,7 @@ namespace jumps.umbraco.usync.helpers
 
         private string GetMappedId(string id, string value, string type)
         {
+            LogHelper.Info<PreValueMapper>("Getting Mapped Value: {0} {1} {2}", () => id, () => value, () => type);
             switch(type)
             {
                 case "stylesheet":
@@ -256,7 +266,7 @@ namespace jumps.umbraco.usync.helpers
                 case "media":
                     return GetMappedMediaId(id, value);
                 case "tab":
-                    break;
+                    return GetMappedTabId(id, value);
             }
 
             return id;
@@ -296,9 +306,13 @@ namespace jumps.umbraco.usync.helpers
 
         private string GetMappedTabId(string id, string value)
         {
+            LogHelper.Info<PreValueMapper>("Getting Mapped tab id {0} {1}", () => id, () => value);
+
             if (value.Contains('|') && value.Split('|').Count() == 2)
             {
                 var bits = value.Split('|');
+
+                LogHelper.Info<PreValueMapper>("Tab bit: {0} - {1}", () => bits[0], () => bits[1]);
 
                 var contentType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(bits[0]);
                 if (contentType != null)
@@ -308,6 +322,7 @@ namespace jumps.umbraco.usync.helpers
                         if (tab.Name == bits[1])
                         {
                             // this is the one
+                            LogHelper.Info<PreValueMapper>("Found the tab: {0}", () => tab.Id);
                             return tab.Id.ToString();
                         }
                     }

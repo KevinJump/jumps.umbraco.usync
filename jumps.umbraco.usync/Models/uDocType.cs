@@ -125,6 +125,8 @@ namespace jumps.umbraco.usync.Models
 
                 ImportStructure(item, node);
 
+                ImportTemplates(item, node);
+
                 RemoveMissingProperties(item, node);
 
                 // tab sort order
@@ -140,10 +142,8 @@ namespace jumps.umbraco.usync.Models
                 }
 
             }
-
             return change; 
         }
-
 
         internal static void ImportStructure(IContentTypeBase item, XElement node, string structureType = "DocumentType")
         {
@@ -171,8 +171,30 @@ namespace jumps.umbraco.usync.Models
                     sortOrder++;
                 }
             }
-
             item.AllowedContentTypes = allowed;
+        }
+
+        internal static void ImportTemplates(IContentType item, XElement node)
+        {
+            XElement templates = node.Element("Info").Element("AllowedTemplates");
+
+            if (templates == null)
+                return ;
+
+            List<ITemplate> allowedTemplates = new List<ITemplate>();
+
+            foreach(var template in templates.Elements("Template"))
+            {
+                string name = template.Value;
+                if (!string.IsNullOrEmpty(name))
+                {
+                    var itemplate = ApplicationContext.Current.Services.FileService.GetTemplate(template.Value);
+                    if (itemplate != null)
+                        allowedTemplates.Add(itemplate);
+                }
+            }
+
+            item.AllowedTemplates = allowedTemplates;
         }
 
         internal static void TabSortOrder(IContentTypeBase docType, XElement node)
@@ -207,7 +229,7 @@ namespace jumps.umbraco.usync.Models
 
             foreach(var tab in tabsToRemove)
             {
-                // docType.RemovePropertyGroup(tab);
+                docType.RemovePropertyGroup(tab);
                 LogHelper.Info<SyncDocType>("Will we remove this tab? {0}", () => tab);
             }
         }
@@ -248,6 +270,7 @@ namespace jumps.umbraco.usync.Models
 
         internal static void UpdateExistingProperties(IContentTypeBase docType, XElement node)
         {
+            LogHelper.Info<SyncMediaTypes>("Update Properties: 1");
             Dictionary<string, string> tabMoves = new Dictionary<string, string>();
 
             foreach (var property in docType.PropertyTypes)
@@ -258,13 +281,23 @@ namespace jumps.umbraco.usync.Models
                                         .SingleOrDefault();
                 if (propNode != null)
                 {
-                    property.Name = propNode.Element("Name").Value;
-                    property.Alias = propNode.Element("Alias").Value;
-                    property.Mandatory = bool.Parse(propNode.Element("Mandatory").Value);
-                    property.ValidationRegExp = propNode.Element("Validation").Value;
-                    property.Description = propNode.Element("Description").Value;
+                    if (propNode.Element("Name") != null)
+                        property.Name = propNode.Element("Name").Value;
 
-                    if ( propNode.Element("SortOrder") != null )
+                    if (propNode.Element("Alias") != null)
+                        property.Alias = propNode.Element("Alias").Value;
+
+                    if (propNode.Element("Mandatory") != null)
+                        property.Mandatory = bool.Parse(propNode.Element("Mandatory").Value);
+
+                    if (propNode.Element("Validation") != null)
+                        property.ValidationRegExp = propNode.Element("Validation").Value;
+
+                    if (propNode.Element("Description") != null)
+                        property.Description = propNode.Element("Description").Value;
+
+                    // media can't do sort ? 
+                    if (propNode.Element("SortOrder") != null)
                         property.SortOrder = int.Parse(propNode.Element("SortOrder").Value);
 
                     // change of type ? 
@@ -274,6 +307,7 @@ namespace jumps.umbraco.usync.Models
                     {
                         property.DataTypeDefinitionId = dtd.Id;
                     }
+                    LogHelper.Info<SyncMediaTypes>("Update Properties: 4");
 
                     var tabName = propNode.Element("Tab").Value;
                     if (!string.IsNullOrEmpty(tabName))
@@ -288,15 +322,25 @@ namespace jumps.umbraco.usync.Models
                             }
                         }
                     }
+                    LogHelper.Info<SyncMediaTypes>("Update Properties: 5");
+
                 }
             }
+            LogHelper.Info<SyncMediaTypes>("Update Properties: 6");
 
             // you have to move tabs outside the loop as you are 
             // chaning the collection. 
             foreach (var move in tabMoves)
             {
+                LogHelper.Info<SyncMediaTypes>("Update Properties: 7");
+
                 docType.MovePropertyType(move.Key, move.Value);
+                LogHelper.Info<SyncMediaTypes>("Update Properties: 7.1");
+
             }
+
+            LogHelper.Info<SyncMediaTypes>("Update Properties: Finish");
+
         }
 
         internal static ChangeItem Delete(string path, bool reportOnly = false)
