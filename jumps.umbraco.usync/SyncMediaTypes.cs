@@ -58,7 +58,6 @@ namespace jumps.umbraco.usync
         {
             foreach (var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.MediaType))
             {
-                // rename (isn't going to be simple)
                 AddChange(
                     uMediaType.Rename(rename.Key, rename.Value, _settings.ReportOnly)
                 );
@@ -75,6 +74,7 @@ namespace jumps.umbraco.usync
             string rootFolder = IOHelper.MapPath(String.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.MediaType));
 
             updates = new Dictionary<string, string>();
+
             base.ImportFolder(rootFolder);
 
             foreach (var update in updates)
@@ -196,6 +196,7 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents(string folder)
         {
+            InitNameCache();
             _eventFolder = folder;
             ContentTypeService.SavedMediaType += ContentTypeService_SavedMediaType;
             ContentTypeService.DeletingMediaType += ContentTypeService_DeletingMediaType;

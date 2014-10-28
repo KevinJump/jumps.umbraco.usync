@@ -135,6 +135,8 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents(string folder)
         {
+            InitNameCache();
+
             _eventFolder = folder;
             Language.New += Language_New;
             Language.AfterSave += Language_AfterSave;

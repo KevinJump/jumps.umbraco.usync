@@ -13,6 +13,7 @@ using umbraco.cms.businesslogic.language;
 
 using jumps.umbraco.usync.Models;
 using Umbraco.Core.Logging;
+using Umbraco.Core;
 
 namespace jumps.umbraco.usync.helpers
 {
@@ -53,19 +54,27 @@ namespace jumps.umbraco.usync.helpers
             if (name == null)
                 return true;
 
-            var item = MediaType.GetByAlias(name.Value);
+            var media = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(name.Value);
+
+            if (media == null)
+                return true;
+
+            var item = new MediaType(media.Id);
             if (item == null)
                 return true;
 
+
             XElement dbNode = uMediaType.SyncExport(item);
             var dbMD5 = XmlDoc.CalculateMD5Hash(dbNode, true);
+
             /*
-            if ( !filehash.Equals(dbMD5))
+            if (!filehash.Equals(dbMD5))
             {
                 LogHelper.Info<SyncMediaTypes>("Media Type Hashes don't match: {0}", () => node.Element("Info").Element("Alias").Value);
                 LogHelper.Info<SyncMediaTypes>("Importing: \n{0}", () => node.ToString());
                 LogHelper.Info<SyncMediaTypes>("Database : \n{0}", () => dbNode);
-            }*/
+            }
+             */
 
             return (!filehash.Equals(dbMD5));
         }
@@ -76,7 +85,7 @@ namespace jumps.umbraco.usync.helpers
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
-            XElement name = node.Element("name");
+            XElement name = node.Element("alias");
             if (name == null)
                 return true;
 
