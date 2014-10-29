@@ -85,7 +85,7 @@ namespace jumps.umbraco.usync
 
         public override void Import(string filePath)
         {
-            LogHelper.Info<SyncMediaTypes>("Base Import {0}", ()=> filePath);
+            // LogHelper.Info<SyncMediaTypes>("Base Import {0}", ()=> filePath);
             if (!File.Exists(filePath))
                 throw new ArgumentNullException("filePath");
 

@@ -119,7 +119,7 @@ namespace jumps.umbraco.usync.helpers
         {
             var _mediaService = ApplicationContext.Current.Services.MediaService;
 
-            LogHelper.Info<MediaWalker>("Walking the path for node id: {0}", () => id);
+            LogHelper.Debug<MediaWalker>("Walking the path for node id: {0}", () => id);
             var media = _mediaService.GetById(id);
             if (media != null)
             {

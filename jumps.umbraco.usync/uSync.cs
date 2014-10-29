@@ -167,7 +167,7 @@ namespace jumps.umbraco.usync
                 dicSync.ExportAll();
             }
 
-            LogHelper.Debug<uSync>("Saving to Disk - End"); 
+            LogHelper.Info<uSync>("Saving to Disk - End"); 
         }
 
         /// <summary>
@@ -193,6 +193,7 @@ namespace jumps.umbraco.usync
 
                 if (uSyncSettings.Elements.Templates)
                 {
+                    LogHelper.Info<uSync>("Importing Templates");
                     var tSync = new SyncTemplate(importSettings);
                     tSync.ImportAll();
                     changes.AddRange(tSync.ChangeList);
@@ -202,6 +203,7 @@ namespace jumps.umbraco.usync
 
                 if (uSyncSettings.Elements.Stylesheets)
                 {
+                    LogHelper.Info<uSync>("Importing Stylesheets");
                     var styleSync = new SyncStylesheet(importSettings);
                     styleSync.ImportAll();
                     changes.AddRange(styleSync.ChangeList);
@@ -212,6 +214,7 @@ namespace jumps.umbraco.usync
 
                 if (uSyncSettings.Elements.DataTypes)
                 {
+                    LogHelper.Info<uSync>("Importing DataTypes");
                     var dataTypeSync = new SyncDataType(importSettings);
                     dataTypeSync.ImportAll();
                     changes.AddRange(dataTypeSync.ChangeList);
@@ -222,6 +225,7 @@ namespace jumps.umbraco.usync
 
                 if (uSyncSettings.Elements.DocumentTypes)
                 {
+                    LogHelper.Info<uSync>("Importing Document Types");
                     var docSync = new SyncDocType(importSettings);
                     docSync.ImportAll();
                     changes.AddRange(docSync.ChangeList);
@@ -242,6 +246,7 @@ namespace jumps.umbraco.usync
 
                 if (uSyncSettings.Elements.MediaTypes)
                 {
+                    LogHelper.Info<uSync>("Importing Media Types");
                     var mediaSync = new SyncMediaTypes(importSettings);
                     mediaSync.ImportAll();
                     changes.AddRange(mediaSync.ChangeList);
@@ -252,12 +257,14 @@ namespace jumps.umbraco.usync
 
                 if (uSyncSettings.Elements.Dictionary) 
                 {
+                    LogHelper.Info<uSync>("Importing Languages");
                     var langSync = new SyncLanguage(importSettings);
                     langSync.ImportAll();
                     changes.AddRange(langSync.ChangeList);
 
                     LogHelper.Info<uSync>("Imported Languages {0} changes ({1}ms)", () => langSync.ChangeCount, ()=> sw.ElapsedMilliseconds - last);
                     last = sw.ElapsedMilliseconds;
+                    LogHelper.Info<uSync>("Importing Dictionary Items");
 
                     var dicSync = new SyncDictionary(importSettings);
                     dicSync.ImportAll();
@@ -270,6 +277,7 @@ namespace jumps.umbraco.usync
                 // double datatype pass - because when mapping it becomes dependent on doctypes
                 if (uSyncSettings.Elements.DataTypes)
                 {
+                    LogHelper.Info<uSync>("Importing Datatypes (Second Pass)");
                     var dataTypeSync = new SyncDataType(importSettings);
                     dataTypeSync.ImportAll();
                     LogHelper.Info<uSync>("Imported DataTypes (again) {0} changes ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);

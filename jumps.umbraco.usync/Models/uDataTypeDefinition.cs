@@ -28,6 +28,8 @@ namespace jumps.umbraco.usync.Models
             PreValueMapper mapper = null;
             if (uSyncSettings.MappedDataTypes.GetAll().Contains(_id))
             {
+                LogHelper.Debug<uSync>("Export Mapping: {0}", () => item.Text);
+
                 var mappedSettings = uSyncSettings.MappedDataTypes[_id];
                 mapper = new PreValueMapper(node, mappedSettings);
             }
