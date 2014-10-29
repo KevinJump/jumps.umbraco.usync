@@ -17,7 +17,7 @@
     <div class="propertyitem">
         <div class="dashboardWrapper">
             <h2>uSync</h2>
-            <img src="./dashboard/images/zipfile.png" alt="usync" class="dashboardIcon" />
+            <img src="/umbraco/dashboard/images/zipfile.png" alt="usync" class="dashboardIcon" />
     
             <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                 <ContentTemplate>

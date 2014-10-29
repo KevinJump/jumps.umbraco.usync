@@ -172,6 +172,7 @@ namespace jumps.umbraco.usync.Models
 
             if (nodeCopy.Element("Nodes") != null)
                 nodeCopy.Element("Nodes").Remove();
+
             return nodeCopy; 
         }
      

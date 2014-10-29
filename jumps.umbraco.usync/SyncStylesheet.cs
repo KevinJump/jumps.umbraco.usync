@@ -165,7 +165,23 @@ namespace jumps.umbraco.usync
             InitNameCache();
             StyleSheet.AfterSave += StyleSheet_AfterSave;
             StyleSheet.BeforeDelete += StyleSheet_BeforeDelete;
+
+            StylesheetProperty.AfterSave += StylesheetProperty_AfterSave;
+            StylesheetProperty.AfterDelete += StylesheetProperty_AfterDelete;
            
+        }
+
+        static void StylesheetProperty_AfterDelete(StylesheetProperty sender, DeleteEventArgs e)
+        {
+            var styleSync = new SyncStylesheet();
+            styleSync.ExportToDisk(sender.StyleSheet(), _eventFolder);
+
+        }
+
+        static void StylesheetProperty_AfterSave(StylesheetProperty sender, SaveEventArgs e)
+        {
+            var styleSync = new SyncStylesheet();
+            styleSync.ExportToDisk(sender.StyleSheet(), _eventFolder);            
         }
 
 

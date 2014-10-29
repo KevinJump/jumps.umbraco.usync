@@ -155,6 +155,12 @@ namespace jumps.umbraco.usync.helpers
                 var root = _mediaService.GetByLevel(1).Where(x => x.Name == rootName).FirstOrDefault();
                 if (root != null)
                 {
+                    if ( bits.Length == 1 )
+                    {
+                        // we are here. the root is what we where looking for?
+                        return root.Id;
+                    }
+
                     return GetLastId(_mediaService, root.Id, bits, 2);
                 }
             }

@@ -216,7 +216,7 @@ namespace jumps.umbraco.usync.helpers
                     // target id - so we add some strings to our target, to stop us
                     // from confusing the id we're putting in with anything else.
                     Regex rgx = new Regex(@"\d{1}");
-                    localId = rgx.Replace(localId, "$0:zzusync");
+                    localId = "\"" + rgx.Replace(localId, "$0:zzusync") + "\""; 
 
                     // at the end of our mapping process we clean out the extra bits.
                 }
@@ -242,7 +242,8 @@ namespace jumps.umbraco.usync.helpers
 
         public string CleanValue(string value)
         {
-            var cleaned = value.Replace(":zzusync", "").Trim("\"");
+            Regex rgx = new Regex("\"?(\\d{1,4})(:zzusync\"?)");
+            var cleaned = rgx.Replace(value, "$1");
             return cleaned;
         }
 

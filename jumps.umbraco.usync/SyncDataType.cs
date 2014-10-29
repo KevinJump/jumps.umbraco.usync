@@ -95,6 +95,7 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "DataType")  
                 throw new ArgumentException("Not a DataType File", filePath);
 
+
             if (_settings.ForceImport || tracker.DataTypeChanged(node))
             {
                 if (!_settings.ReportOnly)
@@ -127,7 +128,9 @@ namespace jumps.umbraco.usync
             {
                 AddNoChange(ItemType.DataType, filePath);
             }
-       }
+
+            LogHelper.Info<SyncDataType>("Import: {0} Complete", () => filePath);
+        }
 
         protected override string Backup(XElement node)
         {
