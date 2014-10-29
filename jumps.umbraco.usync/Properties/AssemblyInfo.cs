@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("jumps.umbraco.usync")]
-[assembly: AssemblyDescription("umbraco syncing thing - for Umbraco 6.1.x")]
+[assembly: AssemblyDescription("An umbraco Syncing Thingy for Umbraco 6.1.x")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("jumoo")]
 [assembly: AssemblyProduct("jumps.umbraco.usync")]

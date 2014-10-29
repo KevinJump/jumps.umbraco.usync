@@ -30,7 +30,7 @@
   <info>
     <package>
       <name>uSync for Umbraco 6</name>
-      <version>1.5.8.2</version>
+      <version>1.6</version>
       <license url="http://www.opensource.org/licenses/mit-license.php">MIT license</license>
       <url>http://jumoo.co.uk/usync</url>
       <requirements>

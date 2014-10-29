@@ -108,7 +108,7 @@ namespace jumps.umbraco.usync
                 
                 // because it could be a new parent has been inserted.
                 AddChange(
-                    uTemplate.Rename(rename.Key, rename.Value, _settings.ReportOnly);
+                    uTemplate.Rename(rename.Key, rename.Value, _settings.ReportOnly)
                 );
             }
 
@@ -116,7 +116,7 @@ namespace jumps.umbraco.usync
             {
                 // deletes - again we get a path - so we have to delete from the top down?
                 AddChange(
-                    uTemplate.Delete(delete.Value, _settings.ReportOnly);
+                    uTemplate.Delete(delete.Value, _settings.ReportOnly)
                 );
             }
 
