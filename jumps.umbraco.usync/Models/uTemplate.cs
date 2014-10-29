@@ -46,6 +46,10 @@ namespace jumps.umbraco.usync.Models
 
             if (t != null)
             {
+                var name = node.Element("Name");
+                if (name != null && name.Value != t.Text)
+                    t.Text = name.Value;
+
                 change.id = t.Id;
                 change.name = t.Text;
 

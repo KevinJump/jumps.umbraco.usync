@@ -20,6 +20,7 @@ using Umbraco.Core.Services;
 
 using jumps.umbraco.usync.helpers;
 using jumps.umbraco.usync.Models;
+using System.Timers;
 
 namespace jumps.umbraco.usync
 {
@@ -194,7 +195,11 @@ namespace jumps.umbraco.usync
 
             return path; 
         }
-        static string _eventFolder = "";
+
+        private static Timer _saveTimer;
+        private static Queue<int> _saveQueue = new Queue<int>();
+        private static object _saveLock = new object();
+        private static string _eventFolder = "";
 
         public static void AttachEvents(string folder)
         {
@@ -202,6 +207,53 @@ namespace jumps.umbraco.usync
             _eventFolder = folder;
             ContentTypeService.SavedMediaType += ContentTypeService_SavedMediaType;
             ContentTypeService.DeletingMediaType += ContentTypeService_DeletingMediaType;
+
+            _saveTimer = new Timer(2048);
+            _saveTimer.Elapsed += _saveTimer_Elapsed;
+
+        }
+
+        static void _saveTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            lock (_saveLock)
+            {
+                var syncMedia = new SyncMediaTypes();
+                while (_saveQueue.Count > 0)
+                {
+                    int mediaTypeId = _saveQueue.Dequeue();
+                    var mt = new MediaType(mediaTypeId);
+
+                    if (uSyncNameCache.IsRenamed(mt))
+                    {
+                        var newPath = syncMedia.GetMediaPath(mt);
+
+                        uSyncNameManager.SaveRename(Constants.ObjectTypes.MediaType,
+                            uSyncNameCache.MediaTypes[mt.Id], newPath);
+
+                        XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.MediaTypes[mt.Id], "def", Constants.ObjectTypes.MediaType), true);
+
+                        XmlDoc.MoveChildren(
+                            XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.MediaTypes[mt.Id], "def", Constants.ObjectTypes.MediaType),
+                            XmlDoc.GetSavePath(_eventFolder, newPath, "def", Constants.ObjectTypes.MediaType)
+                            );
+
+                        if (mt.HasChildren)
+                        {
+                            foreach (var child in mt.GetChildTypes())
+                            {
+                                var childType = new MediaType(child.Id);
+                                syncMedia.ExportToDisk(childType, _eventFolder);
+                            }
+                        }
+
+                    }
+
+                    uSyncNameCache.UpdateCache(mt);
+
+                    syncMedia.ExportToDisk(mt, _eventFolder);
+
+                }
+            }
         }
 
         static void ContentTypeService_DeletingMediaType(IContentTypeService sender, Umbraco.Core.Events.DeleteEventArgs<Umbraco.Core.Models.IMediaType> e)
@@ -226,43 +278,20 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
-                LogHelper.Debug<SyncMediaTypes>("SaveContent Type Fired for {0} types", () => e.SavedEntities.Count());
-                if (e.SavedEntities.Count() > 0)
+                lock (_saveLock)
                 {
-                    var syncMedia = new SyncMediaTypes();
-                    foreach (var mediaType in e.SavedEntities)
+                    if (e.SavedEntities.Count() > 0)
                     {
-                        var mt = new MediaType(mediaType.Id);
+                        _saveTimer.Stop();
 
-                        if ( uSyncNameCache.IsRenamed(mt))
+                        foreach (var mediaType in e.SavedEntities)
                         {
-                            var newPath = syncMedia.GetMediaPath(mt);
-
-                            uSyncNameManager.SaveRename(Constants.ObjectTypes.MediaType,
-                                uSyncNameCache.MediaTypes[mt.Id], newPath);
-
-                            XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.MediaTypes[mt.Id], "def", Constants.ObjectTypes.MediaType), true);
-
-                            XmlDoc.MoveChildren(
-                                XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.MediaTypes[mt.Id], "def", Constants.ObjectTypes.MediaType),
-                                XmlDoc.GetSavePath(_eventFolder, newPath, "def", Constants.ObjectTypes.MediaType)
-                                );
-
-                            if ( mt.HasChildren )
-                            {
-                                foreach (var child in mt.GetChildTypes())
-                                {
-                                    var childType = new MediaType(child.Id);
-                                    syncMedia.ExportToDisk(childType, _eventFolder);
-                                }
-                            }
-
+                            _saveQueue.Enqueue(mediaType.Id);
                         }
 
-                        uSyncNameCache.UpdateCache(mt);
-
-                        syncMedia.ExportToDisk(mt, _eventFolder);
+                        _saveTimer.Start();
                     }
+
                 }
             }
         }

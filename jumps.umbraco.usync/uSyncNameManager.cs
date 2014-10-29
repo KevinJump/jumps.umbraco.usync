@@ -111,7 +111,7 @@ namespace jumps.umbraco.usync
 
         private static XElement LoadNameFile()
         {
-            string nameFile = IOHelper.MapPath( string.Format("{0}\\fileops.xml", uSyncSettings.Folder));
+            string nameFile = IOHelper.MapPath( string.Format("{0}\\fileops.config", uSyncSettings.Folder));
             XElement node = new XElement("uSync");
             if ( File.Exists(nameFile) )
                 node = XElement.Load(nameFile);
@@ -163,7 +163,7 @@ namespace jumps.umbraco.usync
 
         private static void SaveNameFile(XElement node)
         {
-            string renameFile = IOHelper.MapPath( string.Format("{0}\\fileops.xml", uSyncSettings.Folder));
+            string renameFile = IOHelper.MapPath( string.Format("{0}\\fileops.config", uSyncSettings.Folder));
 
             if ( !Directory.Exists( Path.GetDirectoryName(renameFile)))
                 Directory.CreateDirectory(Path.GetDirectoryName(renameFile));

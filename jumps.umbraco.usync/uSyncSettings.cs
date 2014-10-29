@@ -22,17 +22,22 @@ namespace jumps.umbraco.usync
         {
             try
             {
+                var configFile = IOHelper.MapPath(string.Format("~/config/{0}", _settingfile));
+                if (!System.IO.File.Exists(configFile))
+                    throw new Exception(string.Format("Cannot find uSync Config file: /config/{0}", _settingfile));
+
                 ExeConfigurationFileMap fileMap = new ExeConfigurationFileMap();
-                fileMap.ExeConfigFilename = IOHelper.MapPath(string.Format("~/config/{0}", _settingfile));
+                fileMap.ExeConfigFilename = configFile;
 
                 // load the settings file
                 Configuration config = ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
-                
+
                 _settings = (uSyncSettingsSection)config.GetSection("usync");
             }
             catch (Exception ex)
             {
-                 LogHelper.Info<uSyncSettings>("Error loading settings file {0}", ()=> ex.ToString());
+                LogHelper.Info<uSyncSettings>("Error loading settings file {0}", () => ex.ToString());
+                throw ex;
             }
         }
 

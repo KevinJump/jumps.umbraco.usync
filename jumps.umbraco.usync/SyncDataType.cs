@@ -169,8 +169,6 @@ namespace jumps.umbraco.usync
             DataTypeDefinition.Saving += new DataTypeDefinition.SaveEventHandler(DataTypeDefinition_Saving);
             // DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
 
-            DataTypeDefinition.AfterSave += DataTypeDefinition_AfterSave;
-
             // but this is 
             DataTypeDefinition.AfterDelete += DataTypeDefinition_AfterDelete;
 
@@ -180,11 +178,6 @@ namespace jumps.umbraco.usync
             // and do the save - gets over this.
             _saveTimer = new Timer(4064);
             _saveTimer.Elapsed += _saveTimer_Elapsed;
-        }
-
-        static void DataTypeDefinition_AfterSave(object sender, SaveEventArgs e)
-        {
-            LogHelper.Info<SyncDataType>("After Save Fired (it never use to)");
         }
 
         static void InitNameCache()

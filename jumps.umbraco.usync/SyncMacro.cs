@@ -19,6 +19,7 @@ using Umbraco.Core;
 using jumps.umbraco.usync.helpers;
 using jumps.umbraco.usync.Models;
 using System.Xml.Linq;
+using System.Timers;
 
 namespace jumps.umbraco.usync
 {
@@ -155,7 +156,10 @@ namespace jumps.umbraco.usync
                 uMacro.SyncImport(backupNode, false);
         }
 
-        static string _eventFolder = "";
+        private static Timer _saveTimer;
+        private static Queue<int> _saveQueue = new Queue<int>();
+        private static object _saveLock = new object();
+        private static string _eventFolder = "";
 
         public static void AttachEvents(string folder)
         {
@@ -165,6 +169,21 @@ namespace jumps.umbraco.usync
             Macro.AfterSave += Macro_AfterSave;
             Macro.AfterDelete += Macro_AfterDelete;
             Macro.New += Macro_New;
+
+            _saveTimer = new Timer(2048);
+            _saveTimer.Elapsed += _saveTimer_Elapsed;
+                
+        }
+
+        static void _saveTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            lock (_saveLock)
+            {
+                while (_saveQueue.Count > 0 )
+                {
+                    SaveMacro(_saveQueue.Dequeue()); 
+                }
+            }
         }
 
 
@@ -182,7 +201,14 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
-                SaveMacro(sender);
+                lock( _saveLock )
+                {
+                    _saveTimer.Stop();
+
+                    _saveQueue.Enqueue(sender.Id);
+
+                    _saveTimer.Start();
+                }
             }
         }
 
@@ -193,6 +219,13 @@ namespace jumps.umbraco.usync
             {
                 SaveMacro(sender);
             }
+        }
+
+        static void SaveMacro(int id)
+        {
+            var m = Macro.GetById(id);
+            if (m != null)
+                SaveMacro(m);
         }
 
         static void SaveMacro(Macro sender)

@@ -43,6 +43,9 @@ namespace jumps.umbraco.usync.Models
             var s = StyleSheet.Import(xmlNode, _user);
             if (s != null)
             {
+                if (s.Text != change.name)
+                    s.Text = change.name;
+
                 s.Save();
                 change.id = s.Id;
             }

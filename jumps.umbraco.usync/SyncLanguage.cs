@@ -168,6 +168,13 @@ namespace jumps.umbraco.usync
                 {
                     uSyncNameManager.SaveRename(Constants.ObjectTypes.Language, uSyncNameCache.Languages[sender.id], sender.CultureAlias);
                     XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Languages[sender.id], Constants.ObjectTypes.Language), true);
+
+
+                    // when a language is changed, you need to resave all dictionary items... 
+                    uSync.EventPaused = true;
+                    SyncDictionary sDict = new SyncDictionary(new ImportSettings(_eventFolder));
+                    sDict.ExportAll();
+                    uSync.EventPaused = false; 
                 }
 
                 uSyncNameCache.UpdateCache(sender);

@@ -107,13 +107,17 @@ namespace jumps.umbraco.usync
                 // we get two paths, we need to workout exactly what has changed.
                 
                 // because it could be a new parent has been inserted.
-                uTemplate.Rename(rename.Key, rename.Value, _settings.ReportOnly);
+                AddChange(
+                    uTemplate.Rename(rename.Key, rename.Value, _settings.ReportOnly);
+                );
             }
 
             foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Template))
             {
                 // deletes - again we get a path - so we have to delete from the top down?
-                uTemplate.Delete(delete.Value, _settings.ReportOnly);
+                AddChange(
+                    uTemplate.Delete(delete.Value, _settings.ReportOnly);
+                );
             }
 
             string root = IOHelper.MapPath(string.Format("{0}\\{1}", _settings.Folder, Constants.ObjectTypes.Template));
@@ -243,6 +247,12 @@ namespace jumps.umbraco.usync
                             tSync.ExportToDisk(childType, _eventFolder);
                         }
                     }
+
+                    // when a template is renamed - then doctypes change. 
+                    uSync.EventPaused = true;
+                    SyncDocType sDoc = new SyncDocType(new ImportSettings(_eventFolder));
+                    sDoc.ExportAll();
+                    uSync.EventPaused = false;
 
                 }
 

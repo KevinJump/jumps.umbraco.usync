@@ -96,13 +96,6 @@ namespace jumps.umbraco.usync.helpers
             doc.AppendChild(macro.ToXml(doc));
             var dbMD5 = XmlDoc.CalculateMD5Hash(doc);
 
-            if (!filehash.Equals(dbMD5))
-            {
-                var dbNode = XElement.Load(new XmlNodeReader(doc));
-                LogHelper.Info<SyncMediaTypes>("Importing: \n{0}", () => node.ToString());
-                LogHelper.Info<SyncMediaTypes>("Database : \n{0}", () => dbNode);
-            }
-
             return (!filehash.Equals(dbMD5));
 
         }
