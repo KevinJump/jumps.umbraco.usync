@@ -8,6 +8,7 @@ using System.Web.UI.WebControls;
 using System.Diagnostics;
 
 using jumps.umbraco.usync;
+using Umbraco.Core.Logging;
 
 namespace jumoo.usync.ui
 {
@@ -62,6 +63,7 @@ namespace jumoo.usync.ui
             catch (Exception ex)
             {
                 status.Text = string.Format("Error Importing {0}", ex.Message);
+                LogHelper.Info<uSyncDashboard>("Error Importing: {0}", () => ex.ToString());
             }
         }
 

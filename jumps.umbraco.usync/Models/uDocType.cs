@@ -53,7 +53,9 @@ namespace jumps.umbraco.usync.Models
 
                 var tab = item.PropertyTypeGroups.Where(x => x.Id == property.PropertyTypeGroup ).FirstOrDefault();
                 if (tab != null)
-                    prop.Add(new XElement("Tab",tab.Name));
+                    prop.Add(new XElement("Tab", tab.Name));
+                else
+                    prop.Add(new XElement("Tab", ""));
 
                 prop.Add(new XElement("Mandatory", property.Mandatory));
 
@@ -307,16 +309,19 @@ namespace jumps.umbraco.usync.Models
                         property.DataTypeDefinitionId = dtd.Id;
                     }
 
-                    var tabName = propNode.Element("Tab").Value;
-                    if (!string.IsNullOrEmpty(tabName))
+                    var tab = propNode.Element("Tab");
+                    if (tab != null)
                     {
-                        if (docType.PropertyGroups.Contains(tabName))
+                        var tabName = propNode.Element("Tab").Value;
+                        if (!string.IsNullOrEmpty(tabName))
                         {
-                            var propGroup = docType.PropertyGroups.First(x => x.Name == tabName);
-                            if (!propGroup.PropertyTypes.Contains(property.Alias))
+                            if (docType.PropertyGroups.Contains(tabName))
                             {
-                                LogHelper.Info<SyncDocType>("Moving between tabs..");
-                                tabMoves.Add(property.Alias, tabName);
+                                var propGroup = docType.PropertyGroups.First(x => x.Name == tabName);
+                                if (!propGroup.PropertyTypes.Contains(property.Alias))
+                                {
+                                    tabMoves.Add(property.Alias, tabName);
+                                }
                             }
                         }
                     }

@@ -128,8 +128,6 @@ namespace jumps.umbraco.usync
             {
                 AddNoChange(ItemType.DataType, filePath);
             }
-
-            LogHelper.Info<SyncDataType>("Import: {0} Complete", () => filePath);
         }
 
         protected override string Backup(XElement node)

@@ -100,6 +100,8 @@ namespace jumps.umbraco.usync
 
         public override void Import(string filePath)
         {
+            LogHelper.Debug<SyncDocType>("Importing: {0}", () => filePath);
+
             if (!System.IO.File.Exists(filePath))
                 throw new ArgumentNullException("filePath");
 
