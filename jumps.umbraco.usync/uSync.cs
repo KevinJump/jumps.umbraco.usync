@@ -272,7 +272,7 @@ namespace jumps.umbraco.usync
 
                 // Save Everything to disk.
                 // only done first time or when write = true           
-                if (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) || _write)
+                if ( (!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) && _attach) || _write)
                 {
                     SaveAllToDisk();
                 }
