@@ -222,7 +222,9 @@ namespace jumps.umbraco.usync
             if (!uSync.EventsPaused)
             {
                 LogHelper.Info<uSync>("Template after delete");
-                XmlDoc.ArchiveFile("Template", XmlDoc.ScrubFile(sender.Alias), XmlDoc.ScrubFile(sender.Alias));
+
+                var template = ApplicationContext.Current.Services.FileService.GetTemplate(sender.Id);
+                XmlDoc.ArchiveFile("Template", GetTemplatePath(template), XmlDoc.ScrubFile(template.Alias));
             }
         }
 
@@ -232,7 +234,7 @@ namespace jumps.umbraco.usync
             {
                 foreach (var item in e.DeletedEntities)
                 {
-                    XmlDoc.ArchiveFile("Template", XmlDoc.ScrubFile(item.Alias));
+                    XmlDoc.ArchiveFile("Template", GetTemplatePath(item), XmlDoc.ScrubFile(item.Alias));
                 }
             }
         }
