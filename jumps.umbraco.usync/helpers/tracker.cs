@@ -32,7 +32,6 @@ namespace jumps.umbraco.usync.helpers
             if (name == null)
                 return true;
 
-
             // get it...
             var docType = DocumentType.GetByAlias(name.Value);
             if (docType == null)
@@ -127,8 +126,8 @@ namespace jumps.umbraco.usync.helpers
 
             if (!filehash.Equals(dbMD5))
             {
-                LogHelper.Info<SyncMediaTypes>("Importing: \n{0}", () => node.ToString());
-                LogHelper.Info<SyncMediaTypes>("Database : \n{0}", () => dbImportNode.ToString());
+                LogHelper.Debug<SyncDataType>("Importing: \n{0}", () => node.ToString(SaveOptions.DisableFormatting));
+                LogHelper.Debug<SyncDataType>("Database : \n{0}", () => dbImportNode.ToString(SaveOptions.DisableFormatting));
             }
 
             return (!filehash.Equals(dbMD5));

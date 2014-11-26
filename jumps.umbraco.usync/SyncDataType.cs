@@ -87,6 +87,7 @@ namespace jumps.umbraco.usync
         
         public override void Import(string filePath)
         {
+
             if (!File.Exists(filePath))
                 throw new ArgumentNullException("filePath");
 
@@ -95,21 +96,25 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "DataType")  
                 throw new ArgumentException("Not a DataType File", filePath);
 
-
+            LogHelper.Debug<SyncDataType>(">> Import : {0}", () => filePath);
             if (_settings.ForceImport || tracker.DataTypeChanged(node))
             {
+                LogHelper.Debug<SyncDataType>(">>> Change (or Force) detected");
                 if (!_settings.ReportOnly)
                 {
                     var backup = Backup(node);
-
+                    LogHelper.Debug<SyncDataType>(">>>> Performing Import");
                     ChangeItem change = uDataTypeDefinition.SyncImport(node);
 
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
+                        LogHelper.Debug<SyncDataType>("<<< Import was mismatched - restoring backup");
                         Restore(backup);
                         change.changeType = ChangeType.RolledBack;
                     }
+
                     uSyncReporter.WriteToLog("Imported DataType [{0}] {1}", change.name, change.changeType.ToString());
+                    LogHelper.Info<SyncDataType>("<< Imported: {0}", () => change.name, () => change.changeType);
 
                     AddChange(change);
                 }
@@ -135,6 +140,7 @@ namespace jumps.umbraco.usync
             // we only backup if we are considering restore?
             if ( !string.IsNullOrEmpty(uSyncSettings.BackupFolder) )
             {
+                LogHelper.Debug<SyncDataType>("<< Making a backup (for later restore?)");
                 var _def = new Guid(node.Attribute("Definition").Value);
                 if (CMSNode.IsNode(_def))
                 {
@@ -149,9 +155,11 @@ namespace jumps.umbraco.usync
         protected override void Restore(string backup)
         {
             XElement backupNode = XmlDoc.GetBackupNode(backup);
-
             if (backupNode != null)
+            {
+                LogHelper.Info<SyncDataType>(">> Restoring from backup");
                 uDataTypeDefinition.SyncImport(backupNode, false);
+            }
         }
 
  

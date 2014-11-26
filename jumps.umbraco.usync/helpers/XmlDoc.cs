@@ -355,7 +355,7 @@ namespace jumps.umbraco.usync.helpers
         {
             string md5Hash = "";
             MemoryStream stream = new MemoryStream();
-            node.Save(stream);
+            node.Save(stream, SaveOptions.DisableFormatting);
 
             stream.Position = 0;
 

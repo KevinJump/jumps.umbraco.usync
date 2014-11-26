@@ -84,6 +84,7 @@ namespace jumps.umbraco.usync.Models
                 change.name = dtd.Text;
 
                 // post change
+                LogHelper.Debug<SyncDataType>("<<< Checking Import for Match");
                 if (postCheck && tracker.DataTypeChanged(node))
                 {
                     change.changeType = ChangeType.Mismatch;

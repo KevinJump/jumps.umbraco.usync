@@ -210,18 +210,23 @@ namespace jumps.umbraco.usync.helpers
                 // convers the mapping to a local id - the thing we're putting in
                 string localId = GetMappedId(mapId, mapValue, mapType);
 
-                if (valueSubString.Contains(localId))
+                // look in the existing string, to see if we might have a clash 
+                Regex existingRegEx = new Regex(string.Format("{0}(?!:zzusync)", localId));
+                if (existingRegEx.IsMatch(valueSubString))  
                 {
                     // what's happened here is the target value string already contains our 
                     // target id - so we add some strings to our target, to stop us
                     // from confusing the id we're putting in with anything else.
-                    Regex rgx = new Regex(@"\d{1}");
+                    Regex rgx = new Regex(@"\d{1}(?!:zzusync)");
                     localId = "\"" + rgx.Replace(localId, "$0:zzusync") + "\""; 
-
                     // at the end of our mapping process we clean out the extra bits.
                 }
 
-                var targetSubString = valueSubString.Replace(mapId, localId);
+                // replace the mapped id with the new local one, 
+                // ** but only if it doesn't have :zzusync appended to it **                
+                Regex mapRegEx = new Regex(string.Format("{0}(?!:zzusync)", mapId));
+                var targetSubString = mapRegEx.Replace(valueSubString, localId);
+
                 value = value.Replace(valueSubString, targetSubString);
             }
 
@@ -242,9 +247,19 @@ namespace jumps.umbraco.usync.helpers
 
         public string CleanValue(string value)
         {
-            Regex rgx = new Regex("\"?(\\d{1,4})(:zzusync\"?)");
-            var cleaned = rgx.Replace(value, "$1");
-            return cleaned;
+            var looper = 0;
+            while (value.Contains(":zzusync") && looper < 5)
+            {
+                looper++;
+                Regex rgx = new Regex("\"?(\\d{1,4})(:zzusync\"?)");
+                var cleaned = rgx.Replace(value, "$1");
+                value = cleaned; 
+            }
+
+            if (value.Contains(":zzusync"))
+                value = value.Replace(":zzusync", "");
+
+            return value;
         }
 
         private string GetMappedId(string id, string value, string type)
@@ -269,7 +284,10 @@ namespace jumps.umbraco.usync.helpers
             var stylesheet = StyleSheet.GetByName(value);
 
             if (stylesheet != null)
+            {
+                LogHelper.Debug<PreValueMapper>("Stylesheet ID Match, Mapping {0} => {1}", () => id, () => stylesheet.Id);
                 return stylesheet.Id.ToString();
+            }
 
             return id;
         }
@@ -280,7 +298,10 @@ namespace jumps.umbraco.usync.helpers
             var targetId = cw.GetIdFromPath(value);
 
             if (targetId != -1)
+            {
+                LogHelper.Debug<PreValueMapper>("Content ID Match, Mapping {0} => {1}", () => id, () => targetId);
                 return targetId.ToString();
+            }
 
             return id;
         }
@@ -291,7 +312,10 @@ namespace jumps.umbraco.usync.helpers
             var targetId = mw.GetIdFromPath(value);
 
             if (targetId != -1)
+            {
+                LogHelper.Debug<PreValueMapper>("Media ID Match, Mapping {0} => {1}", () => id, ()=> targetId);
                 return targetId.ToString();
+            }
 
             return id;
         }
@@ -310,6 +334,7 @@ namespace jumps.umbraco.usync.helpers
                         if (tab.Name == bits[1])
                         {
                             // this is the one
+                            LogHelper.Debug<PreValueMapper>("TabID Match, Mapping {0} => {1}", ()=> id, () => tab.Id);
                             return tab.Id.ToString();
                         }
                     }
