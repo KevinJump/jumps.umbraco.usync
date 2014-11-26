@@ -186,6 +186,7 @@ namespace jumps.umbraco.usync
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
                 var last = 0.0;
+                LogHelper.Debug<uSync>("#########################################################");
                 LogHelper.Debug<uSync>("Reading from Disk - starting");
 
                 // if backup first...
@@ -296,6 +297,7 @@ namespace jumps.umbraco.usync
 
                 sw.Stop();
                 LogHelper.Info<uSync>("Imported From Disk {0}ms", () => sw.ElapsedMilliseconds);
+                LogHelper.Debug<uSync>("#########################################################");
 
                 var report = new uSyncReporter();
                 report.ReportChanges(changes);

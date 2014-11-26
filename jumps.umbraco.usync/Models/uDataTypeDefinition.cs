@@ -64,7 +64,7 @@ namespace jumps.umbraco.usync.Models
             node.Add(preVals);
 
 
-            LogHelper.Debug<SyncDataType>("{0}", () => node.ToString());
+            LogHelper.Debug<SyncDataType>("Exported: {0}", () => node.ToString(SaveOptions.DisableFormatting));
             return node;
         }
 
@@ -381,7 +381,7 @@ namespace jumps.umbraco.usync.Models
         // we need to map this back then...
         private static List<PreValue> GetPreValues(DataTypeDefinition dataType)
         {
-            LogHelper.Debug<SyncDataType>("Getting Pre-Values"); 
+            // LogHelper.Debug<SyncDataType>("Getting Pre-Values"); 
             return PreValues.GetPreValues(dataType.Id).Values.OfType<PreValue>().OrderBy(p => p.SortOrder).ThenBy(p => p.Id).ToList();
         }
         
