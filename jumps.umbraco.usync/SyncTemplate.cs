@@ -222,9 +222,7 @@ namespace jumps.umbraco.usync
             if (!uSync.EventsPaused)
             {
                 LogHelper.Info<uSync>("Template after delete");
-
-                var template = ApplicationContext.Current.Services.FileService.GetTemplate(sender.Id);
-                XmlDoc.ArchiveFile("Template", GetTemplatePath(template), XmlDoc.ScrubFile(template.Alias));
+                XmlDoc.ArchiveFile("Template", GetDocPath(sender), XmlDoc.ScrubFile(sender.Alias));
             }
         }
 
