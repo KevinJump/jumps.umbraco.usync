@@ -17,7 +17,13 @@ namespace jumps.umbraco.usync.Models
     {
         public static XElement SyncExport(this DataTypeDefinition item)
         {
+            if (item == null)
+                return null; 
+
             // id mapping
+            if (item.DataType == null)
+                return null;
+
             var _id = item.DataType.Id.ToString();
 
             XElement node = new XElement("DataType");
@@ -28,8 +34,7 @@ namespace jumps.umbraco.usync.Models
             PreValueMapper mapper = null;
             if (uSyncSettings.MappedDataTypes.GetAll().Contains(_id))
             {
-                LogHelper.Debug<uSync>("Export Mapping: {0}", () => item.Text);
-
+                LogHelper.Debug<uSync>("SyncExport: Mapping: {0}", () => item.Text);
                 var mappedSettings = uSyncSettings.MappedDataTypes[_id];
                 mapper = new PreValueMapper(node, mappedSettings);
             }
@@ -63,8 +68,7 @@ namespace jumps.umbraco.usync.Models
 
             node.Add(preVals);
 
-
-            LogHelper.Debug<SyncDataType>("Exported: {0}", () => node.ToString(SaveOptions.DisableFormatting));
+            LogHelper.Debug<SyncDataType>("SyncExport: Complete {0}", () => node.ToString(SaveOptions.DisableFormatting));
             return node;
         }
 
@@ -84,7 +88,7 @@ namespace jumps.umbraco.usync.Models
                 change.name = dtd.Text;
 
                 // post change
-                LogHelper.Debug<SyncDataType>("<<< Checking Import for Match");
+                LogHelper.Debug<SyncDataType>("SyncImport: Post Import Match Check");
                 if (postCheck && tracker.DataTypeChanged(node))
                 {
                     change.changeType = ChangeType.Mismatch;
@@ -114,7 +118,7 @@ namespace jumps.umbraco.usync.Models
 
                 if (!reportOnly)
                 {
-                    LogHelper.Info<SyncDataType>("Deleted Datatype: {0}", () => change.name);
+                    LogHelper.Info<SyncDataType>("SyncDelete: Deleted Datatype: {0}", () => change.name);
 
                     change.changeType = ChangeType.Delete;
                     dtd.delete();
@@ -188,138 +192,131 @@ namespace jumps.umbraco.usync.Models
         /// <returns></returns>
         private static DataTypeDefinition ImportItem(XElement sourceNode)
         {
-            if (sourceNode != null)
+            if (sourceNode == null)
+                return null;
+
+            XElement node = ConvertToImportXML(sourceNode);
+
+            string _name = node.Attribute("Name").Value;
+            LogHelper.Debug<SyncDataType>("Importing: {0}", () => _name);
+
+            string _id = node.Attribute("Id").Value;
+            string _def = node.Attribute("Definition").Value;
+
+            bool isNew = false;
+
+            DataTypeDefinition dtd;
+            global::umbraco.cms.businesslogic.datatype.controls.Factory f = new global::umbraco.cms.businesslogic.datatype.controls.Factory();
+
+            var dataType = f.DataType(new Guid(_id));
+            if (dataType == null || dataType.Id == null)
             {
-                XElement node = ConvertToImportXML(sourceNode);
+                LogHelper.Info<SyncDataType>("ImportItem: Failed [{0}] : uSync couldn't find the underling type (it's probably not installed, or a different version of the data-type)", () => _name);
+                return null;
+            }
 
-                string _name = node.Attribute("Name").Value;
-                LogHelper.Debug<SyncDataType>("Importing: {0}", () => _name);
+            if (CMSNode.IsNode(new Guid(_def)))
+            {
+                dtd = DataTypeDefinition.GetDataTypeDefinition(new Guid(_def));
 
-                
-                string _id = node.Attribute("Id").Value;
-                string _def = node.Attribute("Definition").Value;
-
-                bool isNew = false;
-
-                DataTypeDefinition dtd;
-
-                global::umbraco.cms.businesslogic.datatype.controls.Factory f = new global::umbraco.cms.businesslogic.datatype.controls.Factory();
-
-                if (CMSNode.IsNode(new Guid(_def)))
+                if (dtd != null)
                 {
-                    dtd = DataTypeDefinition.GetDataTypeDefinition(new Guid(_def));
-
-                    if ( dtd != null )
+                    dtd.Text = _name;
+                    if (dtd.DataType.Id != dataType.Id)
                     {
-                        dtd.Text = _name;
-
-                        var dataType = f.DataType(new Guid(_id));
-                        if (dataType == null && dataType.Id != null)
-                            throw new NullReferenceException("Could not resolve a data type with id " + _id);
-
-                        if ( dtd.DataType.Id != dataType.Id )
-                        {
-                            // change type ? 
-                            // lets have a go see if this works !
-                            dtd.DataType = dataType;
-                        }
-                        dtd.Save();
-                                               
+                        // change type ? 
+                        // lets have a go see if this works !
+                        dtd.DataType = dataType;
                     }
-                }
-                else
-                {
-                    isNew = true;
-
-                    var u = global::umbraco.BusinessLogic.User.GetUser(0);
-
-                    dtd = DataTypeDefinition.MakeNew(u, _name, new Guid(_def));
-                    var dataType = f.DataType(new Guid(_id));
-                    if (dataType == null && dataType.Id != null)
-                        throw new NullReferenceException("Could not resolve a data type with id " + _id);
-
-                    dtd.DataType = dataType;
                     dtd.Save();
                 }
-
-                if (dtd == null || dtd.DataType == null)
-                {
-                    LogHelper.Info<SyncDataType>("Import Failed for [{0}] .uSync Could not find the underling type", () => _name);
-                    return null;
-                }
-                
-
-                if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
-                {
-                    // multi-node tree picker! do a match sync...
-                    return MatchImport(dtd, node);
-                }
-                else
-                {
-                    //
-                    // PREVALUES - HELL :: num 4532
-                    // 
-                    // Here we are attempting to add new prevalues to a DataType, and remove old ones.
-                    // between umbraco installs the IDs will change. we are not trying to match them,
-                    // we are just trying to match, based on value - problem being, if you change 
-                    // a value's value then this code would think it's a new ID, delete the old one
-                    // and create a new one - as we are syncing from a dev point of view we are
-                    // going to do this for now...
-                    //
-
-                    System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
-                    Hashtable oldvals = new Hashtable();
-                    foreach (DictionaryEntry v in prevals)
-                    {
-                        if ((PreValue)v.Value != null)
-                        // if (!String.IsNullOrEmpty(((PreValue)v.Value).Value.ToString()))
-                        {
-                            oldvals.Add(((PreValue)v.Value).Id, ((PreValue)v.Value).Value.ToString());
-                        }
-                    }
-
-                    Hashtable newvals = new Hashtable();
-                    foreach (var xmlPv in node.Element("PreValues").Elements("PreValue"))
-                    {
-                        var val = xmlPv.Attribute("Value");
-
-                        if (val != null)
-                        {
-                            var propValue = val.Value;
-
-                            // add new values only - because if we mess with old ones. it all goes pete tong..
-                            if ((propValue != null) && (!oldvals.ContainsValue(propValue)))
-                            {
-                                LogHelper.Debug<SyncDataType>("Adding Prevalue [{0}]", () => propValue);
-                                PreValue p = new PreValue(0, 0, propValue);
-                                p.DataTypeId = dtd.Id;
-                                p.Save();
-                            }
-
-                            newvals.Add(xmlPv.Attribute("Id"), propValue);
-                        }
-                    }
-
-
-                    // ok now delete any values that have gone missing between syncs..
-
-                    if (!uSyncSettings.Preserve || !uSyncSettings.PreservedPreValueDataTypes.Contains(_id))
-                    {
-                        foreach (DictionaryEntry oldval in oldvals)
-                        {
-                            if (!newvals.ContainsValue(oldval.Value))
-                            {
-                                PreValue o = new PreValue((int)oldval.Key);
-                                LogHelper.Debug<SyncDataType>("In {0} Deleting prevalue [{1}]", () => dtd.Text, () => oldval.Value);
-                                o.Delete();
-                            }
-                        }
-                    }
-                    return dtd;
-                }
-                LogHelper.Debug<SyncDataType>("Finished Import: {0}", () => _name);
             }
-            return null;
+            else
+            {
+                isNew = true;
+
+                var u = global::umbraco.BusinessLogic.User.GetUser(0);
+                dtd = DataTypeDefinition.MakeNew(u, _name, new Guid(_def));
+                dtd.DataType = dataType;
+                dtd.Save();
+            }
+
+            if (dtd == null || dtd.DataType == null)
+            {
+                LogHelper.Info<SyncDataType>("ImportItem: Failed [{0}] .uSync Could not find the underling type", () => _name);
+                return null;
+            }
+
+
+            if (!isNew && uSyncSettings.MatchedPreValueDataTypes.Contains(_id))
+            {
+                // multi-node tree picker! do a match sync...
+                return MatchImport(dtd, node);
+            }
+            else
+            {
+                //
+                // PREVALUES - HELL :: num 4532
+                // 
+                // Here we are attempting to add new prevalues to a DataType, and remove old ones.
+                // between umbraco installs the IDs will change. we are not trying to match them,
+                // we are just trying to match, based on value - problem being, if you change 
+                // a value's value then this code would think it's a new ID, delete the old one
+                // and create a new one - as we are syncing from a dev point of view we are
+                // going to do this for now...
+                //
+
+                System.Collections.SortedList prevals = PreValues.GetPreValues(dtd.Id);
+                Hashtable oldvals = new Hashtable();
+                foreach (DictionaryEntry v in prevals)
+                {
+                    if ((PreValue)v.Value != null)
+                    // if (!String.IsNullOrEmpty(((PreValue)v.Value).Value.ToString()))
+                    {
+                        oldvals.Add(((PreValue)v.Value).Id, ((PreValue)v.Value).Value.ToString());
+                    }
+                }
+
+                Hashtable newvals = new Hashtable();
+                foreach (var xmlPv in node.Element("PreValues").Elements("PreValue"))
+                {
+                    var val = xmlPv.Attribute("Value");
+
+                    if (val != null)
+                    {
+                        var propValue = val.Value;
+
+                        // add new values only - because if we mess with old ones. it all goes pete tong..
+                        if ((propValue != null) && (!oldvals.ContainsValue(propValue)))
+                        {
+                            LogHelper.Debug<SyncDataType>("ImportItem: Adding Prevalue [{0}]", () => propValue);
+                            PreValue p = new PreValue(0, 0, propValue);
+                            p.DataTypeId = dtd.Id;
+                            p.Save();
+                        }
+
+                        newvals.Add(xmlPv.Attribute("Id"), propValue);
+                    }
+                }
+
+
+                // ok now delete any values that have gone missing between syncs..
+
+                if (!uSyncSettings.Preserve || !uSyncSettings.PreservedPreValueDataTypes.Contains(_id))
+                {
+                    foreach (DictionaryEntry oldval in oldvals)
+                    {
+                        if (!newvals.ContainsValue(oldval.Value))
+                        {
+                            PreValue o = new PreValue((int)oldval.Key);
+                            LogHelper.Debug<SyncDataType>("ImportItem: {0} Deleting prevalue [{1}]", () => dtd.Text, () => oldval.Value);
+                            o.Delete();
+                        }
+                    }
+                }
+                LogHelper.Debug<SyncDataType>("ImportItem: Complete {0}", () => _name);
+                return dtd;
+            }
         }
 
         /// <summary>
@@ -335,34 +332,59 @@ namespace jumps.umbraco.usync.Models
         /// <returns></returns>
         private static DataTypeDefinition MatchImport(DataTypeDefinition dtd, XElement node)
         {
-            LogHelper.Debug<SyncDataType>("usync - Match Import: for {0}", () => dtd.Text);
+            LogHelper.Debug<SyncDataType>("MatchImport: {0}", () => dtd.Text);
 
             List<PreValue> current = GetPreValues(dtd);
             var target = node.Element("PreValues").Elements("PreValue").ToArray();
 
-            LogHelper.Debug<SyncDataType>("uSync - Match Import: Counts [{0} Existing] [{1} New]",
+            LogHelper.Debug<SyncDataType>("MatchImport: Counts [{0} Existing] [{1} New]",
                 () => current.Count, () => target.Count());
 
             for (int n = 0; n < current.Count(); n++)
             {
-                var val = target[n].Attribute("Value");
-
-                if (val != null)
+                if (target.Count() > n)
                 {
-                    // here we need to transpose any mapped ids we might have ...
-                    var propValue = val.Value;
+                    var val = target[n].Attribute("Value");
 
-                    if (current[n].Value != propValue)
+                    if (val != null)
                     {
-                        LogHelper.Debug<SyncDataType>("uSync - Match Import: Overwrite {0} with {1}",
-                            () => current[n].Value, () => propValue);
-                        current[n].Value = propValue;
-                        current[n].Save();
+                        // here we need to transpose any mapped ids we might have ...
+                        var propValue = val.Value;
+
+                        if (current[n].Value != propValue)
+                        {
+                            LogHelper.Debug<SyncDataType>("MatchImport: Overwrite {0} with {1}",
+                                () => current[n].Value, () => propValue);
+                            current[n].Value = propValue;
+                            current[n].Save();
+                        }
+                    }
+                }
+                else
+                {
+                    // the target doesn't have the same amount of properties as the current. - we just drop these ?  
+                }
+            }
+
+            // when we change types, target can be way bigger than source.
+            // so we add any target stuff to the end of the import.
+            if (target.Count() > current.Count())
+            {
+                for (int n = current.Count(); n < target.Count(); n++)
+                {
+                    var val = target[n].Attribute("Value");
+
+                    if (val != null)
+                    {
+                        LogHelper.Debug<SyncDataType>("MatchImport: Adding New PreVal {0} Sort: {1}", () => val.Value, () => n);
+                        PreValue p = new PreValue(0, n, val.Value);
+                        p.DataTypeId = dtd.Id;
+                        p.Save();
                     }
                 }
             }
 
-            LogHelper.Debug<SyncDataType>("uSync - Match Import: Complete");
+            LogHelper.Debug<SyncDataType>("MatchImport: Complete");
             return dtd;
         }
 

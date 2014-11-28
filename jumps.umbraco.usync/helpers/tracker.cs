@@ -101,6 +101,9 @@ namespace jumps.umbraco.usync.helpers
 
         public static bool DataTypeChanged(XElement node)
         {
+            if (node == null)
+                return true;
+
             var importNode = uDataTypeDefinition.ConvertToImportXML(node);
             string filehash = XmlDoc.ReCalculateHash(importNode, true);
 
@@ -121,6 +124,9 @@ namespace jumps.umbraco.usync.helpers
                 return true;
 
             XElement dbNode = dtd.SyncExport();
+            if (dbNode == null)
+                return true; 
+
             XElement dbImportNode = uDataTypeDefinition.ConvertToImportXML(dbNode);
             var dbMD5 = XmlDoc.CalculateMD5Hash(dbImportNode, true);
 

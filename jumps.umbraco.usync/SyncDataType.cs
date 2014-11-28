@@ -53,8 +53,15 @@ namespace jumps.umbraco.usync
                 folder = _settings.Folder;
 
             XElement node = item.SyncExport();
+            if (node != null)
+            {
+                XmlDoc.SaveNode(folder, item.Text, node, Constants.ObjectTypes.DataType);
 
-            XmlDoc.SaveNode(folder, item.Text, node, Constants.ObjectTypes.DataType );
+            }
+            else
+            {
+                LogHelper.Info<SyncDataType>("Failed to save {0} to disk", () => item.Text);
+            }
             
         }
 
@@ -96,25 +103,25 @@ namespace jumps.umbraco.usync
             if (node.Name.LocalName != "DataType")  
                 throw new ArgumentException("Not a DataType File", filePath);
 
-            LogHelper.Debug<SyncDataType>(">> Import : {0}", () => filePath);
+            LogHelper.Debug<SyncDataType>("Import: {0}", () => filePath);
             if (_settings.ForceImport || tracker.DataTypeChanged(node))
             {
-                LogHelper.Debug<SyncDataType>(">>> Change (or Force) detected");
+                LogHelper.Debug<SyncDataType>("Import: Change (or Force) detected");
                 if (!_settings.ReportOnly)
                 {
                     var backup = Backup(node);
-                    LogHelper.Debug<SyncDataType>(">>>> Performing Import");
+                    LogHelper.Debug<SyncDataType>("Import: Calling SyncImport");
                     ChangeItem change = uDataTypeDefinition.SyncImport(node);
 
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
-                        LogHelper.Debug<SyncDataType>("<<< Import was mismatched - restoring backup");
+                        LogHelper.Debug<SyncDataType>("Import: Mismatch - Restoring Backup");
                         Restore(backup);
                         change.changeType = ChangeType.RolledBack;
                     }
 
                     uSyncReporter.WriteToLog("Imported DataType [{0}] {1}", change.name, change.changeType.ToString());
-                    LogHelper.Info<SyncDataType>("<< Imported: {0}", () => change.name, () => change.changeType);
+                    LogHelper.Info<SyncDataType>("Import: {1} {0}", () => change.name, () => change.changeType);
 
                     AddChange(change);
                 }
@@ -137,10 +144,13 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node)
         {
+            if (node == null)
+                return ""; 
+
             // we only backup if we are considering restore?
             if ( !string.IsNullOrEmpty(uSyncSettings.BackupFolder) )
             {
-                LogHelper.Debug<SyncDataType>("<< Making a backup (for later restore?)");
+                LogHelper.Debug<SyncDataType>("Backup: Taking Backup ");
                 var _def = new Guid(node.Attribute("Definition").Value);
                 if (CMSNode.IsNode(_def))
                 {
@@ -157,7 +167,7 @@ namespace jumps.umbraco.usync
             XElement backupNode = XmlDoc.GetBackupNode(backup);
             if (backupNode != null)
             {
-                LogHelper.Info<SyncDataType>(">> Restoring from backup");
+                LogHelper.Info<SyncDataType>("Restore: Restoring from backup");
                 uDataTypeDefinition.SyncImport(backupNode, false);
             }
         }
