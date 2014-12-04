@@ -24,7 +24,7 @@ namespace jumps.umbraco.usync.helpers
 
             LogHelper.Debug<ContentWalker>("Walking the path for node id: {0}", () => id);
             var content = _contentService.GetById(id);
-            if (content != null)
+            if (content != null && !content.Trashed)
             {
                 return GetContentPath(content);
             }
@@ -121,7 +121,7 @@ namespace jumps.umbraco.usync.helpers
 
             LogHelper.Debug<MediaWalker>("Walking the path for node id: {0}", () => id);
             var media = _mediaService.GetById(id);
-            if (media != null)
+            if (media != null && !media.Trashed)
             {
                 return GetMediaPath(media);
             }
