@@ -194,8 +194,6 @@ namespace jumps.umbraco.usync.Extensions
                     /*
                     var legacyEditorId = Guid.Empty;
                     Guid.TryParse(propertyNode.Element("Type").Value, out legacyEditorId);
-
-
                     if ( legacyEditorId == Guid.Empty)
                     {
                         // new style id...?
@@ -229,21 +227,22 @@ namespace jumps.umbraco.usync.Extensions
                     }
                     */
 
-                    /*
                     if ( dataTypeDefinition != null)
                     {
-                        // phew we have found what we are looking for.
-
                         // now we set it in the DB 
                         // property.DataTypeDefinitionId = dataTypeDefinition.Id;
+                        // we can set both the id and alias, but we can't directly change the 
+                        // underling database type, not sure if you can to be honest. 
+                        if (property.DataTypeDefinitionId != dataTypeDefinition.Id)
+                        {
+                            LogHelper.Info<SyncDocType>("Updating the datatype Definition");
+                            property.DataTypeDefinitionId = dataTypeDefinition.Id;
+                            property.PropertyEditorAlias = dataTypeDefinition.PropertyEditorAlias;
+                        }
 
-                        // this is wrong, because you can't 
-                        // actually change the DataTypeId and that prob
-                        // matters when changing a type.
 
                         // TODO: make changes to the datatype import/export properly. 
                     }
-                    */
 
                     property.Name = propertyNode.Element("Name").Value;
                     property.Description = propertyNode.Element("Description").Value;
