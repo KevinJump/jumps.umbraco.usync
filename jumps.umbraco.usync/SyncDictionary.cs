@@ -224,11 +224,11 @@ namespace jumps.umbraco.usync
                 }
                 catch (ApplicationException ex)
                 {
-                    LogHelper.Debug<SyncDictionary>("Exception (just like null)");
+                    LogHelper.Debug<SyncDictionary>("Exception (just like null) {0}", () => ex.Message);
                 }
                 catch (ArgumentException ex)
                 {
-                    LogHelper.Debug<SyncDictionary>("Exception (just like null)");
+                    LogHelper.Debug<SyncDictionary>("Exception (just like null) {0}", ()=> ex.Message);
                 }
 
             }
