@@ -114,60 +114,69 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void SaveAllToDisk(string folder = null)
         {
-            if (String.IsNullOrEmpty(folder))
-                folder = helpers.uSyncIO.RootFolder;
-
-            ImportSettings settings = new ImportSettings(folder);
-
-            LogHelper.Info<uSync>("Saving to disk - start {0}", ()=> folder);
-
-            if (uSyncSettings.Elements.DocumentTypes)
+            try
             {
-                var docSync = new SyncDocType(settings);
-                docSync.ExportAll();
-            }
+                if (String.IsNullOrEmpty(folder))
+                    folder = helpers.uSyncIO.RootFolder;
 
-            if (uSyncSettings.Elements.Macros)
+                ImportSettings settings = new ImportSettings(folder);
+
+                LogHelper.Info<uSync>("Saving to disk - start {0}", () => folder);
+
+                if (uSyncSettings.Elements.DocumentTypes)
+                {
+                    var docSync = new SyncDocType(settings);
+                    docSync.ExportAll();
+                }
+
+                if (uSyncSettings.Elements.Macros)
+                {
+                    var macroSync = new SyncMacro(settings);
+                    macroSync.ExportAll();
+                }
+
+                if (uSyncSettings.Elements.MediaTypes)
+                {
+                    var mediaSync = new SyncMediaTypes(settings);
+                    mediaSync.ExportAll();
+                }
+
+
+                if (uSyncSettings.Elements.Templates)
+                {
+                    var tSync = new SyncTemplate(settings);
+                    tSync.ExportAll();
+                }
+
+                if (uSyncSettings.Elements.Stylesheets)
+                {
+                    var styleSync = new SyncStylesheet(settings);
+                    styleSync.ExportAll();
+                }
+
+                if (uSyncSettings.Elements.DataTypes)
+                {
+                    var dataTypeSync = new SyncDataType(settings);
+                    dataTypeSync.ExportAll();
+                }
+
+                if (uSyncSettings.Elements.Dictionary)
+                {
+                    var langSync = new SyncLanguage(settings);
+                    langSync.ExportAll();
+
+                    var dicSync = new SyncDictionary(settings);
+                    dicSync.ExportAll();
+                }
+
+                LogHelper.Info<uSync>("Saving to Disk - End");
+            }
+            catch (Exception ex)
             {
-                var macroSync = new SyncMacro(settings);
-                macroSync.ExportAll();
+                LogHelper.Error<uSync>("Error while saving everything to disk", ex);
+                if (!uSyncSettings.DontThrowErrors)
+                    throw ex;
             }
-
-            if ( uSyncSettings.Elements.MediaTypes )
-            {
-                var mediaSync = new SyncMediaTypes(settings);
-                mediaSync.ExportAll();
-            }
-
-
-            if (uSyncSettings.Elements.Templates)
-            {
-                var tSync = new SyncTemplate(settings);
-                tSync.ExportAll();
-            }
-
-            if (uSyncSettings.Elements.Stylesheets)
-            {
-                var styleSync = new SyncStylesheet(settings);
-                styleSync.ExportAll();
-            }
-
-            if (uSyncSettings.Elements.DataTypes)
-            {
-                var dataTypeSync = new SyncDataType(settings);
-                dataTypeSync.ExportAll();
-            }
-
-            if (uSyncSettings.Elements.Dictionary)
-            {
-                var langSync = new SyncLanguage(settings);
-                langSync.ExportAll();
-
-                var dicSync = new SyncDictionary(settings);
-                dicSync.ExportAll();
-            }
-
-            LogHelper.Info<uSync>("Saving to Disk - End"); 
         }
 
         /// <summary>
@@ -175,170 +184,180 @@ namespace jumps.umbraco.usync
         /// </summary>
         public List<ChangeItem> ReadAllFromDisk(ImportSettings importSettings = null)
         {
-            if (importSettings == null)
-                importSettings = new ImportSettings();
+            var changes = new List<ChangeItem>();
 
-            if (!importSettings.ReportOnly)
-                EventPaused = true;
-
-            if (!File.Exists(Path.Combine(IOHelper.MapPath(importSettings.Folder), "usync.stop")))
+            try
             {
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                var last = 0.0;
-                LogHelper.Debug<uSync>("#########################################################");
-                LogHelper.Debug<uSync>("Reading from Disk - starting");
+                if (importSettings == null)
+                    importSettings = new ImportSettings();
 
-                // if backup first...
-                var changes = new List<ChangeItem>();
+                if (!importSettings.ReportOnly)
+                    EventPaused = true;
 
-                if (uSyncSettings.Elements.Templates)
+                if (!File.Exists(Path.Combine(IOHelper.MapPath(importSettings.Folder), "usync.stop")))
                 {
-                    LogHelper.Info<uSync>("Importing Templates");
-                    var tSync = new SyncTemplate(importSettings);
-                    tSync.ImportAll();
-                    changes.AddRange(tSync.ChangeList);
-                    LogHelper.Info<uSync>("Imported Templates {0} - changes ({1} ms)", ()=> tSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-                }
+                    Stopwatch sw = new Stopwatch();
+                    sw.Start();
+                    var last = 0.0;
+                    LogHelper.Debug<uSync>("#########################################################");
+                    LogHelper.Debug<uSync>("Reading from Disk - starting");
 
-                if (uSyncSettings.Elements.Stylesheets)
-                {
-                    LogHelper.Info<uSync>("Importing Stylesheets");
-                    var styleSync = new SyncStylesheet(importSettings);
-                    styleSync.ImportAll();
-                    changes.AddRange(styleSync.ChangeList);
-
-                    LogHelper.Info<uSync>("Imported Stylesheets {0} - changes ({1} ms)", ()=> styleSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-                }
-
-                if (uSyncSettings.Elements.DataTypes)
-                {
-                    LogHelper.Info<uSync>("Importing DataTypes");
-                    var dataTypeSync = new SyncDataType(importSettings);
-                    dataTypeSync.ImportAll();
-                    changes.AddRange(dataTypeSync.ChangeList);
-
-                    LogHelper.Info<uSync>("Imported DataTypes {0} changes - ({1} ms)", ()=> dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-                }
-
-                if (uSyncSettings.Elements.DocumentTypes)
-                {
-                    LogHelper.Info<uSync>("Importing Document Types");
-                    var docSync = new SyncDocType(importSettings);
-                    docSync.ImportAll();
-                    changes.AddRange(docSync.ChangeList);
-
-                    LogHelper.Info<uSync>("Imported Document Types {0} changes ({1}ms)", () => docSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-                }
-
-                if (uSyncSettings.Elements.Macros)
-                {
-                    var macroSync = new SyncMacro(importSettings);
-                    macroSync.ImportAll();
-                    changes.AddRange(macroSync.ChangeList);
-
-                    LogHelper.Info<uSync>("Imported Macros {0} changes ({1}ms)", ()=> macroSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-                }
-
-                if (uSyncSettings.Elements.MediaTypes)
-                {
-                    LogHelper.Info<uSync>("Importing Media Types");
-                    var mediaSync = new SyncMediaTypes(importSettings);
-                    mediaSync.ImportAll();
-                    changes.AddRange(mediaSync.ChangeList);
-
-                    LogHelper.Info<uSync>("Imported MediaTypes {0} changes ({1} ms)", ()=> mediaSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-                }
-
-                if (uSyncSettings.Elements.Dictionary) 
-                {
-                    LogHelper.Info<uSync>("Importing Languages");
-                    var langSync = new SyncLanguage(importSettings);
-                    langSync.ImportAll();
-                    changes.AddRange(langSync.ChangeList);
-
-                    LogHelper.Info<uSync>("Imported Languages {0} changes ({1}ms)", () => langSync.ChangeCount, ()=> sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-                    LogHelper.Info<uSync>("Importing Dictionary Items");
-
-                    var dicSync = new SyncDictionary(importSettings);
-                    dicSync.ImportAll();
-                    changes.AddRange(dicSync.ChangeList);
-
-                    LogHelper.Info<uSync>("Imported Dictionary Items {0} changes ({1} ms)", ()=>  dicSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
-                    last = sw.ElapsedMilliseconds;
-                }
-
-                // double datatype pass - because when mapping it becomes dependent on doctypes
-                if (uSyncSettings.Elements.DataTypes)
-                {
-                    LogHelper.Info<uSync>("Importing Datatypes (Second Pass)");
-                    var dataTypeSync = new SyncDataType(importSettings);
-                    dataTypeSync.ImportAll();
-                    LogHelper.Info<uSync>("Imported DataTypes (again) {0} changes ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
-                }
-
-                LogHelper.Debug<uSync>("Reading from Disk - End");
-
-                if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
-                {
-                    LogHelper.Debug<uSync>("Renaming once file");
-
-                    File.Move(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once"),
-                        Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
-                    LogHelper.Debug<uSync>("Once renamed to stop");
-                }
-
-                sw.Stop();
-                LogHelper.Info<uSync>("Imported From Disk {0}ms", () => sw.ElapsedMilliseconds);
-                LogHelper.Debug<uSync>("#########################################################");
-
-                var report = new uSyncReporter();
-                report.ReportChanges(changes);
-
-                EventPaused = false; 
-
-                if ( !importSettings.ReportOnly && !importSettings.ForceImport && uSyncSettings.FullRestore)
-                {
-                    // if we're not on a reporting run, or a force run and the global settings is for a full restore
-                    // then we need to go through our import. 
-
-                    // if there are any changes that didn't work - we do a full restore of the whole backup.
-                    var errors = false;
-                    foreach(var change in changes)
+                    if (uSyncSettings.Elements.Templates)
                     {
-                        if (change.changeType >= ChangeType.Fail)
+                        LogHelper.Info<uSync>("Importing Templates");
+                        var tSync = new SyncTemplate(importSettings);
+                        tSync.ImportAll();
+                        changes.AddRange(tSync.ChangeList);
+                        LogHelper.Info<uSync>("Imported Templates {0} - changes ({1} ms)", () => tSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                        last = sw.ElapsedMilliseconds;
+                    }
+
+                    if (uSyncSettings.Elements.Stylesheets)
+                    {
+                        LogHelper.Info<uSync>("Importing Stylesheets");
+                        var styleSync = new SyncStylesheet(importSettings);
+                        styleSync.ImportAll();
+                        changes.AddRange(styleSync.ChangeList);
+
+                        LogHelper.Info<uSync>("Imported Stylesheets {0} - changes ({1} ms)", () => styleSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                        last = sw.ElapsedMilliseconds;
+                    }
+
+                    if (uSyncSettings.Elements.DataTypes)
+                    {
+                        LogHelper.Info<uSync>("Importing DataTypes");
+                        var dataTypeSync = new SyncDataType(importSettings);
+                        dataTypeSync.ImportAll();
+                        changes.AddRange(dataTypeSync.ChangeList);
+
+                        LogHelper.Info<uSync>("Imported DataTypes {0} changes - ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                        last = sw.ElapsedMilliseconds;
+                    }
+
+                    if (uSyncSettings.Elements.DocumentTypes)
+                    {
+                        LogHelper.Info<uSync>("Importing Document Types");
+                        var docSync = new SyncDocType(importSettings);
+                        docSync.ImportAll();
+                        changes.AddRange(docSync.ChangeList);
+
+                        LogHelper.Info<uSync>("Imported Document Types {0} changes ({1}ms)", () => docSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                        last = sw.ElapsedMilliseconds;
+                    }
+
+                    if (uSyncSettings.Elements.Macros)
+                    {
+                        var macroSync = new SyncMacro(importSettings);
+                        macroSync.ImportAll();
+                        changes.AddRange(macroSync.ChangeList);
+
+                        LogHelper.Info<uSync>("Imported Macros {0} changes ({1}ms)", () => macroSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                        last = sw.ElapsedMilliseconds;
+                    }
+
+                    if (uSyncSettings.Elements.MediaTypes)
+                    {
+                        LogHelper.Info<uSync>("Importing Media Types");
+                        var mediaSync = new SyncMediaTypes(importSettings);
+                        mediaSync.ImportAll();
+                        changes.AddRange(mediaSync.ChangeList);
+
+                        LogHelper.Info<uSync>("Imported MediaTypes {0} changes ({1} ms)", () => mediaSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                        last = sw.ElapsedMilliseconds;
+                    }
+
+                    if (uSyncSettings.Elements.Dictionary)
+                    {
+                        LogHelper.Info<uSync>("Importing Languages");
+                        var langSync = new SyncLanguage(importSettings);
+                        langSync.ImportAll();
+                        changes.AddRange(langSync.ChangeList);
+
+                        LogHelper.Info<uSync>("Imported Languages {0} changes ({1}ms)", () => langSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                        last = sw.ElapsedMilliseconds;
+                        LogHelper.Info<uSync>("Importing Dictionary Items");
+
+                        var dicSync = new SyncDictionary(importSettings);
+                        dicSync.ImportAll();
+                        changes.AddRange(dicSync.ChangeList);
+
+                        LogHelper.Info<uSync>("Imported Dictionary Items {0} changes ({1} ms)", () => dicSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                        last = sw.ElapsedMilliseconds;
+                    }
+
+                    // double datatype pass - because when mapping it becomes dependent on doctypes
+                    if (uSyncSettings.Elements.DataTypes)
+                    {
+                        LogHelper.Info<uSync>("Importing Datatypes (Second Pass)");
+                        var dataTypeSync = new SyncDataType(importSettings);
+                        dataTypeSync.ImportAll();
+                        LogHelper.Info<uSync>("Imported DataTypes (again) {0} changes ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
+                    }
+
+                    LogHelper.Debug<uSync>("Reading from Disk - End");
+
+                    if (File.Exists(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once")))
+                    {
+                        LogHelper.Debug<uSync>("Renaming once file");
+
+                        File.Move(Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.once"),
+                            Path.Combine(IOHelper.MapPath(helpers.uSyncIO.RootFolder), "usync.stop"));
+                        LogHelper.Debug<uSync>("Once renamed to stop");
+                    }
+
+                    sw.Stop();
+                    LogHelper.Info<uSync>("Imported From Disk {0}ms", () => sw.ElapsedMilliseconds);
+                    LogHelper.Debug<uSync>("#########################################################");
+
+                    var report = new uSyncReporter();
+                    report.ReportChanges(changes);
+
+                    EventPaused = false;
+
+                    if (!importSettings.ReportOnly && !importSettings.ForceImport && uSyncSettings.FullRestore)
+                    {
+                        // if we're not on a reporting run, or a force run and the global settings is for a full restore
+                        // then we need to go through our import. 
+
+                        // if there are any changes that didn't work - we do a full restore of the whole backup.
+                        var errors = false;
+                        foreach (var change in changes)
                         {
-                            errors = true;
-                            break;
+                            if (change.changeType >= ChangeType.Fail)
+                            {
+                                errors = true;
+                                break;
+                            }
+                        }
+
+                        if (errors)
+                        {
+                            LogHelper.Info<uSync>("Import contained errors - Full Rollback to {0}", () => importSettings.BackupPath);
+
+                            var restoreSettings = new ImportSettings(importSettings.BackupPath);
+                            restoreSettings.ForceImport = true;
+
+                            var rollbackChanges = ReadAllFromDisk(restoreSettings);
+
+                            changes.AddRange(rollbackChanges);
                         }
                     }
 
-                    if ( errors )
-                    {
-                        LogHelper.Info<uSync>("Import contained errors - Full Rollback to {0}", () => importSettings.BackupPath);
-
-                        var restoreSettings = new ImportSettings(importSettings.BackupPath);
-                        restoreSettings.ForceImport = true;
-
-                        var rollbackChanges = ReadAllFromDisk(restoreSettings);
-
-                        changes.AddRange(rollbackChanges);
-                    }
+                    return changes;
                 }
-
-                return changes; 
+                else
+                {
+                    LogHelper.Info<uSync>("Read stopped by usync.stop");
+                    return new List<ChangeItem>();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                LogHelper.Info<uSync>("Read stopped by usync.stop");
-                return new List<ChangeItem>();
+                LogHelper.Error<uSync>("Error while reading things in from disk", ex);
+                if (!uSyncSettings.DontThrowErrors)
+                    throw ex;
+
+                return changes;
             }
         }
 
@@ -347,36 +366,46 @@ namespace jumps.umbraco.usync
         /// </summary>
         public void AttachToAll(string folder = null)
         {
-            if (String.IsNullOrEmpty(folder))
-                folder = helpers.uSyncIO.RootFolder;
-
-            LogHelper.Debug<uSync>("Attaching to Events - Start"); 
-            
-            if ( uSyncSettings.Elements.DataTypes ) 
-                SyncDataType.AttachEvents(folder);
-
-            if (uSyncSettings.Elements.DocumentTypes)
-                SyncDocType.AttachEvents(folder);                
-
-            if ( uSyncSettings.Elements.MediaTypes ) 
-                SyncMediaTypes.AttachEvents(folder);
-
-            if ( uSyncSettings.Elements.Macros ) 
-                SyncMacro.AttachEvents(folder);
-
-            if ( uSyncSettings.Elements.Templates ) 
-                SyncTemplate.AttachEvents(folder);
-
-            if ( uSyncSettings.Elements.Stylesheets ) 
-                SyncStylesheet.AttachEvents(folder);
-
-            if (uSyncSettings.Elements.Dictionary)
+            try
             {
-                SyncLanguage.AttachEvents(folder); 
-                SyncDictionary.AttachEvents(folder);
+                if (String.IsNullOrEmpty(folder))
+                    folder = helpers.uSyncIO.RootFolder;
+
+                LogHelper.Debug<uSync>("Attaching to Events - Start");
+
+                if (uSyncSettings.Elements.DataTypes)
+                    SyncDataType.AttachEvents(folder);
+
+                if (uSyncSettings.Elements.DocumentTypes)
+                    SyncDocType.AttachEvents(folder);
+
+                if (uSyncSettings.Elements.MediaTypes)
+                    SyncMediaTypes.AttachEvents(folder);
+
+                if (uSyncSettings.Elements.Macros)
+                    SyncMacro.AttachEvents(folder);
+
+                if (uSyncSettings.Elements.Templates)
+                    SyncTemplate.AttachEvents(folder);
+
+                if (uSyncSettings.Elements.Stylesheets)
+                    SyncStylesheet.AttachEvents(folder);
+
+                if (uSyncSettings.Elements.Dictionary)
+                {
+                    SyncLanguage.AttachEvents(folder);
+                    SyncDictionary.AttachEvents(folder);
+                }
+
+                LogHelper.Debug<uSync>("Attaching to Events - End");
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Error<uSync>("Error while Attaching to the events", ex);
+                if (!uSyncSettings.DontThrowErrors)
+                    throw ex;
             }
 
-            LogHelper.Debug<uSync>("Attaching to Events - End");
         }
 
         public void WatchFolder()
@@ -394,49 +423,57 @@ namespace jumps.umbraco.usync
         /// </summary>
         private void RunSync()
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
-            LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
-
-            if (!ApplicationContext.Current.IsConfigured)
+            try
             {
-                LogHelper.Info<uSync>("umbraco not configured, usync aborting");
-                return;
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+
+                LogHelper.Info<uSync>("uSync Starting - for detailed debug info. set priority to 'Debug' in log4net.config file");
+
+                if (!ApplicationContext.Current.IsConfigured)
+                {
+                    LogHelper.Info<uSync>("umbraco not configured, usync aborting");
+                    return;
+                }
+
+                OnStarting(new uSyncEventArgs(_read, _write, _attach));
+
+                // Save Everything to disk.
+                // only done first time (no directory and when attach = true) or when write = true 
+                if ((!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) && _attach) || _write)
+                {
+                    SaveAllToDisk();
+                }
+
+                //
+                // we take the disk and sync it to the DB, this is how 
+                // you can then distribute using uSync.
+                //
+
+                if (_read)
+                {
+                    ReadAllFromDisk();
+                }
+
+                if (_attach)
+                {
+                    // everytime. register our events to all the saves..
+                    // that way we capture things as they are done.
+                    AttachToAll();
+                }
+
+                WatchFolder();
+
+                sw.Stop();
+                LogHelper.Info<uSync>("uSync Initilized ({0} ms)", () => sw.ElapsedMilliseconds);
+                OnComplete(new uSyncEventArgs(_read, _write, _attach));
             }
-
-            OnStarting(new uSyncEventArgs(_read, _write, _attach)); 
-
-            // Save Everything to disk.
-            // only done first time (no directory and when attach = true) or when write = true 
-            if ((!Directory.Exists(IOHelper.MapPath(helpers.uSyncIO.RootFolder)) && _attach) || _write )
+            catch (Exception ex)
             {
-                SaveAllToDisk();
+                LogHelper.Error<uSync>("Error Running the Sync", ex);
+                if (!uSyncSettings.DontThrowErrors)
+                    throw ex;
             }
-
-            //
-            // we take the disk and sync it to the DB, this is how 
-            // you can then distribute using uSync.
-            //
-
-            if (_read)
-            {
-                ReadAllFromDisk(); 
-            }
-
-            if (_attach)
-            {
-                // everytime. register our events to all the saves..
-                // that way we capture things as they are done.
-                AttachToAll(); 
-            }
-
-            WatchFolder();
-
-            sw.Stop();
-            LogHelper.Info<uSync>("uSync Initilized ({0} ms)", ()=> sw.ElapsedMilliseconds);
-            OnComplete(new uSyncEventArgs(_read, _write, _attach));
-
         }
 
         public void OnApplicationStarted(UmbracoApplicationBase httpApplication, Umbraco.Core.ApplicationContext applicationContext)

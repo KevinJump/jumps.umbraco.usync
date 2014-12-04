@@ -198,6 +198,19 @@ namespace jumps.umbraco.usync
             }
         }
 
+        [ConfigurationProperty("dontThrowErrors", DefaultValue=false, IsRequired =false)]
+        public Boolean DontThrowErrors
+        {
+            get
+            {
+                return (Boolean)this["dontThrowErrors"];
+            }
+            set
+            {
+                this["dontThrowErrors"] = value;
+            }
+        }
+
     }
 
     public class PreservedPreValue : ConfigurationElement

@@ -108,6 +108,12 @@ namespace jumps.umbraco.usync
             set { _settings.WatchFolder = value; }
         }
 
+        public static bool DontThrowErrors
+        {
+            get { return _settings.DontThrowErrors; }
+            set { _settings.DontThrowErrors = value; }
+        }
+
         public static string[] PreservedPreValueDataTypes
         {
             get { return _settings.PreservedPreValues.GetAll(); }
