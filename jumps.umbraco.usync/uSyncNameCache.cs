@@ -22,7 +22,7 @@ namespace jumps.umbraco.usync
         internal static Dictionary<int, string> MediaTypes;
         internal static Dictionary<int, string> Macros;
         internal static Dictionary<int, string> Languages;
-        internal static Dictionary<int, string> DictionaryItems;
+        // internal static Dictionary<int, string> DictionaryItems;
 
         internal static bool IsRenamed(DataTypeDefinition dt)
         {
