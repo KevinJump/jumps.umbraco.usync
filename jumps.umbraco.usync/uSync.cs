@@ -332,12 +332,17 @@ namespace jumps.umbraco.usync
 
                         if (errors)
                         {
+                            uSyncReporter.WriteToLog("ROLLBACK: Import contained errors - Full Rollback to {0}", importSettings.BackupPath);
                             LogHelper.Info<uSync>("Import contained errors - Full Rollback to {0}", () => importSettings.BackupPath);
 
                             var restoreSettings = new ImportSettings(importSettings.BackupPath);
                             restoreSettings.ForceImport = true;
 
                             var rollbackChanges = ReadAllFromDisk(restoreSettings);
+                            foreach(var c in rollbackChanges) {
+                                if ( c.changeType == ChangeType.Success )
+                                    c.changeType = ChangeType.RolledBack;
+                            }
 
                             changes.AddRange(rollbackChanges);
                         }
