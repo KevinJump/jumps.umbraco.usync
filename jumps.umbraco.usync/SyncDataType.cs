@@ -149,7 +149,7 @@ namespace jumps.umbraco.usync
 
             var preValues = node.Element("PreValues");
             var dataTypeSerivce = ApplicationContext.Current.Services.DataTypeService;
-            var existingPreValues = dataTypeSerivce.GetPreValuesCollectionByDataTypeId(dataType.Id).PreValuesAsDictionary;
+            var existingPreValues = dataTypeSerivce.GetPreValuesCollectionByDataTypeId(dataType.Id).FormatAsDictionary(); // .PreValuesAsDictionary;
 
 
             if (preValues != null)
