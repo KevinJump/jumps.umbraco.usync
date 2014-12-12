@@ -346,7 +346,7 @@ namespace jumps.umbraco.usync.Models
                 {
                     var val = target[n].Attribute("Value");
 
-                    if (val != null)
+                    if (val != null && val.Value != "usync-unmapped-id")
                     {
                         // here we need to transpose any mapped ids we might have ...
                         var propValue = val.Value;

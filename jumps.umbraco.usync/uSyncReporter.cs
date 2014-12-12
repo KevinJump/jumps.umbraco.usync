@@ -69,8 +69,9 @@ namespace jumps.umbraco.usync
             if (uSyncSettings.Reporter.ReportChanges)
             {
                 int changeCount = 0;
+                int rollbackCount = 0; 
                 int errorCount = 0;
-                changeMsg.Append("<table style=\"width:400px\"><tr><th>Type</th><th>Name</th><th>Status</th><th>Message</th></tr>");
+                changeMsg.Append("<table style=\"width:400px\"><tr><th>Type</th><th>Name</th><th>Status</th><th>Message</th></tr>\n");
                 foreach (var change in changes)
                 {
                     if (change.changeType >= ChangeType.Fail)
@@ -83,9 +84,14 @@ namespace jumps.umbraco.usync
                         changeCount++;
                     }
 
+                    if (change.changeType == ChangeType.RolledBack)
+                    {
+                        rollbackCount++;
+                    }
+
                     if (change.changeType != ChangeType.NoChange || uSyncSettings.Reporter.ReportNoChange)
                     {
-                        changeMsg.AppendFormat("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>",
+                        changeMsg.AppendFormat("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>\n",
                             change.itemType, change.name, change.changeType, change.message);
                     }
 
@@ -97,12 +103,26 @@ namespace jumps.umbraco.usync
                 {
                     sb.AppendFormat("<p>A Total of <strong>{0} changes</strong> where made\n", changeCount);
                     sb.AppendFormat("<p>There where {0} errors</p>", errorCount);
+
+                    if ( rollbackCount > 0 )
+                        sb.AppendFormat("<p>{0} itesm where rolled back</p>", errorCount);
                     sb.Append(changeMsg.ToString());
                     sb.Append("uSync - Report Complete");
                     LogHelper.Info<uSyncReporter>("Emailing Changes to {0}", () => uSyncSettings.Reporter.Email);
-                    // LogHelper.Debug<uSyncReporter>("Email:\n{0}", () => sb.ToString());
+                    var subject = new StringBuilder();
+                    subject.AppendFormat("uSync Report {0}: {1} Changes", DateTime.Now, changeCount);
+                    
+                    if (errorCount > 0)
+                        subject.AppendFormat("- {0} Errors", errorCount);
+                    
+                    if (rollbackCount > 0)
+                        subject.AppendFormat("- {0} Rollbacks", rollbackCount);
+
+                    LogHelper.Debug<uSyncReporter>("Email: Subject: {0}", ()=> subject.ToString());
+                    LogHelper.Debug<uSyncReporter>("Email:\n{0}", () => sb.ToString());
+    
                     SendMailMessage(
-                        string.Format("uSync Report {0} : {1} changes {2} errors", DateTime.Now, changeCount, errorCount),
+                        subject.ToString(),
                         sb.ToString());
                 }
                 else
@@ -110,7 +130,7 @@ namespace jumps.umbraco.usync
                     LogHelper.Info<uSyncReporter>("Nothing changed that time...");
                 }
 
-                var logline = string.Format("uSync {0} Items processed, {1} Changes made {2} Errors", changes.Count(), changeCount, errorCount);
+                var logline = string.Format("uSync {0} Items processed, {1} Changes made {2} Errors {3} Rollbacks", changes.Count(), changeCount, errorCount, rollbackCount);
                 WriteToLog(logline);
                 LogHelper.Info<uSyncReporter>(logline);
             }

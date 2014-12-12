@@ -112,6 +112,10 @@ namespace jumps.umbraco.usync.helpers
 
         public static void ArchiveFile(string filePath, bool delete = false)
         {
+            // we don't archive when we are in the backup folder...
+            if (filePath.ToLower().Contains("backup"))
+                return;
+
             // we need to remove the site folder .. and the add then add the archive one
             // arching only works on the core site files (not backups etc.)
             if (!File.Exists(filePath))

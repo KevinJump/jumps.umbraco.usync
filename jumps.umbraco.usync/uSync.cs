@@ -228,7 +228,6 @@ namespace jumps.umbraco.usync
                         LogHelper.Info<uSync>("Importing DataTypes");
                         var dataTypeSync = new SyncDataType(importSettings);
                         dataTypeSync.ImportAll();
-                        changes.AddRange(dataTypeSync.ChangeList);
 
                         LogHelper.Info<uSync>("Imported DataTypes {0} changes - ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                         last = sw.ElapsedMilliseconds;
@@ -291,6 +290,8 @@ namespace jumps.umbraco.usync
                         LogHelper.Info<uSync>("Importing Datatypes (Second Pass)");
                         var dataTypeSync = new SyncDataType(importSettings);
                         dataTypeSync.ImportAll();
+                        changes.AddRange(dataTypeSync.ChangeList);
+
                         LogHelper.Info<uSync>("Imported DataTypes (again) {0} changes ({1} ms)", () => dataTypeSync.ChangeCount, () => sw.ElapsedMilliseconds - last);
                     }
 
@@ -308,11 +309,6 @@ namespace jumps.umbraco.usync
                     sw.Stop();
                     LogHelper.Info<uSync>("Imported From Disk {0}ms", () => sw.ElapsedMilliseconds);
                     LogHelper.Debug<uSync>("#########################################################");
-
-                    var report = new uSyncReporter();
-                    report.ReportChanges(changes);
-
-                    EventPaused = false;
 
                     if (!importSettings.ReportOnly && !importSettings.ForceImport && uSyncSettings.FullRestore)
                     {
@@ -337,6 +333,15 @@ namespace jumps.umbraco.usync
 
                             var restoreSettings = new ImportSettings(importSettings.BackupPath);
                             restoreSettings.ForceImport = true;
+                            restoreSettings.Restore = true;
+
+                            changes.Add(new ChangeItem() { 
+                                changeType = ChangeType.Information, 
+                                itemType = ItemType.uSync,
+                                message = "uSync Starting Full Rollback",
+                                id = 1,
+                                file = "" 
+                            });
 
                             var rollbackChanges = ReadAllFromDisk(restoreSettings);
                             foreach(var c in rollbackChanges) {
@@ -346,6 +351,14 @@ namespace jumps.umbraco.usync
 
                             changes.AddRange(rollbackChanges);
                         }
+                    }
+
+                    // don't send a mail if this a restore (it gets sent by the first pass)
+                    if (!importSettings.Restore)
+                    {
+                        var report = new uSyncReporter();
+                        report.ReportChanges(changes);
+                        EventPaused = false;
                     }
 
                     return changes;
@@ -552,11 +565,13 @@ namespace jumps.umbraco.usync
         public bool ForceImport;
         public string Folder;
         public string BackupPath;
+        public bool Restore; 
 
         public ImportSettings()
         {
             ReportOnly = false;
             ForceImport = false;
+            Restore = false;
             Folder = helpers.uSyncIO.RootFolder;
             var set = DateTime.Now.ToString("yyyy_MM_dd_HHmmss");
             BackupPath = string.Format("{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), set);
@@ -566,6 +581,7 @@ namespace jumps.umbraco.usync
         {
             ReportOnly = false;
             ForceImport = false;
+            Restore = false; 
             Folder = folder;
             var set = DateTime.Now.ToString("yyyy_MM_dd_HHmmss");
             BackupPath = string.Format("{0}\\{1}", uSyncSettings.BackupFolder.Trim('\\'), set);

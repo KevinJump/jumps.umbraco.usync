@@ -303,7 +303,7 @@ namespace jumps.umbraco.usync.helpers
                 return targetId.ToString();
             }
 
-            return id;
+            return "usync-unmapped-id";
         }
 
         private string GetMappedMediaId(string id, string value)
@@ -317,7 +317,7 @@ namespace jumps.umbraco.usync.helpers
                 return targetId.ToString();
             }
 
-            return id;
+            return "usync-unmapped-id";
         }
 
         private string GetMappedTabId(string id, string value)

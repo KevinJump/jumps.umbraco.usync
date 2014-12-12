@@ -109,7 +109,9 @@ namespace jumps.umbraco.usync
                 LogHelper.Debug<SyncDataType>("Import: Change (or Force) detected");
                 if (!_settings.ReportOnly)
                 {
+                    // we only backup on the first pass (it passes datatypes twice)
                     var backup = Backup(node);
+
                     LogHelper.Debug<SyncDataType>("Import: Calling SyncImport");
                     ChangeItem change = uDataTypeDefinition.SyncImport(node);
 

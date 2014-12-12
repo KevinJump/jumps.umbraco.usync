@@ -46,7 +46,8 @@ namespace jumps.umbraco.usync
         Template,
         Macro,
         Dictionary,
-        Languages
+        Languages,
+        uSync
     }
 
     // status - > 10 is an error.
@@ -56,9 +57,10 @@ namespace jumps.umbraco.usync
         Delete,
         NoChange,
         WillChange,
+        Information,
+        RolledBack,
         Fail = 11,
         ImportFail,
-        Mismatch,
-        RolledBack
+        Mismatch
     }
 }
