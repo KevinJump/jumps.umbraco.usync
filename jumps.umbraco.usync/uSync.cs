@@ -296,7 +296,7 @@ namespace jumps.umbraco.usync
 
                 WatchFolder();
                 sw.Stop();
-                LogHelper.Info<uSync>("uSync Initilized ({0}ms)", () => sw.ElapsedMilliseconds);
+                LogHelper.Info<uSync>("uSync Initialized ({0}ms)", () => sw.ElapsedMilliseconds);
                 OnComplete(new uSyncEventArgs(_read, _write, _attach));
             }
             catch(Exception ex)
