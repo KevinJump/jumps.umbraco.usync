@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
-using System.Xml;
 using System.Xml.Linq;
-
 using Umbraco.Core;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
 
-using Umbraco.Core.Logging;
-
-using jumps.umbraco.usync.helpers;
 
 namespace jumps.umbraco.usync.Extensions
 {
@@ -39,7 +33,7 @@ namespace jumps.umbraco.usync.Extensions
             // element.Element("Info").Add(new XElement("key", item.Key));
             // element.Element("Info").Add(new XElement("Id", item.Id));
             // element.Element("Info").Add(new XElement("Updated", item.UpdateDate));
-            if ( element.Element("Info").Element("Container") == null )
+            if (element.Element("Info").Element("Container") == null)
                 element.Element("Info").Add(new XElement("Container", item.IsContainer.ToString()));
 
             // fix the current (v6.1/v7.0.1) api doesn't do
@@ -53,26 +47,26 @@ namespace jumps.umbraco.usync.Extensions
             // order isn't always right, and we care because we get hash values
             // 
             SortedList<int, ContentTypeSort> allowedTypes = new SortedList<int, ContentTypeSort>();
-            foreach(var t in item.AllowedContentTypes)
+            foreach (var t in item.AllowedContentTypes)
             {
                 allowedTypes.Add(t.Id.Value, t);
             }
 
-            foreach(var allowedType in allowedTypes)
+            foreach (var allowedType in allowedTypes)
             {
                 var allowedItem = _contentTypeService.GetContentType(allowedType.Value.Id.Value);
                 structure.Add(new XElement("DocumentType", allowedItem.Alias));
                 allowedItem.DisposeIfDisposable();
             }
-            
+
 
             // put the sort order on the tabs
             var tabs = element.Element("Tabs");
-            foreach(var tab in item.PropertyGroups)
+            foreach (var tab in item.PropertyGroups)
             {
                 XElement tabNode = tabs.Elements().First(x => x.Element("Id").Value == tab.Id.ToString());
 
-                if ( tabNode != null)
+                if (tabNode != null)
                 {
                     tabNode.Add(new XElement("SortOrder", tab.SortOrder));
                 }
@@ -80,11 +74,11 @@ namespace jumps.umbraco.usync.Extensions
 
             // put the sort order on the proerties ?
             var properties = element.Element("GenericProperties");
-            foreach(var prop in item.PropertyTypes)
+            foreach (var prop in item.PropertyTypes)
             {
                 XElement propNode = properties.Elements().First(x => x.Element("Alias").Value == prop.Alias);
 
-                if ( propNode != null )
+                if (propNode != null)
                 {
                     propNode.Add(new XElement("SortOrder", prop.SortOrder));
                 }
@@ -97,11 +91,11 @@ namespace jumps.umbraco.usync.Extensions
         public static IEnumerable<IContentType> ImportContentType(this XElement node)
         {
             XElement idElement = node.Element("Info").Element("Id");
-            IEnumerable<IContentType> imported = _packageService.ImportContentTypes(node, false, raiseEvents: false );
-            return imported; 
+            IEnumerable<IContentType> imported = _packageService.ImportContentTypes(node, false, raiseEvents: false);
+            return imported;
 
         }
-    
+
 
         /*
          * Import Part 2 - these functions all do post import 2nd pass 
@@ -115,15 +109,15 @@ namespace jumps.umbraco.usync.Extensions
             List<ContentTypeSort> allowed = new List<ContentTypeSort>();
             int sortOrder = 0;
 
-            foreach(var doctype in structure.Elements("DocumentType"))
+            foreach (var doctype in structure.Elements("DocumentType"))
             {
                 string alias = doctype.Value;
 
-                if ( !string.IsNullOrEmpty(alias))
+                if (!string.IsNullOrEmpty(alias))
                 {
                     IContentType aliasDoc = _contentTypeService.GetContentType(alias);
 
-                    if ( aliasDoc != null )
+                    if (aliasDoc != null)
                     {
                         allowed.Add(new ContentTypeSort(
                             new Lazy<int>(() => aliasDoc.Id), sortOrder, aliasDoc.Name));
@@ -138,17 +132,17 @@ namespace jumps.umbraco.usync.Extensions
         {
             XElement tabs = node.Element("Tabs");
 
-            foreach(var tab in tabs.Elements("Tab"))
+            foreach (var tab in tabs.Elements("Tab"))
             {
                 var tabId = int.Parse(tab.Element("Id").Value);
                 var sortOrder = tab.Element("SortOrder");
 
-                if ( sortOrder != null)
+                if (sortOrder != null)
                 {
-                    if ( !String.IsNullOrEmpty(sortOrder.Value))
+                    if (!String.IsNullOrEmpty(sortOrder.Value))
                     {
                         var itemTab = item.PropertyGroups.FirstOrDefault(x => x.Id == tabId);
-                        if ( itemTab != null)
+                        if (itemTab != null)
                         {
                             itemTab.SortOrder = int.Parse(sortOrder.Value);
                         }
@@ -160,7 +154,7 @@ namespace jumps.umbraco.usync.Extensions
         public static void ImportRemoveMissingProps(this IContentType item, XElement node)
         {
             // don't do this if the setting is set to false
-            if ( !uSyncSettings.docTypeSettings.DeletePropertyValues)
+            if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
             {
                 return;
             }
@@ -169,7 +163,7 @@ namespace jumps.umbraco.usync.Extensions
             Dictionary<string, string> propertiesToMove = new Dictionary<string, string>();
 
             // go through the properties in the item
-            foreach(var property in item.PropertyTypes)
+            foreach (var property in item.PropertyTypes)
             {
                 // is this property in the xml ?
                 XElement propertyNode = node.Element("GenericProperties")
@@ -190,28 +184,30 @@ namespace jumps.umbraco.usync.Extensions
                     LogHelper.Debug<uSync>("Updating prop {0} for {1}", () => property.Alias, () => item.Alias);
 
 
-                    /* not sure we need to do this, we just call EditorAlias - it will find it ? */
-                    /*
+
                     var legacyEditorId = Guid.Empty;
+                    var editorAlias = string.Empty;
                     Guid.TryParse(propertyNode.Element("Type").Value, out legacyEditorId);
-                    if ( legacyEditorId == Guid.Empty)
+                    if (legacyEditorId == Guid.Empty)
                     {
                         // new style id...?
                     }
 
                     var dataTypeDefinitionId = new Guid(propertyNode.Element("Definition").Value);
                     IDataTypeService _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
-
                     var dataTypeDefinition = _dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
-                    */
-                    var editorAlias = propertyNode.Element("Type").Value; 
+                    if (dataTypeDefinition == null)
+                    {
+                        editorAlias = propertyNode.Element("Type").Value;
+                        // try to match on guid as alias is not unique
+                        dataTypeDefinition =
+                            _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).Any(x => x.Key == dataTypeDefinitionId)
+                                ? _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).First(x => x.Key == dataTypeDefinitionId)
+                                : _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).FirstOrDefault();
+                    }
 
-                    IDataTypeService _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
-                    var dataTypeDefinition = _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).FirstOrDefault();
-
-                    /*
-                    if ( dataTypeDefinition != null &&
-                         dataTypeDefinition.Key == dataTypeDefinitionId  )
+                    if (dataTypeDefinition != null &&
+                         dataTypeDefinition.Key == dataTypeDefinitionId)
                     {
                         // all good, we are here..
                     }
@@ -220,14 +216,13 @@ namespace jumps.umbraco.usync.Extensions
                         // we need to do even more looking...
                         var dataTypeDefinitions = _dataTypeService.GetDataTypeDefinitionByControlId(legacyEditorId);
 
-                        if ( dataTypeDefinition != null && dataTypeDefinitions.Any())
+                        if (dataTypeDefinition != null && dataTypeDefinitions.Any())
                         {
                             dataTypeDefinition = dataTypeDefinitions.First();
                         }
                     }
-                    */
 
-                    if ( dataTypeDefinition != null)
+                    if (dataTypeDefinition != null)
                     {
                         // now we set it in the DB 
                         // property.DataTypeDefinitionId = dataTypeDefinition.Id;
@@ -251,14 +246,14 @@ namespace jumps.umbraco.usync.Extensions
 
                     XElement sortOrder = propertyNode.Element("SortOrder");
                     if (sortOrder != null)
-                        property.SortOrder = int.Parse(sortOrder.Value); 
-                    
+                        property.SortOrder = int.Parse(sortOrder.Value);
+
                     var tab = propertyNode.Element("Tab").Value;
-                    if ( !string.IsNullOrEmpty(tab))
+                    if (!string.IsNullOrEmpty(tab))
                     {
                         var propGroup = item.PropertyGroups.First(x => x.Name == tab);
 
-                        if ( !propGroup.PropertyTypes.Any(x => x.Alias == property.Alias))
+                        if (!propGroup.PropertyTypes.Any(x => x.Alias == property.Alias))
                         {
                             // if it's not in this prop group - we can move it it into it
                             LogHelper.Info<uSync>("Moving {0} in {1} to {2}",
@@ -285,7 +280,7 @@ namespace jumps.umbraco.usync.Extensions
                 LogHelper.Debug<uSync>("Saving {0}", () => item.Name);
                 _contentTypeService.Save(item);
             }
-                
+
 
         }
 
@@ -293,10 +288,10 @@ namespace jumps.umbraco.usync.Extensions
         {
             XElement Info = node.Element("Info");
 
-            if ( Info != null)
+            if (Info != null)
             {
                 XElement container = Info.Element("Container");
-                if ( container != null)
+                if (container != null)
                 {
                     bool isContainer = false;
                     bool.TryParse(container.Value, out isContainer);
@@ -309,9 +304,9 @@ namespace jumps.umbraco.usync.Extensions
         {
             string path = "";
 
-            if ( item != null)
+            if (item != null)
             {
-                if ( item.ParentId != 0)
+                if (item.ParentId != 0)
                 {
                     path = _contentTypeService.GetContentType(item.ParentId).GetSyncPath();
                 }
