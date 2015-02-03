@@ -131,7 +131,9 @@ namespace jumps.umbraco.usync
                                     if (definition != null)
                                     {
                                         var cNode = HuntContentNodes(node);
+
                                         UpdatePreValues(definition, cNode);
+                                        UpdateDataTypeType(definition, cNode);
 
                                         dataTypeService.Save(definition);
                                     }
@@ -201,6 +203,23 @@ namespace jumps.umbraco.usync
 
                 dataTypeSerivce.SavePreValues(dataType, existingPreValues);
                 dataTypeSerivce.SavePreValues(dataType.Id, valuesWithoutKeys);
+            }
+        }
+
+        private static void UpdateDataTypeType(IDataTypeDefinition datatype, XElement node)
+        {
+            if (node.Attribute("Id") != null)
+            {
+                var targetType = node.Attribute("Id").Value;
+
+                if ( targetType.ToLower() != datatype.PropertyEditorAlias.ToLower() )
+                {
+                    // try setting the property type...
+                    LogHelper.Info<SyncDataType>("Chaning the DataType Proerty Editor");
+                    datatype.PropertyEditorAlias = targetType;
+                    
+                }
+
             }
         }
 
