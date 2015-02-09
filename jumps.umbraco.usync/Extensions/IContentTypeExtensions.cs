@@ -195,31 +195,43 @@ namespace jumps.umbraco.usync.Extensions
 
                     var dataTypeDefinitionId = new Guid(propertyNode.Element("Definition").Value);
                     IDataTypeService _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
-                    var dataTypeDefinition = _dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
-                    if (dataTypeDefinition == null)
-                    {
-                        editorAlias = propertyNode.Element("Type").Value;
-                        // try to match on guid as alias is not unique
-                        dataTypeDefinition =
-                            _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).Any(x => x.Key == dataTypeDefinitionId)
-                                ? _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).First(x => x.Key == dataTypeDefinitionId)
-                                : _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).FirstOrDefault();
-                    }
 
-                    if (dataTypeDefinition != null &&
-                         dataTypeDefinition.Key == dataTypeDefinitionId)
+                    IDataTypeDefinition dataTypeDefinition = null;
+                    try
                     {
-                        // all good, we are here..
-                    }
-                    else
-                    {
-                        // we need to do even more looking...
-                        var dataTypeDefinitions = _dataTypeService.GetDataTypeDefinitionByControlId(legacyEditorId);
 
-                        if (dataTypeDefinition != null && dataTypeDefinitions.Any())
+                        dataTypeDefinition = _dataTypeService.GetDataTypeDefinitionById(dataTypeDefinitionId);
+                        if (dataTypeDefinition == null)
                         {
-                            dataTypeDefinition = dataTypeDefinitions.First();
+                            editorAlias = propertyNode.Element("Type").Value;
+                            // try to match on guid as alias is not unique
+                            dataTypeDefinition =
+                                _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).Any(x => x.Key == dataTypeDefinitionId)
+                                    ? _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).First(x => x.Key == dataTypeDefinitionId)
+                                    : _dataTypeService.GetDataTypeDefinitionByPropertyEditorAlias(editorAlias).FirstOrDefault();
                         }
+
+                        if (dataTypeDefinition != null &&
+                             dataTypeDefinition.Key == dataTypeDefinitionId)
+                        {
+                            // all good, we are here..
+                        }
+                        else
+                        {
+                            // we need to do even more looking...
+                            var dataTypeDefinitions = _dataTypeService.GetDataTypeDefinitionByControlId(legacyEditorId);
+
+                            if (dataTypeDefinition != null && dataTypeDefinitions.Any())
+                            {
+                                dataTypeDefinition = dataTypeDefinitions.First();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // getDataTypeDefinition can throw exceptions - when you have issues with legacy ids' 
+                        // so we capture them, so we can carry on.
+                        LogHelper.Info<SyncDocType>("Error looking for the datatype {0}, you might be missing a package?", ()=> dataTypeDefinitionId);
                     }
 
                     if (dataTypeDefinition != null)
