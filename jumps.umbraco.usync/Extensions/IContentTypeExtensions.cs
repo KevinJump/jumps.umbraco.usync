@@ -280,6 +280,17 @@ namespace jumps.umbraco.usync.Extensions
             {
                 LogHelper.Debug<uSync>("Removing {0}", () => alias);
                 item.RemovePropertyType(alias);
+
+                // if slow - save after every remove 
+                // on big sites, this increases the chances of your SQL server completing the operation in time...
+                // 
+                /*
+                if (uSyncSettings.SlowUpdate)
+                {
+                    LogHelper.Debug<uSync>("SlowMode: saving now {0}", () => item.Name);
+                    _contentTypeService.Save(item);
+                }
+                 */
             }
 
             foreach (KeyValuePair<string, string> movePair in propertiesToMove)
