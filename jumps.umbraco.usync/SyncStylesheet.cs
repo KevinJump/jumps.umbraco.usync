@@ -48,7 +48,7 @@ namespace jumps.umbraco.usync
                 {
                     XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                     xmlDoc.AppendChild(item.ToXml(xmlDoc));
-                    xmlDoc.AddMD5Hash();
+                    // xmlDoc.AddMD5Hash();
 
                     helpers.XmlDoc.SaveXmlDoc(item.GetType().ToString(), item.Text, xmlDoc);
                 }
