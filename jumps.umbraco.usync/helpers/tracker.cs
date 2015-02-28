@@ -61,6 +61,7 @@ namespace jumps.umbraco.usync.helpers
                 return true; 
 
             XElement export = item.ExportToXml();
+
             string dbMD5 = XmlDoc.CalculateMD5Hash(export);
 
             // XmlDoc.SaveElement("doctmp", item.Alias, export);

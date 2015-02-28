@@ -59,7 +59,7 @@ namespace jumps.umbraco.usync
                             }
                         }
                     }
-                    node.AddMD5Hash(item.Alias + item.Name);
+                    // node.AddMD5Hash(item.Alias + item.Name);
 
                     XmlDoc.SaveElement("Template", GetTemplatePath(item), XmlDoc.ScrubFile(item.Alias) , node);
                 }

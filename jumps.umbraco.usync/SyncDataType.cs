@@ -39,7 +39,7 @@ namespace jumps.umbraco.usync
                 try
                 {
                     XElement node = packagingService.Export(item);
-                    node.AddMD5Hash(true); // md5 hash of file with preval ids blanked.
+                    // node.AddMD5Hash(true); // md5 hash of file with preval ids blanked.
                     node = ReplaceCotentNodes(node);
                     // content node hunting goes here....
                    

@@ -271,8 +271,10 @@ namespace jumps.umbraco.usync.helpers
         ///  away - because they are internal and change per install. 
         /// </summary>
         /// <returns></returns>
+        [Obsolete("All XML is now passed through the removePreValIds process, use CalculateMD5Hash(XElement node)")]
         public static string CalculateMD5Hash(XElement node, Boolean removePreValIds)
         {
+            /*
             if (removePreValIds)
             {
                 XElement copy = new XElement(node);
@@ -292,6 +294,8 @@ namespace jumps.umbraco.usync.helpers
             {
                 return CalculateMD5Hash(node);
             }
+             */
+            return CalculateMD5Hash(node);
 
         }
 
@@ -301,9 +305,60 @@ namespace jumps.umbraco.usync.helpers
         //
         public static string CalculateMD5Hash(XElement node)
         {
+            XElement copy = new XElement(node);
+
+            // removes pre-values from the hash
+            var preValueRoot = copy.Element("PreValues");
+            if (preValueRoot != null && preValueRoot.HasElements)
+            {
+                // for pre-values, we use to remove the ids, 
+
+                // but to ensure the order - we create a new list of prevalues,
+                // and sort it - then replace the prevalues with that 
+                // then our hash will be in order...
+                var preValues = preValueRoot.Elements("PreValue");
+                var newPreVals = new XElement("hash_prevals");
+                List<string> vals = new List<string>();
+
+                foreach (var preValue in preValues)
+                {
+                    var genericValue = preValue.Attribute("Value").Value;
+                    vals.Add(genericValue);
+                }
+
+                vals.Sort();
+                foreach (var v in vals)
+                {
+                    newPreVals.Add(new XElement("preval", v));
+                }
+                preValueRoot.RemoveAll();
+                preValueRoot.Add(newPreVals);
+            }
+
+            // tab ids 
+            var tabs = copy.Element("Tabs");
+            if (tabs != null && tabs.HasElements)
+            {
+                foreach (var t in tabs.Elements("Tab"))
+                {
+                    if (t.Element("Id") != null)
+                        t.Element("Id").Remove();
+                }
+            }
+
+            // nodes 
+            var nodes = copy.Element("Nodes");
+            if (nodes != null)
+                nodes.Remove();
+
+            // if there is a usync hash we remove that too
+            if (copy.Element("Hash") != null)
+                copy.Element("Hash").Remove();
+
+
             string md5Hash = "";
             MemoryStream stream = new MemoryStream();
-            node.Save(stream);
+            copy.Save(stream);
 
             stream.Position = 0;
 
@@ -318,20 +373,8 @@ namespace jumps.umbraco.usync.helpers
 
         public static string CalculateMD5Hash(XmlDocument node)
         {
-            string md5Hash = "";
-            MemoryStream stream = new MemoryStream();
-            node.Save(stream);
-
-            stream.Position = 0;
-
-            using (var md5 = MD5.Create())
-            {
-                md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
-            }
-
-            stream.Close();
-
-            return md5Hash; 
+            XElement elementNode = XElement.Load(new XmlNodeReader(node));
+            return CalculateMD5Hash(elementNode);
         }
 
         public static string CalculateMD5Hash(string input)
@@ -347,13 +390,38 @@ namespace jumps.umbraco.usync.helpers
 
         public static string GetPreCalculatedHash(XElement node)
         {
+            /*
             XElement hashNode = node.Element("Hash");
             if ( hashNode == null )
                 return "" ;
 
-            return hashNode.Value ; 
+            return hashNode.Value ;
+             */
+
+            // no longer useing the pre-calculated hash, we calculate it every time
+            return CalculateMD5Hash(node);
         }
 
+        public static string CalculateDictionaryHash(XElement node)
+        {
+            XElement copy = new XElement(node);
+
+            StripDictionaryIds(copy);
+            return CalculateMD5Hash(copy);
+        }
+
+        private static void StripDictionaryIds(XElement node)
+        {
+            foreach (var val in node.Elements("Value"))
+            {
+                val.SetAttributeValue("LanguageId", "");
+            }
+
+            if (node.Element("DictionaryItem") != null)
+            {
+                StripDictionaryIds(node.Element("DictionaryItem"));
+            }
+        }
 
 
        

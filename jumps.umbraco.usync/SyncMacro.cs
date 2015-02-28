@@ -42,7 +42,7 @@ namespace jumps.umbraco.usync
                     var packagingService = ApplicationContext.Current.Services.PackagingService;
 
                     XElement node = packagingService.Export(item);
-                    node.AddMD5Hash();
+                    // node.AddMD5Hash();
 
                     XmlDoc.SaveElement("Macro", XmlDoc.ScrubFile(item.Alias), node);
                 }
