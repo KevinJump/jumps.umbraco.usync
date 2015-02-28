@@ -58,7 +58,7 @@ namespace jumps.umbraco.usync
                 try
                 {
                     XElement element = item.ExportToXml();
-                    element.AddMD5Hash();
+                    // element.AddMD5Hash();
                     XmlDoc.SaveElement("DocumentType", item.GetSyncPath(), "def", element);
                 }
                 catch (Exception e) 
@@ -146,44 +146,94 @@ namespace jumps.umbraco.usync
         /// <param name="path"></param>
         private static void ReadFromDisk(string path) 
         {
-            if (Directory.Exists(path))
+            var docTypes = GetImportDocTypes(path, new Dictionary<string,XElement>());
+
+            // here we need to sort - 
+            // this is very similar to the import routine, but
+            // because we only want to import new things, we need to ensure
+            // that the order of the things we are importing is maintained.
+            // (we might not be importing something that is a dependency - because
+            // it's already there)
+            var fields = new List<TopologicalSorter.DependencyField<XElement>>();
+            foreach(var item in docTypes)
             {
-                // get all the xml files in this folder 
-                // we are sort of assuming they are doctype ones.
-                foreach (string file in Directory.GetFiles(path, "*.config"))
-                {                    
-                    XElement node = XElement.Load(file) ;                                                    
-                    if (node != null ) 
+                LogHelper.Debug<SyncDocType>("Sorting DocType order: {0}", () => item.Key);
+
+                var dependencies = new List<string>();
+                var doctype = item.Value;
+
+                if ( doctype.Element("Master") != null && 
+                    string.IsNullOrEmpty(doctype.Element("Master").Value) == false)
+                {
+                    var master = doctype.Element("Master").Value;
+                    LogHelper.Debug<SyncDocType>("{0}: Checking Dependency {1}", () => item.Key, () => master);
+                    if (docTypes.ContainsKey(master))
                     {
-                        // LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
-                        _readCount++; 
+                        LogHelper.Debug<SyncDocType>("{0}: Adding Dependency {1}", () => item.Key, () => master);
+                        dependencies.Add(master);
+                    }
+                    else if (!DocTypeExists(master))
+                    {
+                        LogHelper.Info<SyncDocType>("{0} : Cannot find the master type {1}, either in the import or the site",
+                            ()=> doctype.Element("Info").Element("Alias").Value, () => master);
+                    }
 
-                        if (Tracker.ContentTypeChanged(node))
-                        {
-                            LogHelper.Info<SyncDocType>("updating DocType {0}", ()=> node.Element("Info").Element("Alias").Value);
-                            node.ImportContentType();
+                }
 
-                            if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
-                            {
-                                updated.Add(node.Element("Info").Element("Alias").Value, node);
-                            }
-                            else
-                            {
-                                LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder");
-                            }
-                        }
-                        else
+                // composistion types..
+                var compElement = doctype.Element("Info").Element("Compositions");
+                if ( compElement != null && compElement.HasElements)
+                {
+                    var composistions = compElement.Elements("Composition");
+                    if ( composistions.Any() )
+                    {
+                        foreach(var comp in composistions)
                         {
-                            LogHelper.Debug<SyncDocType>("Skipping update (Matching Hash Values)");
+                            LogHelper.Debug<SyncDocType>("{0}: Checking Dependency {1}", () => item.Key, () => comp.Value);
+                            if (docTypes.ContainsKey(comp.Value))
+                            {
+                                LogHelper.Debug<SyncDocType>("{0}: Adding Dependency {1}", () => item.Key, () => comp.Value);
+                                dependencies.Add(comp.Value);
+                            }
+                            else if (!DocTypeExists(comp.Value))
+                            {
+                                LogHelper.Warn<SyncDocType>("{0} : Cannot find one of the composite types {1} either in the import or the site, this import will likely fail",
+                                    ()=> doctype.Element("Info").Element("Alias").Value, () => comp.Value);
+                                // again we should check. 
+                            }
                         }
                     }
                 }
-            
-                // now see if there are any folders we should pop into
-                foreach (string folder in Directory.GetDirectories(path))
+
+                var field = new TopologicalSorter.DependencyField<XElement>
                 {
-                    ReadFromDisk(folder);
-                }                
+                    Alias = doctype.Element("Info").Element("Alias").Value,
+                    Item = new Lazy<XElement>(() => doctype),
+                    DependsOn = dependencies.ToArray()
+                };
+
+                fields.Add(field);
+            }
+
+            LogHelper.Debug<SyncDocType>("Processing {0} sorted doctypes", () => fields.Count());
+
+            // now go through the doctypes - in their sorted order...
+            foreach(var node in TopologicalSorter.GetSortedItems(fields).ToList())
+            {
+                LogHelper.Info<SyncDocType>("Updating DocType {0}", () => node.Element("Info").Element("Alias").Value);
+                
+                if (node.ImportContentType() != null)
+                {
+                    if (!updated.ContainsKey(node.Element("Info").Element("Alias").Value))
+                    {
+                        updated.Add(node.Element("Info").Element("Alias").Value, node);
+                    }
+                    else
+                    {
+                        LogHelper.Info<SyncDocType>("WARNING: Multiple DocTypes detected - check your uSync folder");
+                    }
+                }
+                
             }
         }
 
@@ -192,7 +242,7 @@ namespace jumps.umbraco.usync
             foreach (KeyValuePair<string, XElement> update in updated)
             {
                 XElement node = update.Value;
-                LogHelper.Debug<uSync>("Second pass {0}", () => update.Value);
+                LogHelper.Debug<uSync>("Second pass [{0}]", () => update.Key);
 
                 if (node != null)
                 {
@@ -201,31 +251,82 @@ namespace jumps.umbraco.usync
 
                     if (docType != null)
                     {
-                        LogHelper.Debug<uSync>("Container Type", () => update.Value);
+                        LogHelper.Debug<uSync>("{0} : Container Type", () => update.Key);
 
                         // is it a container (in v6 api but only really a v7 thing)
                         docType.ImportContainerType(node);
 
-                        LogHelper.Debug<uSync>("Structure", () => update.Value);
+                        LogHelper.Debug<uSync>("{0} : Structure", () => update.Key);
                         // import structure
                         docType.ImportStructure(node);
 
 
-                        LogHelper.Debug<uSync>("Missing Property Removal", () => update.Value);
+                        LogHelper.Debug<uSync>("{0} : Missing Property Removal", () => update.Key);
                         // delete things that are not in our source xml?
                         docType.ImportRemoveMissingProps(node);
 
-                        LogHelper.Debug<uSync>("Sort order", () => update.Value);
+                        LogHelper.Debug<uSync>("{0} : Sort order", () => update.Key);
                         // fix tab order 
                         docType.ImportTabSortOrder(node);
 
-                        LogHelper.Debug<uSync>("Save", () => update.Value);
+                        LogHelper.Debug<uSync>("{0} : Save", () => update.Key);
                         _contentTypeService.Save(docType);
                     }
                 }
             }
         }
 
+        /// <summary>
+        ///  we have to make sure we import things in the right order - so we load all the 
+        ///  doc types in, - default is folder order, but if something is a composite of another thing
+        ///  then we have to install that before. 
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private static Dictionary<string, XElement> GetImportDocTypes(string path, Dictionary<string, XElement> docTypes)
+        {
+            if ( Directory.Exists(path))
+            {
+                foreach (string file in Directory.GetFiles(path, "*.config"))
+                {
+                    XElement node = XElement.Load(file);
+                    if (node != null)
+                    {
+                        // LogHelper.Info<SyncDocType>("Reading file {0}", () => node.Element("Info").Element("Alias").Value);
+                        _readCount++;
+
+                        if (Tracker.ContentTypeChanged(node))
+                        {
+                            // this one will be added or updated. 
+                            var name = node.Element("Info").Element("Alias").Value;
+
+                            LogHelper.Debug<SyncDocType>("Adding {0} to process list", () => name);
+
+                            if (!docTypes.ContainsKey(name))
+                            {
+                                docTypes.Add(name, node);
+                            }
+                            else
+                            {
+                                LogHelper.Warn<SyncDocType>("Found a duplicated doctype in folder {0}, check your uSync folder for duplicate types", () => name);
+                            }
+                        }
+                    }
+                }
+
+                // now see if there are any folders we should pop into
+                foreach (string folder in Directory.GetDirectories(path))
+                {
+                    docTypes = GetImportDocTypes(folder, docTypes);
+                }                
+            }
+            return docTypes;
+        }
+
+        private static bool DocTypeExists(string alias)
+        {
+            return (_contentTypeService.GetContentType(alias) != null);
+        }
 
         /// <summary>
         /// attach events, adds the event handlers for this class 

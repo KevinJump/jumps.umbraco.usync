@@ -91,8 +91,16 @@ namespace jumps.umbraco.usync.Extensions
         public static IEnumerable<IContentType> ImportContentType(this XElement node)
         {
             XElement idElement = node.Element("Info").Element("Id");
-            IEnumerable<IContentType> imported = _packageService.ImportContentTypes(node, false, raiseEvents: false);
-            return imported;
+            try
+            {
+                IEnumerable<IContentType> imported = _packageService.ImportContentTypes(node, false, raiseEvents: false);
+                return imported;
+            }
+            catch(Exception ex)
+            {
+                LogHelper.Error<SyncDocType>( string.Format("Failed to import {0}", node.Element("Info").Element("Alias").Value), ex);
+                return null;
+            }
 
         }
 
