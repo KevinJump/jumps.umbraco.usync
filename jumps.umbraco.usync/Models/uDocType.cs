@@ -16,6 +16,8 @@ namespace jumps.umbraco.usync.Models
     {
         public static XElement SyncExport(this DocumentType item)
         {
+            LogHelper.Debug<SyncDocType>("export: {0}", ()=> item.Alias);
+
             XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
             xmlDoc.AppendChild(item.ToXml(xmlDoc));
 
@@ -28,6 +30,7 @@ namespace jumps.umbraco.usync.Models
 
         internal static XElement FixProperies(global::umbraco.cms.businesslogic.ContentType item, XElement node)
         {
+            LogHelper.Debug<SyncDocType>("export: fixing doctypes");
             var props = node.Element("GenericProperties");
             if (props == null)
                 return node;
@@ -36,6 +39,8 @@ namespace jumps.umbraco.usync.Models
 
             foreach (var property in item.PropertyTypes.OrderBy(x => x.Name))
             {
+                LogHelper.Debug<SyncDocType>("Adding property: {0}", () => property.Name);
+
                 XElement prop = new XElement("GenericProperty");
 
                 if ( property.Name != null )
@@ -75,6 +80,8 @@ namespace jumps.umbraco.usync.Models
         
         internal static XElement GetTabSortOrder(global::umbraco.cms.businesslogic.ContentType item, XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Export: Fixing the sort order of tabs");
+
             var tabNode = node.Element("Tabs");
 
             if ( tabNode != null )
@@ -83,6 +90,8 @@ namespace jumps.umbraco.usync.Models
             }
             foreach(var tab in item.PropertyTypeGroups.OrderBy(x => x.SortOrder))
             {
+                LogHelper.Debug<SyncDocType>("Adding tab: {0}", () => tab.Name);
+                
                 var t = new XElement("Tab");
                 t.Add(new XElement("Id", tab.Id));
                 t.Add(new XElement("Caption", tab.Name));
@@ -105,6 +114,7 @@ namespace jumps.umbraco.usync.Models
 
             try
             {
+                LogHelper.Info<SyncDocType>("Import: Calling package service to import");
                 ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
             }
             catch (Exception ex)
@@ -118,6 +128,8 @@ namespace jumps.umbraco.usync.Models
 
         public static ChangeItem SyncImportFitAndFix(IContentType item, XElement node, bool postCheck = true)
         {
+            LogHelper.Info<SyncDocType>("Import: Performing fit and fix on doctype: {0}", () => item.Name);
+
             var change = new ChangeItem
             {
                 itemType = ItemType.DocumentType,
@@ -138,14 +150,17 @@ namespace jumps.umbraco.usync.Models
                 ImportTemplates(item, node);
 
                 RemoveMissingProperties(item, node);
+                LogHelper.Debug<SyncDocType>("Saving changes so far: (After Remove Missing Properties): {0}", () => item.Name);
                 ApplicationContext.Current.Services.ContentTypeService.Save(item);
                 
                 // tab sort order
                 TabSortOrder(item, node);
+                LogHelper.Debug<SyncDocType>("Saving changes so far: (After Tab Sort Order): {0}", () => item.Name);
                 ApplicationContext.Current.Services.ContentTypeService.Save(item);
 
                 UpdateExistingProperties(item, node);
 
+                LogHelper.Debug<SyncDocType>("Saving changes so far: (After Update Existing Properties): {0}", () => item.Name);
                 ApplicationContext.Current.Services.ContentTypeService.Save(item);
 
                 if ( postCheck && tracker.DocTypeChanged(node) )
@@ -159,6 +174,8 @@ namespace jumps.umbraco.usync.Models
 
         internal static void ImportStructure(IContentTypeBase item, XElement node, string structureType = "DocumentType")
         {
+            LogHelper.Debug<SyncDocType>("Importing Structure: {0}", () => item.Name);
+
             XElement structure = node.Element("Structure");
 
             List<ContentTypeSort> allowed = new List<ContentTypeSort>();
@@ -179,6 +196,7 @@ namespace jumps.umbraco.usync.Models
 
                 if (aliasDoc != null)
                 {
+                    LogHelper.Debug<SyncDocType>("Adding Allowed Type: {0}", () => aliasDoc.Name);
                     allowed.Add(new ContentTypeSort(new Lazy<int>(() => aliasDoc.Id), sortOrder, aliasDoc.Name));
                     sortOrder++;
                 }
@@ -188,6 +206,8 @@ namespace jumps.umbraco.usync.Models
 
         internal static void ImportTemplates(IContentType item, XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Importing Allowed Templates");
+
             XElement templates = node.Element("Info").Element("AllowedTemplates");
 
             if (templates == null)
@@ -202,7 +222,10 @@ namespace jumps.umbraco.usync.Models
                 {
                     var itemplate = ApplicationContext.Current.Services.FileService.GetTemplate(template.Value);
                     if (itemplate != null)
+                    {
+                        LogHelper.Debug<SyncDocType>("Adding Template to allowed list: {0}", () => itemplate.Alias);
                         allowedTemplates.Add(itemplate);
+                    }
                 }
             }
 
@@ -211,6 +234,8 @@ namespace jumps.umbraco.usync.Models
 
         internal static void TabSortOrder(IContentTypeBase docType, XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Import: Fixing tab sort order");
+
             XElement tabs = node.Element("Tabs");
 
             if (tabs == null)
@@ -223,6 +248,7 @@ namespace jumps.umbraco.usync.Models
                 if (tab.Element("SortOrder") != null)
                 {
                     var sortOrder = tab.Element("SortOrder").Value;
+                    LogHelper.Debug<SyncDocType>("Setting sort order: {0} to {1}", () => caption, () => sortOrder);
                     docType.PropertyGroups[caption].SortOrder = int.Parse(sortOrder);
                 }
             }
@@ -241,13 +267,15 @@ namespace jumps.umbraco.usync.Models
 
             foreach(var tab in tabsToRemove)
             {
+                LogHelper.Info<SyncDocType>("Removing Tab {0}", () => tab);
                 docType.RemovePropertyGroup(tab);
-                LogHelper.Info<SyncDocType>("Will we remove this tab? {0}", () => tab);
             }
         }
 
         internal static void RemoveMissingProperties(IContentTypeBase docType, XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Removing missing properties from doctype: {0}", () => docType.Alias);
+
             if (!uSyncSettings.docTypeSettings.DeletePropertyValues)
             {
                 LogHelper.Debug<SyncDocType>("DeletePropertyValue = false - exiting");
@@ -282,6 +310,8 @@ namespace jumps.umbraco.usync.Models
 
         internal static void UpdateExistingProperties(IContentTypeBase docType, XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Updating existing properties in doctype: {0}", () => docType.Alias);
+
             Dictionary<string, string> tabMoves = new Dictionary<string, string>();
 
             foreach (var property in docType.PropertyTypes)
@@ -292,6 +322,8 @@ namespace jumps.umbraco.usync.Models
                                         .SingleOrDefault();
                 if (propNode != null)
                 {
+                    LogHelper.Debug<SyncDocType>("Updating values in property: {0}", ()=> property.Alias);
+
                     if (propNode.Element("Name") != null)
                         property.Name = propNode.Element("Name").Value;
 
@@ -316,6 +348,7 @@ namespace jumps.umbraco.usync.Models
                     var dtd = ApplicationContext.Current.Services.DataTypeService.GetDataTypeDefinitionById(defId);
                     if (dtd != null && property.DataTypeDefinitionId != dtd.Id)
                     {
+                        LogHelper.Debug<SyncDocType>("Property type change {0}", () => dtd.Id);
                         property.DataTypeDefinitionId = dtd.Id;
                     }
 
@@ -343,12 +376,14 @@ namespace jumps.umbraco.usync.Models
             // chaning the collection. 
             foreach (var move in tabMoves)
             {
+                LogHelper.Debug<SyncDocType>("Moving Property between tabs: {0}", ()=> move.Key, () => move.Value);
                 docType.MovePropertyType(move.Key, move.Value);
             }
         }
 
         internal static ChangeItem Delete(string path, bool reportOnly = false)
         {
+            LogHelper.Debug<SyncDocType>("Deleting {0}", () => path);
             var name = System.IO.Path.GetFileName(path);
 
             var change = ChangeItem.DeleteStub(name, ItemType.DocumentType);
@@ -357,6 +392,7 @@ namespace jumps.umbraco.usync.Models
             {
                 if ( !reportOnly)
                 {
+                    LogHelper.Debug<SyncDocType>("Removing from Umbraco: {0}", () => item.Alias);
                     item.delete();
                     item.Save();
                     change.changeType = ChangeType.Delete;

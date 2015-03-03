@@ -57,14 +57,14 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
-            foreach (var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.MediaType))
+            foreach (var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.MediaType, _settings.Folder))
             {
                 AddChange(
                     uMediaType.Rename(rename.Key, rename.Value, _settings.ReportOnly)
                 );
             }
 
-            foreach (var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.MediaType))
+            foreach (var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.MediaType, _settings.Folder))
             {
                 AddChange(
                     uMediaType.Delete(delete.Value, _settings.ReportOnly)
@@ -135,7 +135,7 @@ namespace jumps.umbraco.usync
 
             XElement node = XElement.Load(filePath);
 
-            var change = uMediaType.SyncImportFitAndFix(node);
+            var change = uMediaType.SyncImportFitAndFix(node, _settings.Restore);
 
             if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
             {
@@ -148,8 +148,11 @@ namespace jumps.umbraco.usync
         }
 
 
-        protected override string Backup(XElement node)
+        protected override string Backup(XElement node, string filePath = null)
         {
+            if (_settings.Restore)
+                return null;
+
             if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
 
@@ -228,7 +231,7 @@ namespace jumps.umbraco.usync
                         var newPath = syncMedia.GetMediaPath(mt);
 
                         uSyncNameManager.SaveRename(Constants.ObjectTypes.MediaType,
-                            uSyncNameCache.MediaTypes[mt.Id], newPath);
+                            uSyncNameCache.MediaTypes[mt.Id], newPath, uSyncSettings.Folder);
 
                         XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.MediaTypes[mt.Id], "def", Constants.ObjectTypes.MediaType), true);
 
@@ -248,7 +251,7 @@ namespace jumps.umbraco.usync
 
                     }
 
-                    uSyncNameCache.UpdateCache(mt);
+                    uSyncNameCache.UpdateCache(mt, uSyncSettings.Folder);
 
                     syncMedia.ExportToDisk(mt, _eventFolder);
 
@@ -264,6 +267,7 @@ namespace jumps.umbraco.usync
                 if (e.DeletedEntities.Count() > 0)
                 {
                     var syncMedia = new SyncMediaTypes();
+                    // TODO: capture media type delete
 
                     foreach (var mediaType in e.DeletedEntities)
                     {

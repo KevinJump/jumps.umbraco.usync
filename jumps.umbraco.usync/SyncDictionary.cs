@@ -106,7 +106,7 @@ namespace jumps.umbraco.usync
         
         }
 
-        protected override string Backup(XElement node) 
+        protected override string Backup(XElement node, string filePath = null) 
         {
             if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {

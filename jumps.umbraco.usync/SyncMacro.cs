@@ -73,13 +73,13 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
-            var renames = uSyncNameManager.GetRenames(Constants.ObjectTypes.Macro);
+            var renames = uSyncNameManager.GetRenames(Constants.ObjectTypes.Macro, _settings.Folder);
             foreach (var rename in renames)
             {
                 AddChange(uMacro.Rename(rename.Key, rename.Value, _settings.ReportOnly));
             }
 
-            var deletes = uSyncNameManager.GetDeletes(Constants.ObjectTypes.Macro);
+            var deletes = uSyncNameManager.GetDeletes(Constants.ObjectTypes.Macro, _settings.Folder);
             foreach (var delete in deletes)
             {
                 AddChange(uMacro.Delete(delete.Value, _settings.ReportOnly));
@@ -105,7 +105,7 @@ namespace jumps.umbraco.usync
                 {
                     var backup = Backup(node);
 
-                    ChangeItem change = uMacro.SyncImport(node);
+                    ChangeItem change = uMacro.SyncImport(node, !_settings.Restore);
 
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
@@ -131,8 +131,11 @@ namespace jumps.umbraco.usync
                 AddNoChange(ItemType.Macro, filePath);
         }
 
-        protected override string Backup(XElement node)
+        protected override string Backup(XElement node, string filePath = null)
         {
+            if (_settings.Restore)
+                return null;
+
             if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
 
@@ -191,7 +194,7 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
-                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Macro, sender.Name);
+                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Macro, sender.Name, uSyncSettings.Folder, null);
                 XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Alias, Constants.ObjectTypes.Macro), true);
                 e.Cancel = false;
             }
@@ -233,13 +236,13 @@ namespace jumps.umbraco.usync
             if (uSyncNameCache.IsRenamed(sender))
             {
                 uSyncNameManager.SaveRename(Constants.ObjectTypes.Macro,
-                    uSyncNameCache.Macros[sender.Id], sender.Alias);
+                    uSyncNameCache.Macros[sender.Id], sender.Alias, uSyncSettings.Folder);
 
                 // delete old one
                 XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Macros[sender.Id], Constants.ObjectTypes.Macro), true);
             }
 
-            uSyncNameCache.UpdateCache(sender);
+            uSyncNameCache.UpdateCache(sender, uSyncSettings.Folder);
 
             SyncMacro m = new SyncMacro();
             m.ExportToDisk(sender, _eventFolder);

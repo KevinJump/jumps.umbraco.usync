@@ -105,6 +105,8 @@ namespace jumps.umbraco.usync.Models
 
         public static ChangeItem SyncDelete(string def, bool reportOnly = false)
         {
+            LogHelper.Debug<SyncDataType>("SyncDelete({0}, {1})", () => def, ()=> reportOnly);
+
             var change = ChangeItem.DeleteStub(def, ItemType.DataType);
 
             if (CMSNode.IsNode(new Guid(def)))

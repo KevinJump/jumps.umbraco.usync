@@ -29,6 +29,7 @@ namespace jumps.umbraco.usync
 
         public override void ExportAll()
         {
+            LogHelper.Debug<SyncDataType>("Exporting All Datatypes to disk ({0})", ()=> _settings.Folder);
             try
             {
                 foreach(DataTypeDefinition item in DataTypeDefinition.GetAll())
@@ -46,11 +47,14 @@ namespace jumps.umbraco.usync
 
         public override void ExportToDisk(DataTypeDefinition item, string folder = null)
         {
+
             if (item == null)
                 throw new ArgumentNullException("item");
 
             if (string.IsNullOrEmpty(folder))
                 folder = _settings.Folder;
+
+            LogHelper.Debug<SyncDataType>("ExportToDisk: {0}", () => item.Text, () => folder);
 
             XElement node = item.SyncExport();
             if (node != null)
@@ -81,8 +85,10 @@ namespace jumps.umbraco.usync
             //{
             //   LogHelper.Info<SyncDataType>("Rename: {0} to {1}", () => rename.Key, ()=> rename.Value);
             //}
-            
-            var deletes = uSyncNameManager.GetDeletes(Constants.ObjectTypes.DataType);
+
+            LogHelper.Debug<SyncDataType>("Import All");
+
+            var deletes = uSyncNameManager.GetDeletes(Constants.ObjectTypes.DataType, _settings.Folder);
             foreach(var delete in deletes)
             {
                 AddChange(uDataTypeDefinition.SyncDelete(delete.Value, _settings.ReportOnly));
@@ -144,8 +150,11 @@ namespace jumps.umbraco.usync
             }
         }
 
-        protected override string Backup(XElement node)
+        protected override string Backup(XElement node, string filePath = null)
         {
+            if (_settings.Restore)
+                return null;
+
             if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
 
@@ -162,6 +171,12 @@ namespace jumps.umbraco.usync
                         var dtd = DataTypeDefinition.GetDataTypeDefinition(_def);
                         ExportToDisk(dtd, _settings.BackupPath);
                         return XmlDoc.GetSavePath(_settings.BackupPath, dtd.Text, Constants.ObjectTypes.DataType);
+                    }
+                    else
+                    {
+                        var rootPath = IOHelper.MapPath(_settings.Folder + Constants.ObjectTypes.DataType);
+                        var savePath = Path.GetDirectoryName(filePath).Remove(0, rootPath.Length);
+                        uSyncNameManager.SaveDelete(Constants.ObjectTypes.DataType, savePath, _settings.BackupPath, null);
                     }
                 }
             }
@@ -240,7 +255,7 @@ namespace jumps.umbraco.usync
                             XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.DataTypes[dt.Id], Constants.ObjectTypes.DataType), true);
                         }
 
-                        uSyncNameCache.UpdateCache(dt);
+                        uSyncNameCache.UpdateCache(dt, uSyncSettings.Folder);
 
                         syncDataType.ExportToDisk(dt, _eventFolder);
                     }
@@ -277,7 +292,7 @@ namespace jumps.umbraco.usync
             {
                 if (typeof(DataTypeDefinition) == sender.GetType())
                 {
-                    uSyncNameManager.SaveDelete(Constants.ObjectTypes.DataType, sender.Text,sender.UniqueId.ToString());
+                    uSyncNameManager.SaveDelete(Constants.ObjectTypes.DataType, sender.Text, uSyncSettings.Folder, sender.UniqueId.ToString());
                     XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.DataType), true);
                 }
 

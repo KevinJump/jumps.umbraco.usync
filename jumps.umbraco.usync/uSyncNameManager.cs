@@ -17,11 +17,11 @@ namespace jumps.umbraco.usync
     {
         static object _fileLock = new object();
 
-        public static void SaveRename(string type, string oldName, string newName)
+        public static void SaveRename(string type, string oldName, string newName, string folder)
         {
             lock (_fileLock)
             {
-                var node = LoadNameFile();
+                var node = LoadNameFile(folder);
 
                 var renameNode = GetNamedNode(node, "Rename", type, oldName, true);
                 if (renameNode != null)
@@ -29,15 +29,15 @@ namespace jumps.umbraco.usync
                     renameNode.Value = newName;
                 }
 
-                SaveNameFile(node);
+                SaveNameFile(node, folder);
             }
         }
 
-        public static void SaveDelete(string type, string name, string id = null)
+        public static void SaveDelete(string type, string name, string folder, string id)
         {
             lock (_fileLock)
             {
-                var node = LoadNameFile();
+                var node = LoadNameFile(folder);
                 var delNode = GetNamedNode(node, "Delete", type, name, true);
                 if (delNode != null)
                 {
@@ -46,16 +46,16 @@ namespace jumps.umbraco.usync
                     delNode.Value = id;
                 }
 
-                SaveNameFile(node);
+                SaveNameFile(node, folder);
             }
         }
 
-        public static void CleanFileOps(string type, string name)
+        public static void CleanFileOps(string type, string name, string folder)
         {
             lock (_fileLock)
             {
                 bool change = false;
-                var node = LoadNameFile();
+                var node = LoadNameFile(folder);
                 var delNode = GetNamedNode(node, "Delete", type, name, false);
 
                 if (delNode != null)
@@ -73,25 +73,25 @@ namespace jumps.umbraco.usync
                 }
 
                 if (change)
-                    SaveNameFile(node);
+                    SaveNameFile(node, folder);
 
             }
         }
 
-        public static Dictionary<string, string> GetRenames(string type)
+        public static Dictionary<string, string> GetRenames(string type, string folder)
         {
-            return GetFileOperation(type, "Rename");
+            return GetFileOperation(type, "Rename", folder);
         }
 
-        public static Dictionary<string, string> GetDeletes(string type)
+        public static Dictionary<string, string> GetDeletes(string type, string folder)
         {
-            return GetFileOperation(type, "Delete");
+            return GetFileOperation(type, "Delete", folder);
         }
 
-        private static Dictionary<string, string> GetFileOperation(string type, string operation)
+        private static Dictionary<string, string> GetFileOperation(string type, string operation, string folder)
         {
             Dictionary<string, string> ops = new Dictionary<string, string>();
-            var node = LoadNameFile();
+            var node = LoadNameFile(folder);
 
             var rNode = node.Element(operation);
             if (rNode != null)
@@ -109,9 +109,12 @@ namespace jumps.umbraco.usync
             return ops;
         }
 
-        private static XElement LoadNameFile()
+        private static XElement LoadNameFile(string folder/* = null */)
         {
-            string nameFile = IOHelper.MapPath( string.Format("{0}\\fileops.config", uSyncSettings.Folder));
+            if (folder == null)
+                folder = uSyncSettings.Folder;
+
+            string nameFile = IOHelper.MapPath( string.Format("{0}\\fileops.config", folder));
             XElement node = new XElement("uSync");
             if ( File.Exists(nameFile) )
                 node = XElement.Load(nameFile);
@@ -161,9 +164,12 @@ namespace jumps.umbraco.usync
             return nameNode;
         }
 
-        private static void SaveNameFile(XElement node)
+        private static void SaveNameFile(XElement node, string folder)
         {
-            string renameFile = IOHelper.MapPath( string.Format("{0}\\fileops.config", uSyncSettings.Folder));
+            if (folder == null)
+                folder = uSyncSettings.Folder;  
+
+            string renameFile = IOHelper.MapPath( string.Format("{0}\\fileops.config", folder));
 
             if ( !Directory.Exists( Path.GetDirectoryName(renameFile)))
                 Directory.CreateDirectory(Path.GetDirectoryName(renameFile));

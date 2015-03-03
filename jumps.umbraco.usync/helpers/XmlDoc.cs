@@ -56,6 +56,8 @@ namespace jumps.umbraco.usync.helpers
 
         public static void SaveNode(string filePath,XElement node)
         {
+            LogHelper.Debug<XmlDoc>("Saving Node to Disk {0}", ()=> filePath);
+
             OnPreSave(new XmlDocFileEventArgs(filePath));
 
             if (File.Exists(filePath))
@@ -70,6 +72,7 @@ namespace jumps.umbraco.usync.helpers
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath));
 
             node.Save(filePath);
+            LogHelper.Debug<XmlDoc>("Saved Node to Disk");
 
             OnSaved(new XmlDocFileEventArgs(filePath));
         }
@@ -222,11 +225,13 @@ namespace jumps.umbraco.usync.helpers
             /* going to phase this out - naming is saving/saved) */
             if (preSave != null)
             {
+                LogHelper.Debug<XmlDoc>("Firing on preSave EventHander : {0}", () => e.Path);
                 preSave(e);
             }
 
             if (Saving != null)
             {
+                LogHelper.Debug<XmlDoc>("Firing on Saveing EventHander : {0}", () => e.Path);
                 Saving(e);
             }
         }
@@ -235,6 +240,7 @@ namespace jumps.umbraco.usync.helpers
         {
             if (Saved != null)
             {
+                LogHelper.Debug<XmlDoc>("Firing on Saved EventHander : {0}", () => e.Path);
                 Saved(e);
             }
             SyncFileWatcher.Start();
@@ -246,11 +252,13 @@ namespace jumps.umbraco.usync.helpers
             SyncFileWatcher.Pause();
             if (preDelete != null)
             {
+                LogHelper.Debug<XmlDoc>("Firing on preDelete EventHander : {0}", () => e.Path);
                 preDelete(e);
             }
 
             if (Deleting != null)
             {
+                LogHelper.Debug<XmlDoc>("Firing on Deleting EventHander : {0}", () => e.Path);
                 Deleting(e);
             }
         }
@@ -259,6 +267,7 @@ namespace jumps.umbraco.usync.helpers
         {
             if (Deleted != null)
             {
+                LogHelper.Debug<XmlDoc>("Firing on Deleted EventHander : {0}", () => e.Path);
                 Deleted(e);
             }
             SyncFileWatcher.Start();

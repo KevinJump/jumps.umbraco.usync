@@ -96,7 +96,7 @@ namespace jumps.umbraco.usync
             }
         }
 
-        protected abstract string Backup(XElement node);
+        protected abstract string Backup(XElement node, string filePath = null);
         protected abstract void Restore(string backup);
         #endregion 
 

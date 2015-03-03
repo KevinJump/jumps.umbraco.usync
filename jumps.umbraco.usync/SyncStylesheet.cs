@@ -72,14 +72,14 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
-            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Stylesheet))
+            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Stylesheet, _settings.Folder))
             {
                 AddChange(
                    uStylesheet.Rename(rename.Key, rename.Value, _settings.ReportOnly)
                 );
             }
 
-            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Stylesheet))
+            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Stylesheet, _settings.Folder))
             {
                 AddChange(
                     uStylesheet.Delete(delete.Value, _settings.ReportOnly)
@@ -106,7 +106,7 @@ namespace jumps.umbraco.usync
                 {
                     var backup = Backup(node);
 
-                    ChangeItem change = uStylesheet.SyncImport(node);
+                    ChangeItem change = uStylesheet.SyncImport(node, !_settings.Restore);
 
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
@@ -133,8 +133,11 @@ namespace jumps.umbraco.usync
                 AddNoChange(ItemType.Stylesheet, filePath);
         }
 
-        protected override string Backup(XElement node)
+        protected override string Backup(XElement node, string filePath = null)
         {
+            if (_settings.Restore)
+                return null;
+
             if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
                 var name = node.Element("Name").Value;
@@ -189,7 +192,7 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
-                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Stylesheet, sender.Text);
+                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Stylesheet, sender.Text, uSyncSettings.Folder, null);
                 uSyncNameCache.Stylesheets.Remove(sender.Id);
 
                 XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.Text, Constants.ObjectTypes.Stylesheet), true);
@@ -204,12 +207,12 @@ namespace jumps.umbraco.usync
             {
                 if (uSyncNameCache.IsRenamed(sender))
                 {
-                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Stylesheet, uSyncNameCache.Stylesheets[sender.Id], sender.Text);
+                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Stylesheet, uSyncNameCache.Stylesheets[sender.Id], sender.Text, uSyncSettings.Folder);
 
                     XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Stylesheets[sender.Id], Constants.ObjectTypes.Stylesheet), true);
                 }
 
-                uSyncNameCache.UpdateCache(sender);
+                uSyncNameCache.UpdateCache(sender, uSyncSettings.Folder);
 
                 var styleSync = new SyncStylesheet();
                 styleSync.ExportToDisk(sender, _eventFolder);

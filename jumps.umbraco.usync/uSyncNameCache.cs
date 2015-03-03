@@ -102,66 +102,66 @@ namespace jumps.umbraco.usync
         }
 
 
-        internal static void UpdateCache(DataTypeDefinition dt, bool clean = true)
+        internal static void UpdateCache(DataTypeDefinition dt, string folder, bool clean = true )
         {
             UpdateCache(DataTypes, dt.Id, dt.Text);
 
             if (clean)
-                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.DataType, dt.Text);
+                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.DataType, dt.Text, folder);
         }
 
-        internal static void UpdateCache(Macro macro, bool clean = true)
+        internal static void UpdateCache(Macro macro, string folder, bool clean = true )
         {
             UpdateCache(Macros, macro.Id, macro.Alias);
 
             if (clean)
-                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.Macro, macro.Alias);
+                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.Macro, macro.Alias, folder);
         }
 
-        internal static void UpdateCache(StyleSheet stylesheet, bool clean = true)
+        internal static void UpdateCache(StyleSheet stylesheet, string folder, bool clean = true)
         {
             UpdateCache(Stylesheets, stylesheet.Id, stylesheet.Text);
 
             if (clean)
-                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.Stylesheet, stylesheet.Text);
+                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.Stylesheet, stylesheet.Text, folder);
         }
 
-        internal static void UpdateCache(Template template, bool clean = true)
+        internal static void UpdateCache(Template template, string folder, bool clean = true)
         {
             var tSync = new SyncTemplate();
             var path = tSync.GetDocPath(template);
             UpdateCache(Templates, template.Id, path);
 
             if (clean)
-                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.Template, template.Text);
+                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.Template, template.Text, folder);
         }
 
-        internal static void UpdateCache(Language language, bool clean = true)
+        internal static void UpdateCache(Language language, string folder, bool clean = true )
         {
             UpdateCache(Languages, language.id, language.CultureAlias);
 
             if (clean)
-                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.Language, language.CultureAlias);
+                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.Language, language.CultureAlias, folder);
         }
 
-        internal static void UpdateCache(DocumentType item, bool clean = true)
+        internal static void UpdateCache(DocumentType item, string folder, bool clean = true)
         {
             var dSync = new SyncDocType();
             var path = dSync.GetDocPath(item);
             UpdateCache(DocumentTypes, item.Id, path);
 
             if (clean)
-                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.DocType, path);
+                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.DocType, path, folder);
         }
 
-        internal static void UpdateCache(MediaType item, bool clean = true)
+        internal static void UpdateCache(MediaType item, string folder, bool clean = true)
         {
             var mSync = new SyncMediaTypes();
             var path = mSync.GetMediaPath(item);
             UpdateCache(MediaTypes, item.Id, path);
 
             if (clean)
-                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.MediaType, path);
+                uSyncNameManager.CleanFileOps(Constants.ObjectTypes.MediaType, path, folder);
         }
 
         private static void UpdateCache(Dictionary<int, string> cache, int key, string name)

@@ -48,12 +48,12 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
-            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Language))
+            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Language, _settings.Folder))
             {
                 AddChange(uLanguage.Rename(rename.Key, rename.Value, _settings.ReportOnly));
             }
 
-            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Language))
+            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Language, _settings.Folder))
             {
                 AddChange(uLanguage.Delete(delete.Value, _settings.ReportOnly));
             }
@@ -80,7 +80,7 @@ namespace jumps.umbraco.usync
 
                     var backup = Backup(node);
 
-                    ChangeItem change = uLanguage.SyncImport(node);
+                    ChangeItem change = uLanguage.SyncImport(node, !_settings.Restore);
 
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
@@ -106,8 +106,11 @@ namespace jumps.umbraco.usync
                 AddNoChange(ItemType.Languages, filePath);
         }
 
-        protected override string Backup(XElement node)
+        protected override string Backup(XElement node, string filePath = null)
         {
+            if (_settings.Restore)
+                return null;
+
             if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
                 var culture = node.Attribute("CultureAlias").Value;
@@ -153,7 +156,7 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventPaused)
             {
-                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Language, sender.CultureAlias);
+                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Language, sender.CultureAlias, uSyncSettings.Folder, null);
                 uSyncNameCache.Languages.Remove(sender.id);
 
                 XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, sender.CultureAlias, Constants.ObjectTypes.Language), true);
@@ -166,7 +169,7 @@ namespace jumps.umbraco.usync
             {
                 if ( uSyncNameCache.IsRenamed(sender))
                 {
-                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Language, uSyncNameCache.Languages[sender.id], sender.CultureAlias);
+                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Language, uSyncNameCache.Languages[sender.id], sender.CultureAlias, uSyncSettings.Folder);
                     XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Languages[sender.id], Constants.ObjectTypes.Language), true);
 
 
@@ -177,7 +180,7 @@ namespace jumps.umbraco.usync
                     uSync.EventPaused = false; 
                 }
 
-                uSyncNameCache.UpdateCache(sender);
+                uSyncNameCache.UpdateCache(sender, uSyncSettings.Folder);
 
                 var langSync = new SyncLanguage();
                 langSync.ExportToDisk(sender, _eventFolder);

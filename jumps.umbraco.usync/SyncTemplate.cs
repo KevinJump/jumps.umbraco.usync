@@ -101,7 +101,7 @@ namespace jumps.umbraco.usync
 
         public override void ImportAll()
         {
-            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Template))
+            foreach(var rename in uSyncNameManager.GetRenames(Constants.ObjectTypes.Template, _settings.Folder))
             {
                 // renames are more complex for hierarchical items.
                 // we get two paths, we need to workout exactly what has changed.
@@ -112,7 +112,7 @@ namespace jumps.umbraco.usync
                 );
             }
 
-            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Template))
+            foreach(var delete in uSyncNameManager.GetDeletes(Constants.ObjectTypes.Template, _settings.Folder))
             {
                 // deletes - again we get a path - so we have to delete from the top down?
                 AddChange(
@@ -141,7 +141,7 @@ namespace jumps.umbraco.usync
                 {
                     var backup = Backup(node);
 
-                    ChangeItem change = uTemplate.SyncImport(node);
+                    ChangeItem change = uTemplate.SyncImport(node, !_settings.Restore);
 
                     if (uSyncSettings.ItemRestore && change.changeType == ChangeType.Mismatch)
                     {
@@ -167,8 +167,11 @@ namespace jumps.umbraco.usync
                 AddNoChange(ItemType.Template, filePath);
         }
 
-        protected override string Backup(XElement node)
+        protected override string Backup(XElement node, string filePath = null)
         {
+            if (_settings.Restore)
+                return null;
+
             if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
 
@@ -211,7 +214,7 @@ namespace jumps.umbraco.usync
                 var tSync = new SyncTemplate();
                 var path = tSync.GetDocPath(sender);
                 
-                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Template, path);
+                uSyncNameManager.SaveDelete(Constants.ObjectTypes.Template, path, uSyncSettings.Folder, null);
                 uSyncNameCache.Templates.Remove(sender.Id);
 
                 XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, path, "def", Constants.ObjectTypes.Template), true);
@@ -230,7 +233,7 @@ namespace jumps.umbraco.usync
                 {
                     var newPath = tSync.GetDocPath(sender);
 
-                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Template, uSyncNameCache.Templates[sender.Id], newPath);
+                    uSyncNameManager.SaveRename(Constants.ObjectTypes.Template, uSyncNameCache.Templates[sender.Id], newPath, uSyncSettings.Folder);
 
                     XmlDoc.ArchiveFile(XmlDoc.GetSavePath(_eventFolder, uSyncNameCache.Templates[sender.Id], "def"), true);
 
@@ -256,7 +259,7 @@ namespace jumps.umbraco.usync
 
                 }
 
-                uSyncNameCache.UpdateCache(sender);
+                uSyncNameCache.UpdateCache(sender, uSyncSettings.Folder);
 
                 // save
                 tSync.ExportToDisk(sender, _eventFolder);
