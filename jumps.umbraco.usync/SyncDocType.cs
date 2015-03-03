@@ -62,6 +62,7 @@ namespace jumps.umbraco.usync
 
             try
             {
+                LogHelper.Debug<SyncDocType>("Exporting DocType to disk: {0} {1}", () => item.Alias, () => Path.GetFileName(folder));
                 XElement node = item.SyncExport();
                 XmlDoc.SaveNode(folder, GetDocPath(item), "def", node, Constants.ObjectTypes.DocType);
             }
@@ -118,6 +119,8 @@ namespace jumps.umbraco.usync
                     var backup = Backup(node);
 
                     ChangeItem change = uDocType.SyncImport(node);
+
+                    LogHelper.Debug<SyncDocType>("Imported Part 1: {0} {1}", () => node.Name.LocalName, () => change.changeType);
 
                     if (change.changeType == ChangeType.Success)
                     {
@@ -183,7 +186,7 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node)
         {
-            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore)
+            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
 
                 var alias = node.Element("Info").Element("Alias").Value;

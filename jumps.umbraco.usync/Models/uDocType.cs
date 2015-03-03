@@ -103,7 +103,15 @@ namespace jumps.umbraco.usync.Models
                 name = node.Element("Info").Element("Name").Value
             };
 
-            ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
+            try
+            {
+                ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Warn<SyncDocType>("Import via Packaging Service Failed for {0} \n{1}", () => node.Element("Info").Element("Name").Value, ()=> ex.ToString());
+                change.changeType = ChangeType.ImportFail;
+            }
 
             return change;
         }
@@ -130,9 +138,11 @@ namespace jumps.umbraco.usync.Models
                 ImportTemplates(item, node);
 
                 RemoveMissingProperties(item, node);
-
+                ApplicationContext.Current.Services.ContentTypeService.Save(item);
+                
                 // tab sort order
                 TabSortOrder(item, node);
+                ApplicationContext.Current.Services.ContentTypeService.Save(item);
 
                 UpdateExistingProperties(item, node);
 
