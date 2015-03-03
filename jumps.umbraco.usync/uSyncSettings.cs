@@ -97,6 +97,11 @@ namespace jumps.umbraco.usync
             get { return _settings.BackupFolder; }
         }
 
+        public static bool BackupOnImport
+        {
+            get { return _settings.BackupOnImport; }
+        }
+
         public static bool Preserve
         {
             get { return _settings.Preserve; }
@@ -143,6 +148,5 @@ namespace jumps.umbraco.usync
         {
             get { return _settings.DocTypeSettings; }
         }
-    }
-  
+    }  
 }

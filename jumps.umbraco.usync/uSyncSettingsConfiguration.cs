@@ -110,6 +110,15 @@ namespace jumps.umbraco.usync
             }
         }
 
+        [ConfigurationProperty("backupOnImport", DefaultValue = false, IsRequired = false)]
+        public Boolean BackupOnImport
+        {
+            get
+            {
+                return (Boolean)this["backupOnImport"];
+            }
+        }
+
         [ConfigurationProperty("backupFolder", DefaultValue = "~/app_data/temp/usync/backups/", IsRequired = false)]
         public String BackupFolder
         {

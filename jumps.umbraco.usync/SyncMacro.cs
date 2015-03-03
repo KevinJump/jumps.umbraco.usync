@@ -133,7 +133,7 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node)
         {
-            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore)
+            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
 
                 var alias = node.Element("alias").Value;

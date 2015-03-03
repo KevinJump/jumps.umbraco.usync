@@ -146,19 +146,23 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node)
         {
-            if (node == null)
-                return ""; 
-
-            // we only backup if we are considering restore?
-            if ( !string.IsNullOrEmpty(uSyncSettings.BackupFolder) )
+            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
             {
-                LogHelper.Debug<SyncDataType>("Backup: Taking Backup ");
-                var _def = new Guid(node.Attribute("Definition").Value);
-                if (CMSNode.IsNode(_def))
+
+                if (node == null)
+                    return "";
+
+                // we only backup if we are considering restore?
+                if (!string.IsNullOrEmpty(uSyncSettings.BackupFolder))
                 {
-                    var dtd = DataTypeDefinition.GetDataTypeDefinition(_def);
-                    ExportToDisk(dtd, _settings.BackupPath);
-                    return XmlDoc.GetSavePath(_settings.BackupPath, dtd.Text, Constants.ObjectTypes.DataType);
+                    LogHelper.Debug<SyncDataType>("Backup: Taking Backup ");
+                    var _def = new Guid(node.Attribute("Definition").Value);
+                    if (CMSNode.IsNode(_def))
+                    {
+                        var dtd = DataTypeDefinition.GetDataTypeDefinition(_def);
+                        ExportToDisk(dtd, _settings.BackupPath);
+                        return XmlDoc.GetSavePath(_settings.BackupPath, dtd.Text, Constants.ObjectTypes.DataType);
+                    }
                 }
             }
             return "";
