@@ -114,7 +114,9 @@ namespace jumps.umbraco.usync.helpers
 
         public static bool TemplateChanged(XElement node)
         {
-            string filehash = XmlDoc.GetPreCalculatedHash(node);
+            var hashProps = new string[] { "Name", "Alias", "Master" };
+
+            string filehash = XmlDoc.CalculateMD5Hash(node, hashProps);
             if (string.IsNullOrEmpty(filehash))
                 return true;
 
@@ -128,10 +130,8 @@ namespace jumps.umbraco.usync.helpers
                 return true;
 
             // for a template - we never change the contents - lets just md5 the two 
-            // properties we care about (and save having to load the thing from disk?
-
-            string values = item.Alias + item.Name;
-            string dbMD5 = XmlDoc.CalculateMD5Hash(values);
+            var export = _packagingService.Export(item);
+            string dbMD5 = XmlDoc.CalculateMD5Hash(export, hashProps);
 
             return (!filehash.Equals(dbMD5));
 

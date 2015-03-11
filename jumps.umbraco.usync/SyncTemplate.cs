@@ -20,6 +20,7 @@ using System.Diagnostics;
 
 using jumps.umbraco.usync.helpers;
 using jumps.umbraco.usync.Extensions;
+using System.Text.RegularExpressions;
 
 namespace jumps.umbraco.usync
 {
@@ -141,7 +142,6 @@ namespace jumps.umbraco.usync
         {
             if (Directory.Exists(path))
             {
-                var packagingService = ApplicationContext.Current.Services.PackagingService ; 
 
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
@@ -151,29 +151,7 @@ namespace jumps.umbraco.usync
                         if (Tracker.TemplateChanged(node))
                         {
                             LogHelper.Info<SyncTemplate>("Importing template {0}", () => path);
-
-                            var templates = packagingService.ImportTemplates(node);
-
-
-                            // master setting - doesn't appear to be a thing on the import so we do it here...
-                            if ( node.Element("Master") != null && !string.IsNullOrEmpty(node.Element("Master").Value) )
-                            {
-                                var master = node.Element("Master");
-                                var template = templates.FirstOrDefault();
-
-                                if (  template != null)
-                                {
-                                    var masterTemplate = ApplicationContext.Current.Services.FileService.GetTemplate(master.Value);
-
-                                    if ( masterTemplate != null )
-                                    {
-                                        template.SetMasterTemplate(masterTemplate);
-                                        ApplicationContext.Current.Services.FileService.SaveTemplate(template);
-                                        LogHelper.Info<uSync>("uSync has stepped in and set the master to {0}", () => masterTemplate.Alias);
-                                    }
-                                }
-
-                            }
+                            ImportTemplate(node);
                         }
                     }
                 }
@@ -184,6 +162,122 @@ namespace jumps.umbraco.usync
                 }
             }
         }
+
+        /// <summary>
+        ///  replacing packagingService, template import. 
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        private static void ImportTemplate(XElement node)
+        {
+            if (node.Name.LocalName != "Template")
+            {
+                LogHelper.Warn<SyncTemplate>("Template file not properly formatted");
+                return;
+            }
+
+            var name = node.Element("Name") != null ? node.Element("Name").Value : string.Empty;
+            var alias = node.Element("Alias") != null ? node.Element("Alias").Value : string.Empty;
+            var master = node.Element("Master") != null ? node.Element("Master").Value : string.Empty;
+            var design = node.Element("Design") != null ? node.Element("Design").Value : string.Empty;
+
+            LogHelper.Debug<SyncTemplate>("Template Values: {0}, {1}, {2}", () => name, () => alias, () => master);
+
+            var masterpage = MasterpagePath(alias);
+            var view = ViewPath(alias);
+
+            LogHelper.Debug<SyncTemplate>("Looking for existing template file: {0} and {1}", ()=> masterpage, ()=> view);
+
+            ITemplate template = null;
+
+            if (!global::System.IO.File.Exists(masterpage) && !global::System.IO.File.Exists(view))
+            {
+                LogHelper.Debug<SyncTemplate>("No Template files calling Package Service to Import {0}", () => alias);
+                // no master page or view - use import to create the template
+                var packagingService = ApplicationContext.Current.Services.PackagingService;
+                var templates = packagingService.ImportTemplates(node);
+                template = templates.FirstOrDefault();
+            }
+            else
+            {
+                template = ApplicationContext.Current.Services.FileService.GetTemplate(alias);
+
+                if (template == null)
+                {
+                    LogHelper.Debug<SyncTemplate>("New Template but files exist {0}", () => alias);
+
+                    var isMasterPage = IsMasterPageSyntax(design);
+                    var path = isMasterPage ? MasterpagePath(alias) : ViewPath(alias);
+
+                    template = new Template(path, name, alias);
+                    if (template != null)
+                    {
+                        // need to load the file into template.content, so the save doesn't 
+                        // destroy it.
+                        LogHelper.Debug<SyncTemplate>("Importing content from disk, to preserve changes: {0}", () => path);
+                        var content = global::System.IO.File.ReadAllText(path);
+                        template.Content = content; 
+
+                        SetMaster(template, master);
+                        ApplicationContext.Current.Services.FileService.SaveTemplate(template);
+                    }
+                    else
+                    {
+                        LogHelper.Warn<SyncTemplate>("Error creating template (for existing files), {0}", () => alias);
+                    }
+                }
+                else { 
+                    LogHelper.Debug<SyncTemplate>("Existing Template updating stuff.. {0}", () => alias);
+
+                    // TODO - renames - but they can't happen in the import have to be part of file ops.
+                    SetMaster(template, master);
+                    ApplicationContext.Current.Services.FileService.SaveTemplate(template);
+
+                    if (template.Name != name)
+                    {
+                        // can't change things, because ITemplate is mainly readonly, need to use old api
+                        // to do the rename
+                        var t = new global::umbraco.cms.businesslogic.template.Template(template.Id);
+                        t.Text = name;
+                        t.Save();
+                    }
+                }
+            }
+        }
+
+        private static void SetMaster(ITemplate template, string master)
+        {
+            if (!string.IsNullOrEmpty(master))
+            {
+                var masterTemplate = ApplicationContext.Current.Services.FileService.GetTemplate(master);
+                if (masterTemplate != null)
+                {
+                    template.SetMasterTemplate(masterTemplate);
+                }
+            }
+        }
+
+        //
+        // from the core 
+        //
+        private static bool IsMasterPageSyntax(string code)
+        {
+            return Regex.IsMatch(code, @"<%@\s*Master", RegexOptions.IgnoreCase) ||
+                code.InvariantContains("<umbraco:Item") || code.InvariantContains("<asp:") || code.InvariantContains("<umbraco:Macro");
+        }
+
+        private static string ViewPath(string alias)
+        {
+            return IOHelper.MapPath(SystemDirectories.MvcViews + "/" + alias.Replace(" ", "") + ".cshtml");
+        }
+
+        private static string MasterpagePath(string alias)
+        {
+            return IOHelper.MapPath(SystemDirectories.Masterpages + "/" + alias.Replace(" ", "") + ".master");
+        }
+        //
+        // end core lifting
+        //
 
         public static void AttachEvents()
         {

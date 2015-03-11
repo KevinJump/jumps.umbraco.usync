@@ -388,6 +388,19 @@ namespace jumps.umbraco.usync.helpers
             return hash; 
         }
 
+        public static string CalculateMD5Hash(XElement node, string[] values)
+        {
+            var hashstring = "";
+
+            foreach (var val in values)
+            {
+                var i = node.Element(val);
+                if (i != null)
+                    hashstring += i.ToString(SaveOptions.DisableFormatting);
+            }
+            return CalculateMD5Hash(hashstring);
+        }
+
         public static string GetPreCalculatedHash(XElement node)
         {
             /*
