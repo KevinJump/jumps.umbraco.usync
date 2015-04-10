@@ -135,19 +135,26 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node, string filePath = null)
         {
-            if (_settings.Restore)
-                return null;
-
-            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
+            try
             {
-                var name = node.Element("Name").Value;
-                var stylesheet = StyleSheet.GetByName(name);
+                if (_settings.Restore)
+                    return null;
 
-                if (stylesheet != null)
+                if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
                 {
-                    ExportToDisk(stylesheet, _settings.BackupPath);
-                    return XmlDoc.GetSavePath(_settings.BackupPath, name, Constants.ObjectTypes.Stylesheet);
+                    var name = node.Element("Name").Value;
+                    var stylesheet = StyleSheet.GetByName(name);
+
+                    if (stylesheet != null)
+                    {
+                        ExportToDisk(stylesheet, _settings.BackupPath);
+                        return XmlDoc.GetSavePath(_settings.BackupPath, name, Constants.ObjectTypes.Stylesheet);
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
+                LogHelper.Warn<SyncStylesheet>("Failed to create pre install backup", () => ex.ToString());
             }
             return "" ;
         }
