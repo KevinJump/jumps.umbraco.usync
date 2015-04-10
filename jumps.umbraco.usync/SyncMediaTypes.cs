@@ -85,7 +85,7 @@ namespace jumps.umbraco.usync
 
         public override void Import(string filePath)
         {
-            // LogHelper.Info<SyncMediaTypes>("Base Import {0}", ()=> filePath);
+            LogHelper.Info<SyncMediaTypes>("Base Import {0}", ()=> filePath);
             if (!File.Exists(filePath))
                 throw new ArgumentNullException("filePath");
 
@@ -150,23 +150,42 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node, string filePath = null)
         {
-            if (_settings.Restore)
-                return null;
-
-            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
+            try
             {
+                if (_settings.Restore)
+                    return null;
 
-                var alias = node.Element("Info").Element("Alias").Value;
-                var mediaType = MediaType.GetByAlias(alias);
-
-                if (mediaType != null)
+                if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
                 {
-                    ExportToDisk(mediaType, _settings.BackupPath);
-                    return XmlDoc.GetSavePath(_settings.BackupPath, GetMediaPath(mediaType), "def", Constants.ObjectTypes.MediaType);
-                }
-            }
+                    MediaType mediaType = null;
+                    var alias = node.Element("Info").Element("Alias").Value;
+                    try
+                    {
+                        var media = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(alias);
+                        if (media != null)
+                        {
+                            mediaType = new MediaType(media.Id);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", () => ex.ToString());
+                    }
 
-            return "";
+                    if (mediaType != null)
+                    {
+                        ExportToDisk(mediaType, _settings.BackupPath);
+                        return XmlDoc.GetSavePath(_settings.BackupPath, GetMediaPath(mediaType), "def", Constants.ObjectTypes.MediaType);
+                    }
+                }
+
+                return "";
+            }
+            catch(Exception ex)
+            {
+                LogHelper.Warn<SyncMediaTypes>("Backup of type failed - probibly because media type isn't there.");
+                return "";
+            }
         }
 
         protected override void Restore(string backup)

@@ -108,19 +108,26 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node, string filePath = null)
         {
-            if (_settings.Restore)
-                return null;
-
-            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
+            try
             {
-                var culture = node.Attribute("CultureAlias").Value;
-                var lang = Language.GetByCultureCode(culture);
+                if (_settings.Restore)
+                    return null;
 
-                if (lang != null)
+                if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
                 {
-                    ExportToDisk(lang, _settings.BackupPath);
-                    return XmlDoc.GetSavePath(_settings.BackupPath, lang.CultureAlias, Constants.ObjectTypes.Language);
+                    var culture = node.Attribute("CultureAlias").Value;
+                    var lang = Language.GetByCultureCode(culture);
+
+                    if (lang != null)
+                    {
+                        ExportToDisk(lang, _settings.BackupPath);
+                        return XmlDoc.GetSavePath(_settings.BackupPath, lang.CultureAlias, Constants.ObjectTypes.Language);
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
+                LogHelper.Warn<SyncLanguage>("Failed to make a backup {0}", () => ex.ToString());
             }
             return "";
         }

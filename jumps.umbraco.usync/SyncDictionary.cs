@@ -108,20 +108,27 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node, string filePath = null) 
         {
-            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
+            try
             {
-
-                var key = node.Attribute("Key").Value;
-                var items = Dictionary.getTopMostItems;
-
-                foreach (var i in items)
+                if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
                 {
-                    if (i.key == key)
+
+                    var key = node.Attribute("Key").Value;
+                    var items = Dictionary.getTopMostItems;
+
+                    foreach (var i in items)
                     {
-                        ExportToDisk(i, _settings.BackupPath);
-                        return XmlDoc.GetSavePath(_settings.BackupPath, key, Constants.ObjectTypes.Dictionary);
+                        if (i.key == key)
+                        {
+                            ExportToDisk(i, _settings.BackupPath);
+                            return XmlDoc.GetSavePath(_settings.BackupPath, key, Constants.ObjectTypes.Dictionary);
+                        }
                     }
                 }
+            }
+            catch( Exception ex )
+            {
+                LogHelper.Warn<SyncDictionary>("Failed to create a backup before import", () => ex.ToString());
             }
 
             return "";

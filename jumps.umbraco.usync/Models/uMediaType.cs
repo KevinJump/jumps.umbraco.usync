@@ -76,10 +76,17 @@ namespace jumps.umbraco.usync.Models
         private static MediaType FindMediaTypeByPath(string path)
         {
             var pathBits = path.Split('/');
-            var doc = MediaType.GetByAlias(pathBits[pathBits.Length - 1]);
+            try
+            {
+                var doc = MediaType.GetByAlias(pathBits[pathBits.Length - 1]);
 
-            if (doc != null)
-                return doc;
+                if (doc != null)
+                    return doc;
+            }
+            catch(Exception ex)
+            {
+                LogHelper.Warn<SyncMediaTypes>("Failed to find media type (and caught umbraco exception)");
+            }
 
             return null;
         }

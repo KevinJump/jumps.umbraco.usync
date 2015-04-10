@@ -152,35 +152,44 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node, string filePath = null)
         {
-            if (_settings.Restore)
-                return null;
-
-            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
+            try
             {
+                if (_settings.Restore)
+                    return null;
 
-                if (node == null)
-                    return "";
-
-                // we only backup if we are considering restore?
-                if (!string.IsNullOrEmpty(uSyncSettings.BackupFolder))
+                if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
                 {
-                    LogHelper.Debug<SyncDataType>("Backup: Taking Backup ");
-                    var _def = new Guid(node.Attribute("Definition").Value);
-                    if (CMSNode.IsNode(_def))
+
+                    if (node == null)
+                        return "";
+
+                    // we only backup if we are considering restore?
+                    if (!string.IsNullOrEmpty(uSyncSettings.BackupFolder))
                     {
-                        var dtd = DataTypeDefinition.GetDataTypeDefinition(_def);
-                        ExportToDisk(dtd, _settings.BackupPath);
-                        return XmlDoc.GetSavePath(_settings.BackupPath, dtd.Text, Constants.ObjectTypes.DataType);
-                    }
-                    else
-                    {
-                        var rootPath = IOHelper.MapPath(_settings.Folder + Constants.ObjectTypes.DataType);
-                        var savePath = Path.GetDirectoryName(filePath).Remove(0, rootPath.Length);
-                        uSyncNameManager.SaveDelete(Constants.ObjectTypes.DataType, savePath, _settings.BackupPath, null);
+                        LogHelper.Debug<SyncDataType>("Backup: Taking Backup ");
+                        var _def = new Guid(node.Attribute("Definition").Value);
+                        if (CMSNode.IsNode(_def))
+                        {
+                            LogHelper.Debug<SyncDataType>("Getting Def by GUID");
+                            var dtd = DataTypeDefinition.GetDataTypeDefinition(_def);
+                            ExportToDisk(dtd, _settings.BackupPath);
+                            return XmlDoc.GetSavePath(_settings.BackupPath, dtd.Text, Constants.ObjectTypes.DataType);
+                        }
+                        else
+                        {
+                            uSyncNameManager.SaveDelete(Constants.ObjectTypes.DataType, node.Attribute("Name").Value, _settings.BackupPath, node.Attribute("Definition").Value);
+                            LogHelper.Debug<SyncDataType>("Added Save Delete");
+                        }
                     }
                 }
+                LogHelper.Debug<SyncDataType>("Returning from backup...");
+                return "";
             }
-            return "";
+            catch( Exception ex )
+            {
+                LogHelper.Warn<SyncDataType>("Backup of the existing datatype has failed, but backups are non-critical...");
+                return ""; 
+            }
         }
 
         protected override void Restore(string backup)

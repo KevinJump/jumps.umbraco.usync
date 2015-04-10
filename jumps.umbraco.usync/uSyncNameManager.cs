@@ -35,6 +35,7 @@ namespace jumps.umbraco.usync
 
         public static void SaveDelete(string type, string name, string folder, string id)
         {
+            LogHelper.Debug<uSyncNameManager>("Saving Delete: {0} {1} {2} {3}", () => type, () => name, () => folder, () => id);
             lock (_fileLock)
             {
                 var node = LoadNameFile(folder);

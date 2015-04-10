@@ -188,30 +188,37 @@ namespace jumps.umbraco.usync
 
         protected override string Backup(XElement node, string filePath)
         {
-            if (_settings.Restore)
-                return null;
-
-            if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
+            try
             {
+                if (_settings.Restore)
+                    return null;
 
-                var alias = node.Element("Info").Element("Alias").Value;
-                var docType = DocumentType.GetByAlias(alias);
+                if (uSyncSettings.ItemRestore || uSyncSettings.FullRestore || uSyncSettings.BackupOnImport)
+                {
 
-                if (docType != null)
-                {
-                    ExportToDisk(docType, _settings.BackupPath);
-                    return XmlDoc.GetSavePath(_settings.BackupPath, GetDocPath(docType), "def", Constants.ObjectTypes.DocType);
+                    var alias = node.Element("Info").Element("Alias").Value;
+                    var docType = DocumentType.GetByAlias(alias);
+
+                    if (docType != null)
+                    {
+                        ExportToDisk(docType, _settings.BackupPath);
+                        return XmlDoc.GetSavePath(_settings.BackupPath, GetDocPath(docType), "def", Constants.ObjectTypes.DocType);
+                    }
+                    else
+                    {
+                        // If there is no exsting doctype then we are creating it. 
+                        // so we put a delete command in the fileops for the backup, 
+                        // that way if a full rollback happens then the file will be deleted. 
+                        var docPath = IOHelper.MapPath(_settings.Folder + Constants.ObjectTypes.DocType);
+                        var savePath = Path.GetDirectoryName(filePath).Remove(0, docPath.Length);
+                        uSyncNameManager.SaveDelete(Constants.ObjectTypes.DocType, savePath, _settings.BackupPath, null);
+                    }
+
                 }
-                else
-                {
-                    // If there is no exsting doctype then we are creating it. 
-                    // so we put a delete command in the fileops for the backup, 
-                    // that way if a full rollback happens then the file will be deleted. 
-                    var docPath = IOHelper.MapPath( _settings.Folder + Constants.ObjectTypes.DocType);
-                    var savePath = Path.GetDirectoryName(filePath).Remove(0, docPath.Length);
-                    uSyncNameManager.SaveDelete(Constants.ObjectTypes.DocType, savePath, _settings.BackupPath, null);
-                }
-                
+            }
+            catch ( Exception ex )
+            {
+                LogHelper.Warn<SyncDocType>("Failed to create backup - {0}", () => ex.ToString());
             }
             return "";
         }
