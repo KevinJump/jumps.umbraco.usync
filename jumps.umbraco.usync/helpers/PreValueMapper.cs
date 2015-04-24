@@ -39,36 +39,48 @@ namespace jumps.umbraco.usync.helpers
             foreach(Match match in Regex.Matches(IdValues, _mSettings.IdRegEx))
             {
                 int id;
-                string type = _mSettings.IdObjectType.ToLower();
+                string types = _mSettings.IdObjectType.ToLower();
 
                 if (int.TryParse(match.Value, out id))
                 {
                     string mappedValue = string.Empty;
 
-                    switch(type)
+                    foreach (var type in types.Split(','))
                     {
-                        case "stylesheet":
-                            mappedValue = MapStylesheetId(id);
-                            break;
-                        case "content":
-                            mappedValue = MapContentId(id);
-                            if (string.IsNullOrEmpty(mappedValue))
-                            {
-                                type = "media";
-                                mappedValue = MapMediaId(id);
-                            }
+                        LogHelper.Debug<PreValueMapper>("Mapping: id: {0} type :{1}", () => id, () => type);
+                        var destType = type; 
+                        switch (type)
+                        {
+                            case "stylesheet":
+                                mappedValue = MapStylesheetId(id);
+                                break;
+                            case "content":
+                                mappedValue = MapContentId(id);
+                                if (string.IsNullOrEmpty(mappedValue))
+                                {
+                                    destType = "media";
+                                    mappedValue = MapMediaId(id);
+                                }
 
-                            break;
-                        case "tab":
-                            mappedValue = MapTabId(id);
-                            break;
-                    }
+                                break;
+                            case "tab":
+                                mappedValue = MapTabId(id);
+                                break;
+                            case "mediatype":
+                                mappedValue = MapMediaTypeId(id);
+                                break;
+                            case "doctype":
+                                mappedValue = MapDocTypeId(id);
+                                break;
+                        }
 
-                    if ( !string.IsNullOrEmpty(mappedValue))
-                    {
-                        // we've mapped something...
-                        AddToNode(id, mappedValue, type, guid);
-                        mapped = true;
+                        if (!string.IsNullOrEmpty(mappedValue))
+                        {
+                            // we've mapped something...
+                            AddToNode(id, mappedValue, destType, guid);
+                            mapped = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -139,6 +151,24 @@ namespace jumps.umbraco.usync.helpers
         {
             helpers.MediaWalker mw = new MediaWalker();
             return mw.GetPathFromID(id);
+        }
+
+        private string MapMediaTypeId(int id)
+        {
+            var mediaType = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(id);
+            if ( mediaType != null )
+                return mediaType.Alias;
+
+            return string.Empty;
+        }
+
+        private string MapDocTypeId(int id)
+        {
+            var DocType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(id);
+            if ( DocType != null )
+                return DocType.Alias;
+
+            return string.Empty;
         }
 
         private string MapTabId(int id)
@@ -274,6 +304,10 @@ namespace jumps.umbraco.usync.helpers
                     return GetMappedMediaId(id, value);
                 case "tab":
                     return GetMappedTabId(id, value);
+                case "mediatype":
+                    return GetMappedMediaType(id, value);
+                case "doctype":
+                    return GetMappedDocType(id, value);
             }
 
             return id;
@@ -341,6 +375,23 @@ namespace jumps.umbraco.usync.helpers
                 }
             }
 
+            return id;
+        }
+
+        private string GetMappedMediaType(string id, string value)
+        {
+            var mediaType = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(value);
+            if (mediaType != null)
+                return mediaType.Id.ToString();
+
+            return id; 
+        }
+
+        private string GetMappedDocType(string id, string value)
+        {
+            var docType = ApplicationContext.Current.Services.ContentTypeService.GetContentType(value);
+            if (docType != null)
+                return docType.Id.ToString();
             return id;
         }
 
