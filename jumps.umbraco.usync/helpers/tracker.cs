@@ -24,6 +24,7 @@ namespace jumps.umbraco.usync.helpers
     {
         public static bool DocTypeChanged(XElement node)
         {
+            LogHelper.Debug<SyncDocType>("Calling tracker->DocTypeChanged");
             string filehash = XmlDoc.ReCalculateHash(node, true);
             if (string.IsNullOrEmpty(filehash))
                 return true;

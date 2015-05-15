@@ -153,14 +153,13 @@ namespace jumps.umbraco.usync.Models
                 LogHelper.Debug<SyncDocType>("Saving changes so far: (After Remove Missing Properties): {0}", () => item.Name);
                 ApplicationContext.Current.Services.ContentTypeService.Save(item);
                 
+                UpdateExistingProperties(item, node);
+                LogHelper.Debug<SyncDocType>("Saving changes so far: (After Update Existing Properties): {0}", () => item.Name);
+                ApplicationContext.Current.Services.ContentTypeService.Save(item);
+
                 // tab sort order
                 TabSortOrder(item, node);
                 LogHelper.Debug<SyncDocType>("Saving changes so far: (After Tab Sort Order): {0}", () => item.Name);
-                ApplicationContext.Current.Services.ContentTypeService.Save(item);
-
-                UpdateExistingProperties(item, node);
-
-                LogHelper.Debug<SyncDocType>("Saving changes so far: (After Update Existing Properties): {0}", () => item.Name);
                 ApplicationContext.Current.Services.ContentTypeService.Save(item);
 
                 if ( postCheck && tracker.DocTypeChanged(node) )
@@ -358,17 +357,32 @@ namespace jumps.umbraco.usync.Models
                         var tabName = propNode.Element("Tab").Value;
                         if (!string.IsNullOrEmpty(tabName))
                         {
+                            LogHelper.Debug<SyncDocType>("Setting Tab Value: {0}", () => tabName);
+
                             if (docType.PropertyGroups.Contains(tabName))
                             {
                                 var propGroup = docType.PropertyGroups.First(x => x.Name == tabName);
                                 if (!propGroup.PropertyTypes.Contains(property.Alias))
                                 {
+                                    LogHelper.Debug<SyncDocType>("Moving to the tab: {0}", () => tabName);
                                     tabMoves.Add(property.Alias, tabName);
                                 }
+                                else
+                                {
+                                    LogHelper.Debug<SyncDocType>("Property {0} is already in tab {1}", () => property.Alias, () => tabName);
+                                }
+                            }
+                            else
+                            {
+                                LogHelper.Debug<SyncDocType>("Target tab doesn't exist: {0}", () => tabName);
                             }
                         }
                     }
 
+                }
+                else
+                {
+                    LogHelper.Debug<SyncDocType>("Cannot find property: {0} in xml (so it won't process it)", () => property.Alias);
                 }
             }
 
