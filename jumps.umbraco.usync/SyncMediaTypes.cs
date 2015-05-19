@@ -206,8 +206,18 @@ namespace jumps.umbraco.usync
                 // does this documentType have a parent 
                 if (item.MasterContentType != 0)
                 {
+                    MediaType mediaType = null;
+                    try
+                    {
+                            mediaType = new MediaType(item.MasterContentType);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", () => ex.ToString());
+                    }
                     // recurse in to the parent to build the path
-                    path = GetMediaPath(new MediaType(item.MasterContentType));
+                    if ( mediaType != null)
+                        path = GetMediaPath(mediaType);
                 }
 
                 // buld the final path (as path is "" to start with we always get
@@ -348,21 +358,34 @@ namespace jumps.umbraco.usync
             if (xd == null)
                 throw new ArgumentNullException("XmlDocument cannot be null");
 
-
             XmlElement doc = xd.CreateElement("MediaType");
 
+            LogHelper.Debug<MediaTypeHelper>("Exporting To XML");
             // build the info section (name and stuff)
             XmlElement info = xd.CreateElement("Info");
             doc.AppendChild(info);
 
-            info.AppendChild(XmlHelper.AddTextNode(xd, "Name", mt.Text));
-            info.AppendChild(XmlHelper.AddTextNode(xd, "Alias", mt.Alias));
-            info.AppendChild(XmlHelper.AddTextNode(xd, "Icon", mt.IconUrl));
-            info.AppendChild(XmlHelper.AddTextNode(xd, "Thumbnail", mt.Thumbnail));
-            info.AppendChild(XmlHelper.AddTextNode(xd, "Description", mt.Description));
+            if ( mt.Text != null)
+                info.AppendChild(XmlHelper.AddTextNode(xd, "Name", mt.Text));
+
+            if (mt.Alias != null)
+                info.AppendChild(XmlHelper.AddTextNode(xd, "Alias", mt.Alias));
+
+            if (mt.IconUrl != null)
+                info.AppendChild(XmlHelper.AddTextNode(xd, "Icon", mt.IconUrl));
+
+            if (mt.Thumbnail != null)
+                info.AppendChild(XmlHelper.AddTextNode(xd, "Thumbnail", mt.Thumbnail));
+
+            if (mt.Description != null)
+                info.AppendChild(XmlHelper.AddTextNode(xd, "Description", mt.Description));
 
             // v6 property 
-            info.AppendChild(XmlHelper.AddTextNode(xd, "AllowAtRoot", mt.AllowAtRoot.ToString()));
+            if (mt.AllowAtRoot != null)
+                info.AppendChild(XmlHelper.AddTextNode(xd, "AllowAtRoot", mt.AllowAtRoot.ToString()));
+
+            LogHelper.Debug<MediaTypeHelper>("Exporting Structure");
+
             XmlElement structure = xd.CreateElement("Structure");
             foreach (int child in mt.AllowedChildContentTypeIDs.ToList())
             {
@@ -375,13 +398,28 @@ namespace jumps.umbraco.usync
             //
             if (mt.MasterContentType > 0)
             {
-                MediaType pmt = new MediaType(mt.MasterContentType);
+                MediaType pmt = null;
+                try
+                {
+                    var media = ApplicationContext.Current.Services.ContentTypeService.GetMediaType(mt.MasterContentType);
+                    if (media != null)
+                    {
+                        pmt = new MediaType(media.Id);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", () => ex.ToString());
+                }
+
+                // pmt = new MediaType(mt.MasterContentType);
 
                 if (pmt != null)
                     info.AppendChild(XmlHelper.AddTextNode(xd, "Master", pmt.Alias));
             }
 
             // stuff in the generic properties tab
+            LogHelper.Debug<MediaTypeHelper>("Exporting Properties");
             XmlElement props = xd.CreateElement("GenericProperties");
             foreach (PropertyType pt in mt.PropertyTypes)
             {
@@ -389,15 +427,27 @@ namespace jumps.umbraco.usync
                 if (pt.ContentTypeId == mt.Id)
                 {
                     XmlElement prop = xd.CreateElement("GenericProperty");
-                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Name", pt.Name));
-                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Alias", pt.Alias));
-                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Type", pt.DataTypeDefinition.DataType.Id.ToString()));
 
-                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Definition", pt.DataTypeDefinition.UniqueId.ToString()));
+                    if ( pt.Name != null)
+                        prop.AppendChild(XmlHelper.AddTextNode(xd, "Name", pt.Name));
+
+                    if ( pt.Alias != null)
+                        prop.AppendChild(XmlHelper.AddTextNode(xd, "Alias", pt.Alias));
+
+                    if (pt.DataTypeDefinition != null)
+                    {
+                        prop.AppendChild(XmlHelper.AddTextNode(xd, "Type", pt.DataTypeDefinition.DataType.Id.ToString()));
+                        prop.AppendChild(XmlHelper.AddTextNode(xd, "Definition", pt.DataTypeDefinition.UniqueId.ToString()));
+                    }
+
                     prop.AppendChild(XmlHelper.AddTextNode(xd, "Tab", ContentType.Tab.GetCaptionById(pt.TabId)));
                     prop.AppendChild(XmlHelper.AddTextNode(xd, "Mandatory", pt.Mandatory.ToString()));
-                    prop.AppendChild(XmlHelper.AddTextNode(xd, "Validation", pt.ValidationRegExp));
-                    prop.AppendChild(XmlHelper.AddCDataNode(xd, "Description", pt.Description));
+
+                    if ( pt.ValidationRegExp != null)
+                        prop.AppendChild(XmlHelper.AddTextNode(xd, "Validation", pt.ValidationRegExp));
+
+                    if ( pt.Description != null )
+                        prop.AppendChild(XmlHelper.AddCDataNode(xd, "Description", pt.Description));
 
                     // add this property to the tree
                     props.AppendChild(prop);
@@ -409,6 +459,7 @@ namespace jumps.umbraco.usync
             doc.AppendChild(props);
 
             // tabs
+            LogHelper.Debug<MediaTypeHelper>("Exporting Tabs");
             XmlElement tabs = xd.CreateElement("Tabs");
             foreach (ContentType.TabI t in mt.getVirtualTabs.ToList())
             {
@@ -417,8 +468,12 @@ namespace jumps.umbraco.usync
                 {
                     XmlElement tabx = xd.CreateElement("Tab");
                     tabx.AppendChild(xmlHelper.addTextNode(xd, "Id", t.Id.ToString()));
-                    tabx.AppendChild(xmlHelper.addTextNode(xd, "Caption", t.Caption));
+
+                    if (t.Caption != null )
+                        tabx.AppendChild(xmlHelper.addTextNode(xd, "Caption", t.Caption));
+
                     tabx.AppendChild(xmlHelper.addTextNode(xd, "Sort", t.SortOrder.ToString()));
+
                     tabs.AppendChild(tabx);
                 }
             }
