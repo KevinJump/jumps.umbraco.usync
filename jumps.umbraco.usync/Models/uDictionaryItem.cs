@@ -6,6 +6,7 @@ using System.Xml;
 using System.Xml.Linq;
 using umbraco.cms.businesslogic;
 using umbraco.cms.businesslogic.language;
+using Umbraco.Core.Logging;
 
 namespace jumps.umbraco.usync.Models
 {
@@ -41,55 +42,77 @@ namespace jumps.umbraco.usync.Models
 
         private static Dictionary.DictionaryItem AddOrUpdateDictionaryItem(XElement node, Dictionary.DictionaryItem parent =null)
         {
-            Dictionary.DictionaryItem item = null;
-            var key = node.Attribute("Key").Value;
-
-            if (!Dictionary.DictionaryItem.hasKey(key))
+            try
             {
-                if (parent != null)
-                {
-                    Dictionary.DictionaryItem.addKey(key, " ", parent.key);
-                }
-                else
-                {
-                    Dictionary.DictionaryItem.addKey(key, " ");
-                }
-            }
-          
+                Dictionary.DictionaryItem item = null;
+                var key = node.Attribute("Key").Value;
 
-            item = new Dictionary.DictionaryItem(key);
+                LogHelper.Debug<SyncDictionary>("Updating Dictionary Item: {0}", () => key);
 
-            var values = node.Elements("Value");
-            if (values.Any())
-            {
-                // update values...
-                foreach (var val in values)
+                LogHelper.Debug<SyncDictionary>("1.");
+                if (!Dictionary.DictionaryItem.hasKey(key))
                 {
-                    var alias = val.Attribute("LanguageCultureAlias").Value;
-                    if (alias != null)
+                    if (parent != null)
                     {
-                        var lang = Language.GetByCultureCode(alias);
-                        if (lang != null)
-                        {
-                            item.setValue(lang.id, val.Value);
-                        }
+                        LogHelper.Debug<SyncDictionary>("2.");
+                        LogHelper.Debug<SyncDictionary>("Adding to Parent: {0}", () => parent.key);
+                        Dictionary.DictionaryItem.addKey(key, " ", parent.key);
+                    }
+                    else
+                    {
+                        LogHelper.Debug<SyncDictionary>("3.");
+                        LogHelper.Debug<SyncDictionary>("Adding to without Parent");
+                        Dictionary.DictionaryItem.addKey(key, " ");
                     }
                 }
-                
-                //remove values we don't care about? 
 
-            }
-            var children = node.Elements("DictionaryItem");
+                LogHelper.Debug<SyncDictionary>("4.");
+                LogHelper.Debug<SyncDictionary>("Getting new Key: {0}", () => key);
+                // creating new 
+                item = new Dictionary.DictionaryItem(key);
 
-            if (children.Any())
-            {
-                foreach (var child in children)
+                LogHelper.Debug<SyncDictionary>("5.");
+                LogHelper.Debug<SyncDictionary>("Updating values: {0}", () => key);
+                var values = node.Elements("Value");
+                if (values.Any())
                 {
-                    AddOrUpdateDictionaryItem(child, item);
-                }
-            }
+                    // update values...
+                    foreach (var val in values)
+                    {
+                        var alias = val.Attribute("LanguageCultureAlias").Value;
+                        if (alias != null)
+                        {
+                            var lang = Language.GetByCultureCode(alias);
+                            if (lang != null)
+                            {
+                                item.setValue(lang.id, val.Value);
+                            }
+                        }
+                    }
 
-            return item;
+                    //remove values we don't care about? 
+
+                }
+                var children = node.Elements("DictionaryItem");
+
+                if (children.Any())
+                {
+                    // sae the parent ?
+                    item.Save();
+
+                    foreach (var child in children)
+                    {
+                        AddOrUpdateDictionaryItem(child, item);
+                    }
+                }
+
+                return item;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Warn<SyncDictionary>("Error importing dictionary item:\n{0}", ()=> ex.ToString());
+                return null;    
+            }
         }
     }
 }
