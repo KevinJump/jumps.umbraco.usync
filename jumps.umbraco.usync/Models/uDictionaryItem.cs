@@ -47,32 +47,32 @@ namespace jumps.umbraco.usync.Models
                 Dictionary.DictionaryItem item = null;
                 var key = node.Attribute("Key").Value;
 
-                LogHelper.Debug<SyncDictionary>("Updating Dictionary Item: {0}", () => key);
+                LogHelper.Info<SyncDictionary>("Updating Dictionary Item: {0}", () => key);
 
-                LogHelper.Debug<SyncDictionary>("1.");
+                LogHelper.Info<SyncDictionary>("1.");
                 if (!Dictionary.DictionaryItem.hasKey(key))
                 {
                     if (parent != null)
                     {
-                        LogHelper.Debug<SyncDictionary>("2.");
-                        LogHelper.Debug<SyncDictionary>("Adding to Parent: {0}", () => parent.key);
+                        LogHelper.Info<SyncDictionary>("2.");
+                        LogHelper.Info<SyncDictionary>("Adding to Parent: {0}", () => parent.key);
                         Dictionary.DictionaryItem.addKey(key, " ", parent.key);
                     }
                     else
                     {
-                        LogHelper.Debug<SyncDictionary>("3.");
-                        LogHelper.Debug<SyncDictionary>("Adding to without Parent");
+                        LogHelper.Info<SyncDictionary>("3.");
+                        LogHelper.Info<SyncDictionary>("Adding to without Parent");
                         Dictionary.DictionaryItem.addKey(key, " ");
                     }
                 }
 
-                LogHelper.Debug<SyncDictionary>("4.");
-                LogHelper.Debug<SyncDictionary>("Getting new Key: {0}", () => key);
+                LogHelper.Info<SyncDictionary>("4.");
+                LogHelper.Info<SyncDictionary>("Getting new Key: {0}", () => key);
                 // creating new 
                 item = new Dictionary.DictionaryItem(key);
 
-                LogHelper.Debug<SyncDictionary>("5.");
-                LogHelper.Debug<SyncDictionary>("Updating values: {0}", () => key);
+                LogHelper.Info<SyncDictionary>("5.");
+                LogHelper.Info<SyncDictionary>("Updating values: {0}", () => key);
                 var values = node.Elements("Value");
                 if (values.Any())
                 {
@@ -82,9 +82,11 @@ namespace jumps.umbraco.usync.Models
                         var alias = val.Attribute("LanguageCultureAlias").Value;
                         if (alias != null)
                         {
+                            LogHelper.Info<SyncDictionary>("Updating Value: {0}", () => alias);
                             var lang = Language.GetByCultureCode(alias);
                             if (lang != null)
                             {
+                                LogHelper.Info<SyncDictionary>("Updating Value: {0} {1}", () => lang.id, ()=> val.Value);
                                 item.setValue(lang.id, val.Value);
                             }
                         }
