@@ -31,6 +31,17 @@ namespace jumps.umbraco.usync.Models
 
             var item = AddOrUpdateDictionaryItem(node);
 
+            // double try, for http://issues.umbraco.org/issue/U4-3077 
+            // while we are sub umbraco 6.2 - this can occasianly happen, 
+            // so if we get null, we just have another go, doesn't mean
+            // it will work the second time, but we are optimistic.
+            if (item == null && 
+                Umbraco.Core.Configuration.UmbracoVersion.Current.Major == 6 && 
+                Umbraco.Core.Configuration.UmbracoVersion.Current.Minor < 2) {
+                LogHelper.Info<SyncDictionary>("Tring to add the dictionary item again...");
+                item = AddOrUpdateDictionaryItem(node);
+            }
+
             if (item != null)
             {
                 item.Save();
@@ -47,32 +58,26 @@ namespace jumps.umbraco.usync.Models
                 Dictionary.DictionaryItem item = null;
                 var key = node.Attribute("Key").Value;
 
-                LogHelper.Info<SyncDictionary>("Updating Dictionary Item: {0}", () => key);
-
-                LogHelper.Info<SyncDictionary>("1.");
+                LogHelper.Debug<SyncDictionary>("Updating Dictionary Item: {0}", () => key);
                 if (!Dictionary.DictionaryItem.hasKey(key))
                 {
                     if (parent != null)
                     {
-                        LogHelper.Info<SyncDictionary>("2.");
-                        LogHelper.Info<SyncDictionary>("Adding to Parent: {0}", () => parent.key);
+                        LogHelper.Debug<SyncDictionary>("Adding to Parent: {0}", () => parent.key);
                         Dictionary.DictionaryItem.addKey(key, " ", parent.key);
                     }
                     else
                     {
-                        LogHelper.Info<SyncDictionary>("3.");
-                        LogHelper.Info<SyncDictionary>("Adding to without Parent");
+                        LogHelper.Debug<SyncDictionary>("Adding to without Parent");
                         Dictionary.DictionaryItem.addKey(key, " ");
                     }
                 }
 
-                LogHelper.Info<SyncDictionary>("4.");
-                LogHelper.Info<SyncDictionary>("Getting new Key: {0}", () => key);
+                LogHelper.Debug<SyncDictionary>("Getting new Key: {0}", () => key);
                 // creating new 
                 item = new Dictionary.DictionaryItem(key);
 
-                LogHelper.Info<SyncDictionary>("5.");
-                LogHelper.Info<SyncDictionary>("Updating values: {0}", () => key);
+                LogHelper.Debug<SyncDictionary>("Updating values: {0}", () => key);
                 var values = node.Elements("Value");
                 if (values.Any())
                 {
@@ -82,11 +87,11 @@ namespace jumps.umbraco.usync.Models
                         var alias = val.Attribute("LanguageCultureAlias").Value;
                         if (alias != null)
                         {
-                            LogHelper.Info<SyncDictionary>("Updating Value: {0}", () => alias);
+                            LogHelper.Debug<SyncDictionary>("Updating Value: {0}", () => alias);
                             var lang = Language.GetByCultureCode(alias);
                             if (lang != null)
                             {
-                                LogHelper.Info<SyncDictionary>("Updating Value: {0} {1}", () => lang.id, ()=> val.Value);
+                                LogHelper.Debug<SyncDictionary>("Updating Value: {0} {1}", () => lang.id, () => val.Value);
                                 item.setValue(lang.id, val.Value);
                             }
                         }
@@ -109,6 +114,8 @@ namespace jumps.umbraco.usync.Models
                 }
 
                 return item;
+
+
             }
             catch (Exception ex)
             {
