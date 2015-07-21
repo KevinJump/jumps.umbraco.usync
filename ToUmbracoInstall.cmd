@@ -12,7 +12,7 @@ REM and don't commit this file back.
 REM
 
 
-SET UmbracoPath=D:\Development\Web\Umbraco\DevUmbraco7.2.2
+SET UmbracoPath=D:\Development\Web\Umbraco\DevUmbraco7.2.6
 ECHO Copying File %1 to "%UmbracoPath%\%2"
 XCOPY %1 "%UmbracoPath%\%2" /y /i /q
 
