@@ -95,11 +95,14 @@ namespace jumps.umbraco.usync
 
                 foreach (string file in Directory.GetFiles(path, "*.config"))
                 {
+                    LogHelper.Debug<SyncMacro>("Importing Macro: {0}", () => file);
                     XElement node = XElement.Load(file);
 
                     if (node != null)
                     {
                         var macros = packagingService.ImportMacros(node);
+
+                        LogHelper.Debug<SyncMacro>("Macro Imported");
                         foreach( var macro in macros)
                         {
                             // second pass. actually make some changes...
@@ -115,6 +118,7 @@ namespace jumps.umbraco.usync
 
             if ( macro != null )
             {
+                LogHelper.Debug<uSync>("Applying updates for macro: {0}", () => macro.Alias);
 
                 macro.Name = node.Element("name").Value;
                 macro.ControlType = node.Element("scriptType").Value;
@@ -152,6 +156,7 @@ namespace jumps.umbraco.usync
 
                         if ( prop != null)
                         {
+                            LogHelper.Debug<SyncMacro>("updating macro property: {0} on {1}", () => prop.Alias, () => macro.Name);
                             prop.Name = property.Attribute("name").Value;
                             prop.EditorAlias = property.Attribute("propertyType").Value;
                         }
@@ -171,7 +176,7 @@ namespace jumps.umbraco.usync
 
                     if ( propertyNode == null)
                     {
-                        LogHelper.Info<uSync>("Removing {0}", ()=> currentProperty.Alias);
+                        LogHelper.Info<SyncMacro>("Removing {0}", ()=> currentProperty.Alias);
                         propertiesToRemove.Add(currentProperty.Alias);
                     }
 
@@ -179,9 +184,11 @@ namespace jumps.umbraco.usync
 
                 foreach(string alias in propertiesToRemove)
                 {
+                    LogHelper.Debug<SyncMacro>("Removing Property: {0} from {1}", () => alias, () => macro.Name);
                     macro.Properties.Remove(alias);
                 }
 
+                LogHelper.Debug<SyncMacro>("Saving changes to: {0}", () => macro.Name);
                 macroService.Save(macro);
             }
         }
