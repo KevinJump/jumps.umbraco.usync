@@ -15,6 +15,8 @@ using Umbraco.Core.Models;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
+using umbraco.cms.businesslogic.macro; 
+
 using System.Diagnostics;
 
 using jumps.umbraco.usync.helpers;
@@ -100,6 +102,7 @@ namespace jumps.umbraco.usync
 
                     if (node != null)
                     {
+                        /*
                         var macros = packagingService.ImportMacros(node);
 
                         LogHelper.Debug<SyncMacro>("Macro Imported");
@@ -107,10 +110,101 @@ namespace jumps.umbraco.usync
                         {
                             // second pass. actually make some changes...
                             ApplyUpdates(macro, node);
+                        }*/
+
+                        var macro = ImportMacro(node);
+                        if (macro != null)
+                        {
+                            ApplyUpdates(macro, node);
                         }
                     }
                 }
             }
+        }
+
+        /// <summary>
+        ///  can't do this pre v.7.3 - the Macro class is internal...
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        private static IMacro ImportMacro(XElement node)
+        {
+            var name = node.Name.LocalName;
+            if (name.Equals("macro") == false)
+            {
+                throw new ArgumentNullException("The passed node is not a macro import");
+            }
+
+            var alias = node.Element("alias").Value;
+
+            var macro = Macro.GetByAlias(alias);
+            if (macro == null)
+            {
+                macro = Macro.MakeNew(alias);
+            }
+
+            try
+            {
+                macro.Alias = alias;
+                macro.Assembly = node.Element("scriptAssembly").Value;
+                macro.Type = node.Element("scriptType").Value;
+                macro.Xslt = node.Element("xslt").Value;
+                macro.RefreshRate = int.Parse(node.Element("refreshRate").Value);
+
+                if (string.IsNullOrEmpty(macro.Assembly)
+                    && !string.IsNullOrEmpty(macro.Type)
+                    && !macro.Type.StartsWith("~"))
+                {
+                    macro.Type = "~/" + macro.Type;
+                }
+
+                if (node.Element("scriptingFile") != null)
+                    macro.ScriptingFile = node.Element("scriptingFile").Value;
+
+                if (node.Element("useInEditor") != null)
+                    macro.UseInEditor = bool.Parse(node.Element("useInEditor").Value);
+
+                var properties = node.Element("properties");
+                if (properties != null)
+                {
+                    foreach (var property in properties.Elements())
+                    {
+                        var propertyAlias = property.Attribute("alias").Value;
+
+                        if ( !macro.Properties.Any(x => string.Equals(x.Alias, propertyAlias, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            // create...
+                            var propertyName = property.Attribute("name").Value;
+                            var propertyType = property.Attribute("propertyType").Value;
+
+                            global::umbraco.cms.businesslogic.macro.MacroProperty.MakeNew(
+                                macro, propertyAlias, propertyName, propertyType);
+                        }
+                    }
+                }
+
+                macro.Save();
+
+                return ApplicationContext.Current.Services.MacroService.GetByAlias(macro.Alias);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Error<SyncMacro>("Error importing a macro:", ex);
+            }
+
+            /*
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(node.ToString());
+            XmlNode xmlNode = xmlDoc.SelectSingleNode("//macro");
+
+            var m = global::umbraco.cms.businesslogic.macro.Macro.Import(xmlNode);
+            if (m != null )
+            {
+                // go get it from the service
+                return ApplicationContext.Current.Services.MacroService.GetByAlias(alias);
+            }
+            */
+            return null;
         }
 
         private static void ApplyUpdates(IMacro macro, XElement node)
@@ -152,11 +246,12 @@ namespace jumps.umbraco.usync
                     {
                         var propertyAlias = property.Attribute("alias").Value;
 
-                        var prop = macro.Properties.First(x => x.Alias == propertyAlias);
+                        var prop = macro.Properties.First(x => string.Equals(x.Alias, propertyAlias, StringComparison.OrdinalIgnoreCase));
 
                         if ( prop != null)
                         {
                             LogHelper.Debug<SyncMacro>("updating macro property: {0} on {1}", () => prop.Alias, () => macro.Name);
+                            prop.Alias = propertyAlias;
                             prop.Name = property.Attribute("name").Value;
                             prop.EditorAlias = property.Attribute("propertyType").Value;
                         }
