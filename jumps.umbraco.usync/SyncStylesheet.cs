@@ -62,32 +62,43 @@ namespace jumps.umbraco.usync
 
         public static void SaveAllToDisk()
         {
-            try
+            // we don't do stylesheets 7.3+ 
+            if (Umbraco.Core.Configuration.UmbracoVersion.Current.Major == 7 &&
+                Umbraco.Core.Configuration.UmbracoVersion.Current.Minor < 3)
             {
-                foreach (StyleSheet item in StyleSheet.GetAll())
+
+                try
                 {
-                    SaveToDisk(item);
+                    foreach (StyleSheet item in StyleSheet.GetAll())
+                    {
+                        SaveToDisk(item);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                LogHelper.Info<SyncStylesheet>("uSync: Error Saving all Stylesheets {0}", ()=> ex.ToString());
+                catch (Exception ex)
+                {
+                    LogHelper.Info<SyncStylesheet>("uSync: Error Saving all Stylesheets {0}", () => ex.ToString());
+                }
             }
         }
 
         public static void ReadAllFromDisk()
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
+            if (Umbraco.Core.Configuration.UmbracoVersion.Current.Major == 7 &&
+                Umbraco.Core.Configuration.UmbracoVersion.Current.Minor < 3)
+            {
 
-            string path = IOHelper.MapPath(string.Format("{0}{1}",
-                helpers.uSyncIO.RootFolder,
-                "StyleSheet" )) ;
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
 
-            ReadFromDisk(path);
+                string path = IOHelper.MapPath(string.Format("{0}{1}",
+                    helpers.uSyncIO.RootFolder,
+                    "StyleSheet"));
 
-            sw.Stop();
-            LogHelper.Info<uSync>("Processed Stylesheets ({0}ms)", ()=> sw.ElapsedMilliseconds);
+                ReadFromDisk(path);
+
+                sw.Stop();
+                LogHelper.Info<uSync>("Processed Stylesheets ({0}ms)", () => sw.ElapsedMilliseconds);
+            }
         }
 
         public static void ReadFromDisk(string path)
@@ -120,8 +131,12 @@ namespace jumps.umbraco.usync
 
         public static void AttachEvents()
         {
-            StyleSheet.AfterSave += StyleSheet_AfterSave;
-            StyleSheet.BeforeDelete += StyleSheet_BeforeDelete;
+            if (Umbraco.Core.Configuration.UmbracoVersion.Current.Major == 7 &&
+                Umbraco.Core.Configuration.UmbracoVersion.Current.Minor < 3)
+            {
+                StyleSheet.AfterSave += StyleSheet_AfterSave;
+                StyleSheet.BeforeDelete += StyleSheet_BeforeDelete;
+            }
            
         }
 
