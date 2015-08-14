@@ -13,7 +13,7 @@
     </file>
     <file>
       <guid>uSyncUi.ascx</guid>
-      <orgPath>/umbraco/plugins/uSync</orgPath>
+      <orgPath>/app_plugins/uSync</orgPath>
       <orgName>uSyncUi.ascx</orgName>
     </file>
     <file>
@@ -25,7 +25,7 @@
   <info>
     <package>
       <name>uSync for Umbraco 7.1+</name>
-      <version>2.4.10</version>
+      <version>2.4.12</version>
       <license url="http://www.opensource.org/licenses/mit-license.php">MIT license</license>
       <url>http://jumoo.co.uk/usync</url>
       <requirements>
@@ -73,7 +73,7 @@ uSync is designed to aid the sycronization  and source control of umbraco instal
           <area>developer</area>
         </areas>
         <tab caption="uSync Dashboard">
-          <control>/Umbraco/Plugins/usync/uSyncUi.ascx</control>
+          <control>/App_Plugins/usync/uSyncUi.ascx</control>
         </tab>
       </section>
     </Action>
