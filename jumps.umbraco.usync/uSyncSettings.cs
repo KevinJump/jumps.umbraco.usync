@@ -302,6 +302,13 @@ namespace jumps.umbraco.usync
             get { return (Boolean)this["dictionary"]; }
         }
 
+
+        [ConfigurationProperty("memberTypes", DefaultValue = "true", IsRequired = false)]
+        public Boolean MemberTypes
+        {
+            get { return (Boolean)this["memberTypes"]; }
+        }
+
     }
 
     public class uSyncDocTypeSettings : ConfigurationElement
