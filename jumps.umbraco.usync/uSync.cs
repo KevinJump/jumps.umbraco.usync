@@ -145,6 +145,11 @@ namespace jumps.umbraco.usync
                 SyncDictionary.SaveAllToDisk();
             }
 
+            if (uSyncSettings.Elements.MemberTypes)
+            {
+                SyncMemberType.SaveAllToDisk();
+            }
+
             LogHelper.Debug<uSync>("Saving to Disk - End"); 
         }
 
@@ -184,6 +189,11 @@ namespace jumps.umbraco.usync
                     {
                         SyncLanguage.ReadAllFromDisk();
                         SyncDictionary.ReadAllFromDisk();
+                    }
+
+                    if (uSyncSettings.Elements.MemberTypes)
+                    {
+                        SyncMemberType.ReadAllFromDisk();
                     }
 
                     LogHelper.Debug<uSync>("Reading from Disk - End");
@@ -235,6 +245,12 @@ namespace jumps.umbraco.usync
             {
                 SyncLanguage.AttachEvents(); 
                 SyncDictionary.AttachEvents();
+            }
+
+            if (uSyncSettings.Elements.MemberTypes)
+            {
+                SyncMemberType.AttachEvents();
+                LogHelper.Info<uSync>("Attaching MemberTypes events");
             }
 
             LogHelper.Debug<uSync>("Attaching to Events - End");

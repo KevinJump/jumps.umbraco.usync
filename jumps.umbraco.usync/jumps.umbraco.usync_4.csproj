@@ -91,6 +91,7 @@
     <Compile Include="SyncLanguage.cs" />
     <Compile Include="SyncMacro.cs" />
     <Compile Include="SyncMediaTypes.cs" />
+    <Compile Include="SyncMemberType.cs" />
     <Compile Include="SyncStylesheet.cs" />
     <Compile Include="SyncTemplate.cs" />
     <Compile Include="uSync.cs" />
