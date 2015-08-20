@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Xml;
 using umbraco;
 using umbraco.BusinessLogic;
@@ -21,10 +22,32 @@ namespace jumps.umbraco.usync
 {
     public class SyncMemberType
     {
+        private static Timer _saveTimer;
+        private static Queue<int> _saveQueue;
+        private static object _saveLock;
+
         public static void AttachEvents()
         {
             MemberTypeService.Saved += MemberTypeService_Saved;
-            MemberTypeService.Deleting += MemberTypeService_Deleting;            
+            MemberTypeService.Deleting += MemberTypeService_Deleting;
+
+            _saveTimer = new Timer(8128);
+            _saveTimer.Elapsed += _saveTimer_Elapsed;
+
+            _saveQueue = new Queue<int>();
+            _saveLock = new object();
+        }
+
+        static void _saveTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            lock(_saveLock)
+            {
+                while (_saveQueue.Count > 0)
+                {
+                    var memberId = _saveQueue.Dequeue();
+                    SaveToDisk(new MemberType(memberId));
+                }
+            }
         }
 
         static void MemberTypeService_Deleting(IMemberTypeService sender, Umbraco.Core.Events.DeleteEventArgs<Umbraco.Core.Models.IMemberType> e)
@@ -45,10 +68,20 @@ namespace jumps.umbraco.usync
         {
             if (!uSync.EventsPaused)
             {
-                LogHelper.Debug<SyncMemberType>("MemberTypeService.Saved Fired for {0} types", () => e.SavedEntities.Count());
-                foreach (var memberType in e.SavedEntities)
+                if (e.SavedEntities.Any())
                 {
-                    SaveToDisk(new MemberType(memberType.Id));
+                    _saveTimer.Stop();
+                    LogHelper.Debug<SyncMemberType>("MemberTypeService.Saved Fired for {0} types", () => e.SavedEntities.Count());
+                    foreach (var memberType in e.SavedEntities)
+                    {
+                        // like data types, the property saves are fired after
+                        // the membership save, so we wait a bit.
+
+                        _saveQueue.Enqueue(memberType.Id);
+                        
+                        // SaveToDisk(new MemberType(memberType.Id));
+                    }
+                    _saveTimer.Start();
                 }
             }
         }
@@ -93,10 +126,12 @@ namespace jumps.umbraco.usync
             }
         }
 
+
         public static void SaveAllToDisk()
         {
             try
             {
+                
                 foreach (MemberType item in MemberType.GetAll)
                 {
                     SaveToDisk(item);
@@ -222,6 +257,10 @@ namespace jumps.umbraco.usync
                     prop.AppendChild(XmlHelper.AddTextNode(xd, "Mandatory", pt.Mandatory.ToString()));
                     prop.AppendChild(XmlHelper.AddTextNode(xd, "Validation", pt.ValidationRegExp));
                     prop.AppendChild(XmlHelper.AddCDataNode(xd, "Description", pt.Description));
+
+
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "CanEdit", mt.MemberCanEdit(pt) ? "True" : "False"));
+                    prop.AppendChild(XmlHelper.AddTextNode(xd, "CanView", mt.ViewOnProfile(pt) ? "True" : "False"));
 
                     // add this property to the tree
                     props.AppendChild(prop);
@@ -420,6 +459,9 @@ namespace jumps.umbraco.usync
                     pt.ValidationRegExp = xmlHelper.GetNodeValue(gp.SelectSingleNode("Validation"));
                     pt.Description = xmlHelper.GetNodeValue(gp.SelectSingleNode("Description"));
 
+
+
+
                     // tab
                     try
                     {
@@ -431,6 +473,15 @@ namespace jumps.umbraco.usync
                         LogHelper.Debug<SyncMemberType>("Packager: Error assigning property to tab: {0}", () => ee.ToString());
                     }
                     pt.Save();
+
+                    // membertype stuff
+                    var canEdit = bool.Parse(xmlHelper.GetNodeValue(gp.SelectSingleNode("CanEdit")));
+                    mt.setMemberCanEdit(pt, canEdit);
+
+                    var canView = bool.Parse(xmlHelper.GetNodeValue(gp.SelectSingleNode("CanView")));
+                    mt.setMemberViewOnProfile(pt, canView);
+
+
                 }
             }
 
