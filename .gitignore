@@ -15,6 +15,7 @@ local.properties
 .classpath
 .settings/
 .loadpath
+.cmd
 
 # External tool builders
 .externalToolBuilders/
