@@ -10,6 +10,7 @@ using System.IO;
 using umbraco.BusinessLogic;
 using umbraco.cms.businesslogic;
 
+using Umbraco.Core;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
@@ -24,15 +25,15 @@ namespace jumps.umbraco.usync
         {
             if (item != null)
             {
-                Umbraco.Core.Strings.DefaultShortStringHelper _sh = new Umbraco.Core.Strings.DefaultShortStringHelper();
+                // Umbraco.Core.Strings.DefaultShortStringHelper _sh = new Umbraco.Core.Strings.DefaultShortStringHelper();
 
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
                 // xmlDoc.AddMD5Hash();
+
+                LogHelper.Info<SyncDictionary>("Saving: [{0}]", () => item.key);
                 
-                helpers.XmlDoc.SaveXmlDoc("Dictionary", 
-                    _sh.CleanString( item.key, Umbraco.Core.Strings.CleanStringType.Ascii),
-                    xmlDoc);
+                helpers.XmlDoc.SaveXmlDoc("Dictionary", item.key.ToSafeFileName(), xmlDoc);
             }
         }
 
