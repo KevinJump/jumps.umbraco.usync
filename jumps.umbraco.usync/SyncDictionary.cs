@@ -30,9 +30,7 @@ namespace jumps.umbraco.usync
                 XmlDocument xmlDoc = helpers.XmlDoc.CreateDoc();
                 xmlDoc.AppendChild(item.ToXml(xmlDoc));
                 // xmlDoc.AddMD5Hash();
-
-                LogHelper.Info<SyncDictionary>("Saving: [{0}]", () => item.key);
-                
+               
                 helpers.XmlDoc.SaveXmlDoc("Dictionary", item.key.ToSafeFileName(), xmlDoc);
             }
         }
