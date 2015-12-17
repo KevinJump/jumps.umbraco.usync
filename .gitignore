@@ -1,6 +1,7 @@
 #################
 ## Eclipse
 #################
+.vs
 
 *.pydevproject
 .project
