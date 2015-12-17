@@ -31,14 +31,12 @@ namespace jumps.umbraco.usync.helpers
     {
         private static IFileService _fileService;
         private static IContentTypeService _contentService;
-        private static PackagingService _packagingService;
         private static IDataTypeService _dataTypeService;
         static Tracker()
         {
             _fileService = ApplicationContext.Current.Services.FileService;
             _contentService = ApplicationContext.Current.Services.ContentTypeService;
             _dataTypeService = ApplicationContext.Current.Services.DataTypeService;
-            _packagingService = ApplicationContext.Current.Services.PackagingService;
         }
 
         public static bool ContentTypeChanged(XElement node)

@@ -22,17 +22,16 @@ namespace jumps.umbraco.usync.Extensions
     /// </summary>
     public static class IContentTypeExtensions
     {
-        static PackagingService _packageService;
         static IContentTypeService _contentTypeService;
 
         static IContentTypeExtensions()
         {
-            _packageService = ApplicationContext.Current.Services.PackagingService;
             _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
         }
 
         public static XElement ExportToXml(this IContentType item)
         {
+            var _packageService = ApplicationContext.Current.Services.PackagingService;
             XElement element = _packageService.Export(item);
 
             // some extra stuff (we want)
@@ -75,7 +74,8 @@ namespace jumps.umbraco.usync.Extensions
         {
             XElement idElement = node.Element("Info").Element("Id");
 
-            IEnumerable<IContentType> imported = _packageService.ImportContentTypes(node, false);
+            IEnumerable<IContentType> imported = 
+                ApplicationContext.Current.Services.PackagingService.ImportContentTypes(node, false);
 
             return imported; 
 

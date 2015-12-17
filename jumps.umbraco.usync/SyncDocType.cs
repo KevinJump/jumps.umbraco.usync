@@ -30,12 +30,10 @@ namespace jumps.umbraco.usync
     {
         static Dictionary<string, string> updated;
 
-        private static PackagingService _packageService;
         private static IContentTypeService _contentTypeService; 
 
         static SyncDocType()
         {
-            _packageService = ApplicationContext.Current.Services.PackagingService;
             _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
         }
 
