@@ -260,7 +260,7 @@ namespace jumps.umbraco.usync
         public static void Import(XmlNode n, bool ImportStructure)
         {
             if (n == null)
-                throw new ArgumentNullException("Node cannot be null"); 
+                throw new ArgumentNullException("Node cannot be null");
 
             //
             // using xmlHelper not XmlHelper because GetNodeValue has gone all 
@@ -286,7 +286,7 @@ namespace jumps.umbraco.usync
             }
             catch (Exception ex)
             {
-                LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", ()=> ex.ToString()); 
+                LogHelper.Info<SyncMediaTypes>("Media type corrupt? {0}", () => ex.ToString());
             }
 
             if (mt == null)
@@ -328,53 +328,73 @@ namespace jumps.umbraco.usync
                     if (pmt != null)
                         mt.MasterContentType = pmt.Id;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", () => ex.ToString()); 
+                    LogHelper.Debug<SyncMediaTypes>("Media type corrupt? {0}", () => ex.ToString());
                 }
-                
+
             }
 
-            //tabs
 
-            ContentType.TabI[] tabs = mt.getVirtualTabs;
+            /// TABS TAKE 2: 
+            var localTabs = mt.PropertyTypeGroups;
+            var allTabs = mt.getVirtualTabs;
 
-            // load the current tabs
-            string tabnames = ";";
-            for (int t = 0; t < tabs.Length; t++)
+            // tab fupfix
+            foreach (var vt in allTabs)
             {
-                tabnames += tabs[t].Caption + ";";
+                if (localTabs.Any(x => x.Name == vt.Caption && x.ContentTypeId != vt.ContentType))
+                {
+
+                    LogHelper.Debug<SyncMediaTypes>("Detected a broken tab (in both parent and child) - removing: {0}", () => vt.Caption);
+                    try
+                    {
+                        var lt = localTabs.SingleOrDefault(x => x.Name == vt.Caption);
+                        LogHelper.Debug<SyncMediaTypes>("Local: {0}->{1} : Virtual: {2}->{3}", () => lt.Id, () => lt.Name, () => vt.Id, () => vt.Caption);
+                        // delete the tab from the local lot..
+                        // mt.DeleteVirtualTab(lt.Id);
+                        mt.Save();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogHelper.Warn<SyncMediaTypes>("Failed tring to fix the borked tab: {0}\n{1}", () => vt.Caption, () => ex.ToString());
+                    }
+
+                }
+
             }
 
-            Hashtable ht = new Hashtable();
+            //Hashtable ht = new Hashtable();
             foreach (XmlNode t in n.SelectNodes("Tabs/Tab"))
             {
+                var caption = xmlHelper.GetNodeValue(t.SelectSingleNode("Caption"));
                 // is this a new tab?
                 // if ( tabnames.IndexOf(";" + xmlHelper.GetNodeValue(t.SelectSingleNode("Caption")) + ";" == -1)
-                if (!tabnames.Contains(";" + xmlHelper.GetNodeValue(t.SelectSingleNode("Caption")) + ";"))
+                if (!localTabs.Any(x => x.Name == caption))
                 {
-                    ht.Add(int.Parse(xmlHelper.GetNodeValue(t.SelectSingleNode("Id"))),
-                        mt.AddVirtualTab(xmlHelper.GetNodeValue(t.SelectSingleNode("Caption"))));
-
+                    LogHelper.Debug<SyncMediaTypes>("This tab does not exsit at this level: {0} {1}", () => mt.Alias, () => caption);
+                    // only add the tab if one of the parents doesn't have it...
+                    if (!allTabs.Any(x => x.Caption == caption))
+                    {
+                        LogHelper.Debug<SyncMediaTypes>("This is not a tab for any parents - adding: {0}", () => caption);
+                        mt.AddVirtualTab(caption);
+                    }
                 }
             }
+
             // clear cache  
             mt.ClearVirtualTabs();
 
-            // put tabs in a hashtable, so we can check they exist when we add properties.
-            Hashtable tabList = new Hashtable();
-            foreach (ContentType.TabI t in mt.getVirtualTabs.ToList())
-            {
-                if (!tabList.ContainsKey(t.Caption))
-                    tabList.Add(t.Caption, t.Id);
-            }
-
             // properties..
+            var propertiesToMove = new Dictionary<string, KeyValuePair<string, int>>();
+
+
             global::umbraco.cms.businesslogic.datatype.controls.Factory f =
                 new global::umbraco.cms.businesslogic.datatype.controls.Factory();
 
             foreach (XmlNode gp in n.SelectNodes("GenericProperties/GenericProperty"))
             {
+                LogHelper.Debug<SyncMediaTypes>(" >> Processing Properties: {0} -> {1}", () => mt.Alias, () => xmlHelper.GetNodeValue(gp.SelectSingleNode("Name")));
                 int dfId = 0;
                 Guid dtId = new Guid(xmlHelper.GetNodeValue(gp.SelectSingleNode("Type")));
 
@@ -403,7 +423,7 @@ namespace jumps.umbraco.usync
                     dtId = new Guid("83722133-f80c-4273-bdb6-1befaa04a612");
                     dfId = findDataTypeDefinitionFromType(ref dtId);
                 }
-                
+
                 if (dfId != 0)
                 {
                     PropertyType pt = mt.getPropertyType(xmlHelper.GetNodeValue(gp.SelectSingleNode("Alias")));
@@ -426,17 +446,11 @@ namespace jumps.umbraco.usync
                     pt.ValidationRegExp = xmlHelper.GetNodeValue(gp.SelectSingleNode("Validation"));
                     pt.Description = xmlHelper.GetNodeValue(gp.SelectSingleNode("Description"));
 
-                    // tab
-                    try
-                    {
-                        if (tabList.ContainsKey(xmlHelper.GetNodeValue(gp.SelectSingleNode("Tab"))))
-                            pt.TabId = (int)tabList[xmlHelper.GetNodeValue(gp.SelectSingleNode("Tab"))];
-                    }
-                    catch (Exception ee)
-                    {
-                        LogHelper.Debug<SyncMediaTypes>("Packager: Error assigning property to tab: {0}", ()=> ee.ToString());
-                    }
-                    pt.Save(); 
+                    var tabName = xmlHelper.GetNodeValue(gp.SelectSingleNode("Tab"));
+                    propertiesToMove.Add(pt.Alias, new KeyValuePair<string, int>(tabName, pt.PropertyTypeGroup));
+
+                    pt.Save();
+
                 }
             }
 
@@ -455,7 +469,7 @@ namespace jumps.umbraco.usync
                         }
                         catch (Exception ex)
                         {
-                            LogHelper.Info<uSync>("Can't find structure mediatype - so skipping");
+                            LogHelper.Warn<uSync>("Can't find structure mediatype - so skipping");
                         }
                     }
 
@@ -466,13 +480,67 @@ namespace jumps.umbraco.usync
                 }
             }
 
+            LogHelper.Info<SyncMediaTypes>("Saving Media Type");
             mt.Save();
+
+            if (propertiesToMove.Any())
+            {
+                LogHelper.Debug<SyncMediaTypes>(">> Moving Properties into the right tabs (as needed)");
+                var _contentTypeService = ApplicationContext.Current.Services.ContentTypeService;
+                var mediaType = _contentTypeService.GetMediaType(mt.Id);
+                if (mediaType != null)
+                {
+                    var tabs = mediaType.PropertyGroups.ToList();
+                    var moves = 0;
+
+                    foreach (var ptmove in propertiesToMove)
+                    {
+                        var targetTab = tabs.FirstOrDefault(x => x.Name == ptmove.Value.Key);
+                        if (targetTab == null)
+                        {
+                            // is it a parent 
+                            if (allTabs.Any(x => x.Caption == ptmove.Value.Key))
+                            {
+                                // create it at this level too!
+                                if (mediaType.AddPropertyGroup(ptmove.Value.Key))
+                                {
+                                    _contentTypeService.Save(mediaType);
+                                    tabs = mediaType.PropertyGroups.ToList();
+                                    targetTab = tabs.FirstOrDefault(x => x.Name == ptmove.Value.Key);
+                                }
+                            }
+                        }
+
+                        if (targetTab != null)
+                        {
+                            if (targetTab.Id != ptmove.Value.Value)
+                            {
+                                // it's different that we had before, perform a move.
+                                mediaType.MovePropertyType(ptmove.Key, ptmove.Value.Key);
+                                moves++;
+                            }
+                        }
+                    }
+
+                    if (moves > 0)
+                    {
+                        LogHelper.Debug<SyncMediaTypes>("Saving {0} tab moves", () => moves);
+                        _contentTypeService.Save(mediaType);
+                    }
+                }
+                else
+                {
+                    LogHelper.Warn<SyncMediaTypes>("Couldn't get the media type from the media type service;");
+                }
+            }
+            
             /*
             foreach (MediaType.TabI t in mt.getVirtualTabs.ToList())
             {
                 MediaType.FlushTabCache(t.Id, mt.Id);
             }
-
+            */
+            /*
             // need to do this more i think
             MediaType.FlushFromCache(mt.Id); 
              */
